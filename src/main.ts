@@ -1,5 +1,6 @@
 import './styles.css';
 import { TournamentGame, type HudState } from './game';
+import { DojoGame, type DojoAction, type DojoStep } from './dojo';
 import { ROSTER, findCharacter, type CharacterDef } from './roster';
 
 interface DailyState {
@@ -20,6 +21,14 @@ interface SaveData {
   totalRuns: number;
   fighterXp: Record<string, number>;
   daily: DailyState;
+}
+
+interface MoveController {
+  setMove: (x: number, y: number) => void;
+}
+
+interface DodgeController {
+  dodge: (x?: number, y?: number) => void;
 }
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
@@ -79,6 +88,7 @@ function loadSave(): SaveData {
 
 let save = loadSave();
 let activeGame: TournamentGame | null = null;
+let activeDojo: DojoGame | null = null;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function persist() {
@@ -122,6 +132,8 @@ function upgradedCharacter(base: CharacterDef): CharacterDef {
 function cleanupGame() {
   activeGame?.destroy();
   activeGame = null;
+  activeDojo?.destroy();
+  activeDojo = null;
 }
 
 function showHome() {
@@ -137,13 +149,13 @@ function showHome() {
         <p class="subtitle">Playable reconstruction of the discontinued 2015 mobile arena loop, built from public gameplay references with original procedural placeholder art.</p>
         <div class="selected-fighter">
           <span class="fighter-dot" style="--fighter:#${selected.color.toString(16).padStart(6, '0')}"></span>
-          <div><small>SELECTED FIGHTER · LEVEL ${level}</small><b>${selected.name}</b><em>${selected.element} · ${selected.style}</em></div>
+          <div><small>SELECTED FIGHTER · LEVEL ${level}</small><b>${selected.name}</b><em>${selected.element} · ${selected.style} · ${selected.special.replace('-', ' ')}</em></div>
         </div>
         <div class="menu-actions">
           <button class="gold-button primary" id="play-btn">▶ ENTER TOURNAMENT</button>
-          <button class="gold-button" id="fighters-btn">◉ FIGHTERS</button>
+          <button class="gold-button" id="fighters-btn">◉ FIGHTERS (${ROSTER.length})</button>
           <button class="gold-button" id="rewards-btn">✦ DAILY DRAW & CHALLENGES ${save.daily.draws > 0 ? `(${save.daily.draws})` : ''}</button>
-          <button class="gold-button" id="dojo-btn">◇ DOJO / CONTROLS</button>
+          <button class="gold-button" id="dojo-btn">◇ PLAY DOJO TUTORIAL</button>
         </div>
         <div class="save-stats">
           <span>◉ ${formatStuds(save.bankStuds)} banked studs</span>
@@ -174,7 +186,7 @@ function showRoster() {
         <div class="fighter-avatar" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}"><span></span><i></i></div>
         <div class="fighter-copy">
           <h3>${fighter.name} <small>LV ${progress.level}</small></h3>
-          <p>${fighter.element} · ${fighter.style}</p>
+          <p>${fighter.element} · ${fighter.style} · ${fighter.special.replace('-', ' ')}</p>
           <div class="stat-row"><span>SPD ${upgraded.speed.toFixed(1)}</span><span>DMG ${upgraded.damage}</span><span>♥ ${upgraded.maxHealth}</span></div>
           ${unlocked ? `<div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'MAX POTENTIAL' : `${progress.current}/${progress.target} XP`}</em>` : ''}
         </div>
@@ -275,25 +287,85 @@ function showRewards() {
 
 function showDojo() {
   cleanupGame();
+  const baseFighter = findCharacter(save.selected);
+  const fighter = upgradedCharacter(baseFighter);
   app.innerHTML = `
-    <main class="panel-screen dojo-screen">
-      <header class="top-bar"><button class="back-button" id="back-btn">‹</button><div><small>SENSEI'S TRAINING NOTES</small><h2>Dojo Controls</h2></div><span></span></header>
-      <section class="dojo-grid">
-        <article><b>Move</b><p>Touch joystick or WASD / arrow keys.</p></article>
-        <article><b>Attack</b><p>Red sword button, Space, or J. Chain hits to raise the stud multiplier.</p></article>
-        <article><b>Jump + Slam</b><p>Arrow button or K to jump. Press attack while airborne to slam down and damage nearby enemies.</p></article>
-        <article><b>Dodge</b><p>Swipe across the arena on mobile or press Q. Dodge grants a short invulnerability window.</p></article>
-        <article><b>Block</b><p>Shield button or Shift. Damage is heavily reduced while blocking.</p></article>
-        <article><b>Grab / Throw</b><p>Hand button or L. Throw regular enemies toward either gong for an instant KO.</p></article>
-        <article><b>Spinjitzu</b><p>Land attacks to fill the lower-left meter. Press the spiral or E at 100% for temporary invulnerability and area damage.</p></article>
-        <article><b>Arena Events</b><p>Watch for Boulder Basher targets, Titanium Dragon ice balls, Condrai reinforcements, and floor spikes.</p></article>
-        <article><b>Boss Powers</b><p>Boss waves now include special behavior such as Karlof tremors, Ash teleports, Mr. Pale invisibility, Neuro bursts, and Griffin speed charges.</p></article>
-        <article><b>True Potential</b><p>Each fighter earns XP after a run and grows through five potential levels, improving combat stats.</p></article>
+    <main class="game-screen dojo-game-screen">
+      <div id="dojo-host"></div>
+      <button class="pause-button dojo-exit" id="dojo-exit" aria-label="Exit dojo">‹</button>
+      <section class="dojo-coach" id="dojo-coach">
+        <small>SENSEI'S DOJO · STEP <span id="dojo-step-number">1</span>/7</small>
+        <h2 id="dojo-step-title">Movement</h2>
+        <p id="dojo-step-copy">Use the joystick or WASD / arrow keys.</p>
+        <div class="dojo-progress"><i id="dojo-progress"></i></div>
       </section>
-      <button class="gold-button primary dojo-play" id="play-btn">START PRACTICE RUN</button>
+      <div class="dojo-fighter-label"><b>${baseFighter.name}</b><span>LV ${fighterLevel(baseFighter.id)} · ${baseFighter.special.replace('-', ' ')}</span></div>
+      <div class="special-wrap"><button id="dojo-special" class="special-button">↻</button><div class="meter"><i id="dojo-meter"></i></div></div>
+      <div class="joystick" id="dojo-joystick"><div class="joystick-ring"><span id="dojo-stick"></span></div></div>
+      <div class="action-cluster dojo-actions">
+        <button class="action-button jump" data-dojo-action="jump" aria-label="Jump">↑</button>
+        <button class="action-button block" id="dojo-block" aria-label="Block">◆</button>
+        <button class="action-button grab" data-dojo-action="grab" aria-label="Grab">✦</button>
+        <button class="action-button attack" data-dojo-action="attack" aria-label="Attack">⚔</button>
+      </div>
+      <div class="dodge-hint">SWIPE DOJO TO DODGE · Q ON DESKTOP</div>
+      <div id="dojo-complete" class="game-over hidden"></div>
     </main>`;
-  document.querySelector('#back-btn')?.addEventListener('click', showHome);
-  document.querySelector('#play-btn')?.addEventListener('click', startGame);
+
+  const host = document.querySelector<HTMLElement>('#dojo-host')!;
+  const tutorial = new DojoGame(host, fighter, {
+    onStep: updateDojoStep,
+    onMeter: (value) => {
+      const meter = document.querySelector<HTMLElement>('#dojo-meter');
+      if (meter) meter.style.width = `${value}%`;
+      document.querySelector('#dojo-special')?.classList.toggle('ready', value >= 100);
+    },
+    onComplete: () => {
+      const overlay = document.querySelector<HTMLElement>('#dojo-complete');
+      if (!overlay) return;
+      overlay.classList.remove('hidden');
+      overlay.innerHTML = `<section><small>SENSEI'S DOJO</small><h2>Training Complete</h2><p>You are ready for the Tournament of Elements.</p><div class="menu-actions"><button class="gold-button primary" id="dojo-enter-tournament">ENTER TOURNAMENT</button><button class="gold-button" id="dojo-menu">MAIN MENU</button></div></section>`;
+      document.querySelector('#dojo-enter-tournament')?.addEventListener('click', startGame);
+      document.querySelector('#dojo-menu')?.addEventListener('click', showHome);
+    }
+  });
+  activeDojo = tutorial;
+
+  wireJoystick(tutorial, '#dojo-joystick', '#dojo-stick');
+  wireArenaSwipe(tutorial, host);
+  document.querySelectorAll<HTMLButtonElement>('[data-dojo-action]').forEach((button) => {
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      tutorial.action(button.dataset.dojoAction as DojoAction);
+    });
+  });
+  document.querySelector('#dojo-special')?.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    tutorial.action('special');
+  });
+  const block = document.querySelector<HTMLButtonElement>('#dojo-block')!;
+  const releaseBlock = () => { block.classList.remove('held'); tutorial.setBlock(false); };
+  block.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    block.setPointerCapture(event.pointerId);
+    block.classList.add('held');
+    tutorial.setBlock(true);
+  });
+  block.addEventListener('pointerup', releaseBlock);
+  block.addEventListener('pointercancel', releaseBlock);
+  document.querySelector('#dojo-exit')?.addEventListener('click', showHome);
+}
+
+function updateDojoStep(step: DojoStep, title: string, copy: string, progress: number) {
+  const indexMap: Record<DojoStep, number> = { move: 1, attack: 2, jump: 3, block: 4, grab: 5, dodge: 6, special: 7, complete: 7 };
+  const number = document.querySelector('#dojo-step-number');
+  const titleEl = document.querySelector('#dojo-step-title');
+  const copyEl = document.querySelector('#dojo-step-copy');
+  const bar = document.querySelector<HTMLElement>('#dojo-progress');
+  if (number) number.textContent = String(indexMap[step]);
+  if (titleEl) titleEl.textContent = title;
+  if (copyEl) copyEl.textContent = copy;
+  if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
 }
 
 function startGame() {
@@ -413,9 +485,9 @@ function showGameOver(runStuds: number, wave: number, fighterId: string) {
   document.querySelector('#menu-btn')?.addEventListener('click', showHome);
 }
 
-function wireJoystick(game: TournamentGame) {
-  const zone = document.querySelector<HTMLElement>('#joystick')!;
-  const stick = document.querySelector<HTMLElement>('#stick')!;
+function wireJoystick(game: MoveController, zoneSelector = '#joystick', stickSelector = '#stick') {
+  const zone = document.querySelector<HTMLElement>(zoneSelector)!;
+  const stick = document.querySelector<HTMLElement>(stickSelector)!;
   let pointerId: number | null = null;
   const radius = 42;
 
@@ -450,7 +522,7 @@ function wireJoystick(game: TournamentGame) {
   zone.addEventListener('pointercancel', release);
 }
 
-function wireArenaSwipe(game: TournamentGame, host: HTMLElement) {
+function wireArenaSwipe(game: DodgeController, host: HTMLElement) {
   let start: { id: number; x: number; y: number; time: number } | null = null;
   host.addEventListener('pointerdown', (event) => {
     start = { id: event.pointerId, x: event.clientX, y: event.clientY, time: performance.now() };
