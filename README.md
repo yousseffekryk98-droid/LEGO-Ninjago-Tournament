@@ -2,26 +2,30 @@
 
 A clean-room, fan-made recreation project inspired by the discontinued 2015 mobile arena brawler.
 
-> This repository does **not** contain extracted/ripped LEGO, TT Games, Hellbent Games, APK, OBB, audio, models, textures, logos, or other proprietary game assets. Use only assets you own or have permission to use.
+> This repository does **not** contain extracted/ripped LEGO, TT Games, Hellbent Games, APK, OBB, audio, models, textures, logos, animations, or other proprietary game assets. Use only assets you own or have permission to use.
 
-## Current playable prototype
+## Current playable build
 
-The `remake/playable-prototype` branch contains a browser-playable 3D reconstruction built with TypeScript, Vite and Three.js.
+The project is a browser-playable 3D reconstruction built with TypeScript, Vite and Three.js.
 
 Implemented now:
 
 - original-inspired diagonal/isometric arena presentation;
-- mobile virtual joystick and touch combat buttons;
+- mobile virtual joystick and four-button combat cluster;
 - desktop WASD/arrow controls;
-- attack, block, jump, grab/throw and charged Spinjitzu;
+- attack, block, jump, jump-slam, grab/throw, dodge and charged Spinjitzu;
 - combo counter and escalating stud multiplier;
 - melee, heavy and ranged enemies;
 - escalating waves and boss waves;
+- boss-specific mechanics for Karlof, Ash, Mr. Pale, Neuro, Griffin Turner, Master Chen and Ronin;
 - gong instant-KO throws;
-- marked falling-boulder arena event;
+- Boulder Basher, Titanium Dragon freeze projectile, Condrai reinforcement and spike hazards;
 - procedural block-style fighters and environment (no ripped game art);
 - unlockable roster with local stud bank/progression;
+- five-level fighter potential/XP system with stat growth;
+- daily free prize draw plus three daily challenges that award extra draws;
 - responsive phone/tablet/desktop HUD;
+- local save migration/persistence;
 - automated TypeScript and production build workflow.
 
 See [`docs/RESEARCH.md`](docs/RESEARCH.md) for the gameplay research, public references, clean-room rules and fidelity roadmap.
@@ -45,13 +49,13 @@ npm run preview
 
 ## Controls
 
-Desktop: WASD / arrows to move, `Space` or `J` attack, `K` jump, `L` grab/throw, `Shift` block, `E` Spinjitzu.
+Desktop: WASD / arrows to move, `Space` or `J` attack, `K` jump, `L` grab/throw, `Shift` block, `E` Spinjitzu, `Q` dodge. Attack while airborne to perform a jump slam.
 
-Mobile: left virtual joystick plus the on-screen action cluster. Fill the special meter by landing hits, then press the spiral button.
+Mobile: left virtual joystick plus the on-screen action cluster. Swipe across the arena to dodge. Fill the special meter by landing hits, then press the spiral button.
 
-## Next fidelity pass
+## Next fidelity work
 
-The next milestone adds dodge/roll, jump slam, individual boss powers, additional arena events (Titanium Dragon, Roto Jet, Condrai Crushers, spikes/training props), five-level fighter progression, challenges/daily tasks, prize draw, power-ups and a proper playable Dojo tutorial.
+The largest remaining original-loop pieces are a fully playable scripted Dojo tutorial, Roto Jet supply drops/destructible training props, consumable power-ups, deeper character-specific special abilities, a larger verified roster/variant set, stronger animation/VFX/audio hooks, controller support, PWA/offline packaging and optional Android packaging.
 
 ## Legal / project scope
 

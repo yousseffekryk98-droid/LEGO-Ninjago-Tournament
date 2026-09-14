@@ -21,6 +21,7 @@ export interface GameCallbacks {
 
 type Action = 'attack' | 'jump' | 'grab' | 'special';
 type EnemyKind = 'melee' | 'heavy' | 'ranged' | 'boss';
+type ProjectileEffect = 'damage' | 'freeze';
 
 interface Enemy {
   mesh: THREE.Group;
@@ -30,6 +31,8 @@ interface Enemy {
   speed: number;
   damage: number;
   attackCooldown: number;
+  specialCooldown: number;
+  hiddenTime: number;
   knock: THREE.Vector3;
   bossName?: string;
   hitFlash: number;
@@ -40,6 +43,7 @@ interface Projectile {
   velocity: THREE.Vector3;
   life: number;
   damage: number;
+  effect: ProjectileEffect;
 }
 
 interface Boulder {
@@ -48,6 +52,16 @@ interface Boulder {
   delay: number;
   velocity: number;
   active: boolean;
+}
+
+interface Shockwave {
+  mesh: THREE.Mesh;
+  origin: THREE.Vector3;
+  radius: number;
+  speed: number;
+  life: number;
+  hit: boolean;
+  damage: number;
 }
 
 const ARENA_RADIUS = 11.25;
@@ -63,6 +77,8 @@ export class TournamentGame {
   private enemies: Enemy[] = [];
   private projectiles: Projectile[] = [];
   private boulders: Boulder[] = [];
+  private shockwaves: Shockwave[] = [];
+  private spikePositions: THREE.Vector3[] = [];
   private callbacks: GameCallbacks;
   private character: CharacterDef;
   private animationFrame = 0;
@@ -82,11 +98,16 @@ export class TournamentGame {
   private invulnerable = 0;
   private jumpVelocity = 0;
   private grounded = true;
+  private jumpSlam = false;
   private spinTime = 0;
   private spinTick = 0;
+  private dodgeTime = 0;
+  private dodgeDirection = new THREE.Vector3();
+  private frozenTime = 0;
+  private spikeCooldown = 0;
   private intermission = 0.35;
   private hudTimer = 0;
-  private eventTimer = 0;
+  private eventTimer = 7;
   private elapsed = 0;
   private lastDamageAt = -999;
 
@@ -143,6 +164,21 @@ export class TournamentGame {
     this.queuedActions.add(action);
   }
 
+  dodge(x = 0, y = 0) {
+    if (!this.grounded || this.spinTime > 0 || this.dodgeTime > 0 || this.frozenTime > 0) return;
+    const direction = new THREE.Vector3(x, 0, y);
+    if (direction.lengthSq() < 0.04) {
+      direction.set(Math.sin(this.player.rotation.y), 0, Math.cos(this.player.rotation.y));
+    } else {
+      direction.normalize();
+    }
+    this.dodgeDirection.copy(direction);
+    this.player.rotation.y = Math.atan2(direction.x, direction.z);
+    this.dodgeTime = 0.28;
+    this.invulnerable = Math.max(this.invulnerable, 0.38);
+    this.input.block = false;
+  }
+
   setPaused(paused: boolean) {
     this.paused = paused;
     if (!paused) this.clock.getDelta();
@@ -165,6 +201,7 @@ export class TournamentGame {
     if (event.code === 'KeyK') this.action('jump');
     if (event.code === 'KeyL') this.action('grab');
     if (event.code === 'KeyE') this.action('special');
+    if (event.code === 'KeyQ') this.dodge(this.input.x, this.input.y);
     if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') this.input.block = true;
   };
 
@@ -193,6 +230,8 @@ export class TournamentGame {
     this.elapsed += dt;
     this.attackCooldown = Math.max(0, this.attackCooldown - dt);
     this.invulnerable = Math.max(0, this.invulnerable - dt);
+    this.frozenTime = Math.max(0, this.frozenTime - dt);
+    this.spikeCooldown = Math.max(0, this.spikeCooldown - dt);
     this.hudTimer -= dt;
     this.intermission -= dt;
     this.eventTimer -= dt;
@@ -201,19 +240,20 @@ export class TournamentGame {
     this.updateEnemies(dt);
     this.updateProjectiles(dt);
     this.updateBoulders(dt);
+    this.updateShockwaves(dt);
+    this.updateSpikeHazards();
 
     if (this.enemies.length === 0 && this.intermission <= 0) {
       this.spawnWave();
       this.intermission = 1.4;
     }
 
-    if (this.wave >= 3 && this.eventTimer <= 0 && this.enemies.length > 0) {
-      this.spawnBoulderEvent();
-      this.eventTimer = Math.max(8, 15 - this.wave * 0.25);
+    if (this.wave >= 2 && this.eventTimer <= 0 && this.enemies.length > 0) {
+      this.triggerArenaEvent();
+      this.eventTimer = Math.max(7.5, 14 - this.wave * 0.22) + Math.random() * 3;
     }
 
     if (this.combo > 0 && this.elapsed - this.lastDamageAt > 5.5 && this.attackCooldown <= 0) {
-      // Combo survives active fighting, but naturally decays when the arena goes quiet.
       if (Math.random() < dt * 0.35) this.combo = Math.max(0, this.combo - 1);
     }
 
@@ -234,7 +274,14 @@ export class TournamentGame {
     const move = new THREE.Vector2(x, z);
     if (move.lengthSq() > 1) move.normalize();
 
-    if (this.spinTime > 0) {
+    if (this.frozenTime > 0) {
+      this.player.rotation.z = Math.sin(this.elapsed * 20) * 0.03;
+    } else if (this.dodgeTime > 0) {
+      this.dodgeTime -= dt;
+      this.player.position.addScaledVector(this.dodgeDirection, 12.5 * dt);
+      this.player.rotation.z = Math.sin((0.28 - this.dodgeTime) * 18) * 0.22;
+      this.invulnerable = Math.max(this.invulnerable, 0.12);
+    } else if (this.spinTime > 0) {
       this.spinTime -= dt;
       this.spinTick -= dt;
       this.player.rotation.y += dt * 18;
@@ -243,7 +290,7 @@ export class TournamentGame {
         this.spinTick = 0.16;
         for (const enemy of [...this.enemies]) {
           const distance = enemy.mesh.position.distanceTo(this.player.position);
-          if (distance < 3.25) this.hitEnemy(enemy, this.character.damage * 0.9, 4.5);
+          if (distance < 3.25) this.hitEnemy(enemy, this.character.damage * 0.9, 4.5, true);
         }
       }
     } else if (move.lengthSq() > 0.01) {
@@ -251,6 +298,9 @@ export class TournamentGame {
       this.player.position.x += move.x * speed * dt;
       this.player.position.z += move.y * speed * dt;
       this.player.rotation.y = Math.atan2(move.x, move.y);
+      this.player.rotation.z = 0;
+    } else {
+      this.player.rotation.z *= Math.pow(0.02, dt);
     }
 
     const planar = new THREE.Vector2(this.player.position.x, this.player.position.z);
@@ -267,6 +317,7 @@ export class TournamentGame {
         this.player.position.y = 0;
         this.jumpVelocity = 0;
         this.grounded = true;
+        if (this.jumpSlam) this.landJumpSlam();
       }
     }
 
@@ -274,15 +325,25 @@ export class TournamentGame {
     this.playerShadow.position.z = this.player.position.z;
     (this.playerShadow.material as THREE.MeshBasicMaterial).opacity = clamp(0.3 - this.player.position.y * 0.05, 0.08, 0.3);
 
-    if (this.queuedActions.has('attack')) this.performAttack();
-    if (this.queuedActions.has('jump')) this.performJump();
-    if (this.queuedActions.has('grab')) this.performGrab();
-    if (this.queuedActions.has('special')) this.performSpecial();
+    if (this.frozenTime <= 0) {
+      if (this.queuedActions.has('attack')) this.performAttack();
+      if (this.queuedActions.has('jump')) this.performJump();
+      if (this.queuedActions.has('grab')) this.performGrab();
+      if (this.queuedActions.has('special')) this.performSpecial();
+    }
     this.queuedActions.clear();
   }
 
   private performAttack() {
-    if (this.attackCooldown > 0 || this.spinTime > 0) return;
+    if (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0) return;
+    if (!this.grounded) {
+      this.jumpSlam = true;
+      this.jumpVelocity = Math.min(this.jumpVelocity, -10.5);
+      this.attackCooldown = 0.65;
+      this.callbacks.onMessage('Jump slam!');
+      return;
+    }
+
     this.attackCooldown = this.character.style === 'speed' ? 0.24 : this.character.style === 'heavy' ? 0.48 : 0.34;
     const forward = new THREE.Vector3(Math.sin(this.player.rotation.y), 0, Math.cos(this.player.rotation.y));
     let connected = false;
@@ -290,21 +351,52 @@ export class TournamentGame {
       const toEnemy = enemy.mesh.position.clone().sub(this.player.position);
       const distance = toEnemy.length();
       if (distance <= (this.character.style === 'heavy' ? 2.55 : 2.15) && forward.dot(toEnemy.normalize()) > -0.05) {
+        const before = enemy.hp;
         this.hitEnemy(enemy, this.character.damage, this.character.style === 'heavy' ? 5.5 : 3.4);
-        connected = true;
+        connected ||= enemy.hp < before || !this.enemies.includes(enemy);
       }
     }
     if (!connected) this.combo = Math.max(0, this.combo - 1);
   }
 
   private performJump() {
-    if (!this.grounded || this.spinTime > 0) return;
+    if (!this.grounded || this.spinTime > 0 || this.dodgeTime > 0) return;
     this.grounded = false;
+    this.jumpSlam = false;
     this.jumpVelocity = 7.2;
   }
 
+  private landJumpSlam() {
+    this.jumpSlam = false;
+    this.invulnerable = Math.max(this.invulnerable, 0.22);
+    const ring = this.makeRing(0xd6b044, 0.78);
+    ring.position.copy(this.player.position).setY(0.04);
+    ring.scale.setScalar(0.2);
+    this.scene.add(ring);
+    const started = this.elapsed;
+    const animate = () => {
+      if (!this.running || this.elapsed - started > 0.38) {
+        this.scene.remove(ring);
+        return;
+      }
+      const t = (this.elapsed - started) / 0.38;
+      ring.scale.setScalar(0.2 + t * 3.8);
+      (ring.material as THREE.MeshBasicMaterial).opacity = 0.78 * (1 - t);
+      requestAnimationFrame(animate);
+    };
+    animate();
+
+    for (const enemy of [...this.enemies]) {
+      if (enemy.mesh.position.distanceTo(this.player.position) < 3.2) {
+        enemy.hiddenTime = 0;
+        this.setEnemyOpacity(enemy, 1);
+        this.hitEnemy(enemy, this.character.damage * 1.35, 6.2, true);
+      }
+    }
+  }
+
   private performGrab() {
-    if (this.attackCooldown > 0 || this.spinTime > 0) return;
+    if (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0 || !this.grounded) return;
     const candidates = this.enemies
       .filter((enemy) => enemy.kind !== 'boss' && enemy.mesh.position.distanceTo(this.player.position) < 1.8)
       .sort((a, b) => a.mesh.position.distanceTo(this.player.position) - b.mesh.position.distanceTo(this.player.position));
@@ -318,14 +410,15 @@ export class TournamentGame {
   }
 
   private performSpecial() {
-    if (this.special < 100 || this.spinTime > 0 || !this.grounded) return;
+    if (this.special < 100 || this.spinTime > 0 || !this.grounded || this.dodgeTime > 0) return;
     this.special = 0;
     this.spinTime = 1.65;
     this.spinTick = 0;
     this.callbacks.onMessage(`${this.character.element} Spinjitzu!`);
   }
 
-  private hitEnemy(enemy: Enemy, damage: number, knockback: number) {
+  private hitEnemy(enemy: Enemy, damage: number, knockback: number, force = false) {
+    if (enemy.bossName === 'Mr. Pale' && enemy.hiddenTime > 0 && !force) return;
     enemy.hp -= damage;
     enemy.hitFlash = 0.09;
     this.combo += 1;
@@ -339,9 +432,10 @@ export class TournamentGame {
 
   private defeatEnemy(enemy: Enemy) {
     const index = this.enemies.indexOf(enemy);
-    if (index >= 0) this.enemies.splice(index, 1);
+    if (index < 0) return;
+    this.enemies.splice(index, 1);
     const multiplier = this.getMultiplier();
-    const payout = (enemy.kind === 'boss' ? 500 : enemy.kind === 'heavy' ? 80 : 45) * multiplier;
+    const payout = (enemy.kind === 'boss' ? 500 : enemy.kind === 'heavy' ? 80 : enemy.kind === 'ranged' ? 60 : 45) * multiplier;
     this.studs += payout;
     this.special = clamp(this.special + (enemy.kind === 'boss' ? 35 : 12), 0, 100);
 
@@ -352,7 +446,7 @@ export class TournamentGame {
   }
 
   private damagePlayer(amount: number) {
-    if (this.invulnerable > 0 || this.spinTime > 0) return;
+    if (this.invulnerable > 0 || this.spinTime > 0 || this.dodgeTime > 0) return;
     const blocked = this.input.block;
     const actual = blocked ? amount * 0.28 : amount;
     this.health = Math.max(0, this.health - actual);
@@ -371,13 +465,23 @@ export class TournamentGame {
     const playerPos = this.player.position;
     for (const enemy of [...this.enemies]) {
       enemy.attackCooldown -= dt;
+      enemy.specialCooldown -= dt;
       enemy.hitFlash -= dt;
+      if (enemy.hiddenTime > 0) {
+        enemy.hiddenTime -= dt;
+        if (enemy.hiddenTime <= 0) this.setEnemyOpacity(enemy, 1);
+      }
+
       enemy.mesh.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;
         const material = object.material as THREE.MeshStandardMaterial;
         if (!material.emissive) return;
         material.emissive.setHex(enemy.hitFlash > 0 ? 0x67241d : 0x000000);
       });
+
+      if (enemy.kind === 'boss' && enemy.specialCooldown <= 0) {
+        this.performBossSpecial(enemy);
+      }
 
       if (enemy.knock.lengthSq() > 0.02) {
         enemy.mesh.position.addScaledVector(enemy.knock, dt);
@@ -387,15 +491,17 @@ export class TournamentGame {
         const toPlayer = playerPos.clone().sub(enemy.mesh.position).setY(0);
         const distance = toPlayer.length();
         if (distance > 0.001) enemy.mesh.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
+        const hiddenSpeedBoost = enemy.hiddenTime > 0 ? 1.35 : 1;
+
         if (enemy.kind === 'ranged') {
-          if (distance > 6) enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * dt);
+          if (distance > 6) enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * hiddenSpeedBoost * dt);
           else if (distance < 4) enemy.mesh.position.addScaledVector(toPlayer.normalize(), -enemy.speed * 0.55 * dt);
           else if (enemy.attackCooldown <= 0) {
             this.fireProjectile(enemy);
             enemy.attackCooldown = 1.65 + Math.random() * 0.45;
           }
         } else if (distance > 1.45) {
-          enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * dt);
+          enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * hiddenSpeedBoost * dt);
         } else if (enemy.attackCooldown <= 0) {
           this.damagePlayer(enemy.damage);
           enemy.attackCooldown = enemy.kind === 'heavy' || enemy.kind === 'boss' ? 1.25 : 0.8;
@@ -410,34 +516,113 @@ export class TournamentGame {
       }
 
       if (Math.abs(enemy.mesh.position.x) > 9.35 && Math.abs(enemy.mesh.position.z) < 1.75 && enemy.knock.length() > 1.5) {
-        enemy.hp = 0;
         this.defeatEnemy(enemy);
         this.callbacks.onMessage('GONG KO! Instant arena knockout.');
       }
     }
   }
 
+  private performBossSpecial(enemy: Enemy) {
+    const name = enemy.bossName ?? '';
+    enemy.specialCooldown = 5 + Math.random() * 2.5;
+    const toPlayer = this.player.position.clone().sub(enemy.mesh.position).setY(0);
+
+    if (name === 'Karlof') {
+      this.spawnShockwave(enemy.mesh.position, 7.6, 1.35);
+      this.callbacks.onMessage('Karlof: METAL TREMOR! Jump or dodge the ring.');
+      return;
+    }
+
+    if (name === 'Ash') {
+      const behind = new THREE.Vector3(-Math.sin(this.player.rotation.y), 0, -Math.cos(this.player.rotation.y)).multiplyScalar(2.1);
+      enemy.mesh.position.copy(this.player.position).add(behind);
+      enemy.attackCooldown = 0.25;
+      this.callbacks.onMessage('Ash vanished into smoke!');
+      return;
+    }
+
+    if (name === 'Mr. Pale') {
+      enemy.hiddenTime = 2.2;
+      this.setEnemyOpacity(enemy, 0.12);
+      this.callbacks.onMessage('Mr. Pale is invisible — jump slam reveals him!');
+      return;
+    }
+
+    if (name === 'Neuro') {
+      for (let i = 0; i < 7; i++) {
+        const angle = (i / 7) * Math.PI * 2;
+        this.spawnEnemyProjectile(enemy.mesh.position, new THREE.Vector3(Math.cos(angle), 0.04, Math.sin(angle)).multiplyScalar(6.7), enemy.damage * 0.72, 0x7a5ce5);
+      }
+      this.callbacks.onMessage('Neuro: MIND BURST!');
+      return;
+    }
+
+    if (name === 'Griffin Turner') {
+      if (toPlayer.lengthSq() > 0.01) enemy.knock.add(toPlayer.normalize().multiplyScalar(12));
+      enemy.attackCooldown = 0.15;
+      this.callbacks.onMessage('Griffin Turner: SPEED CHARGE!');
+      return;
+    }
+
+    if (name === 'Master Chen') {
+      const support = Math.min(2, Math.max(0, 12 - this.enemies.length));
+      for (let i = 0; i < support; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        this.enemies.push(this.createEnemy(i % 2 ? 'ranged' : 'melee', Math.cos(angle) * 8.8, Math.sin(angle) * 8.8));
+      }
+      this.callbacks.onMessage('Master Chen calls reinforcements!');
+      return;
+    }
+
+    if (name === 'Ronin') {
+      this.spawnEnemyProjectile(enemy.mesh.position, toPlayer.normalize().multiplyScalar(10), 1.05, 0xd6a24d);
+      this.callbacks.onMessage('Ronin: AIR STRIKE!');
+      return;
+    }
+
+    this.spawnShockwave(enemy.mesh.position, 6.5, 1.0);
+  }
+
+  private setEnemyOpacity(enemy: Enemy, opacity: number) {
+    enemy.mesh.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const material = object.material as THREE.MeshStandardMaterial;
+      material.transparent = opacity < 1;
+      material.opacity = opacity;
+      material.depthWrite = opacity >= 1;
+    });
+  }
+
   private fireProjectile(enemy: Enemy) {
+    const origin = enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.1, 0));
+    const velocity = this.player.position.clone().add(new THREE.Vector3(0, 0.7, 0)).sub(origin).normalize().multiplyScalar(8.2);
+    this.spawnEnemyProjectile(origin, velocity, enemy.damage * 0.8, 0xe2552f);
+  }
+
+  private spawnEnemyProjectile(origin: THREE.Vector3, velocity: THREE.Vector3, damage: number, color: number, effect: ProjectileEffect = 'damage') {
     const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.19, 12, 10),
-      new THREE.MeshStandardMaterial({ color: 0xe2552f, emissive: 0x8a1e12, emissiveIntensity: 1.4 })
+      new THREE.SphereGeometry(effect === 'freeze' ? 0.42 : 0.19, 14, 10),
+      new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: effect === 'freeze' ? 1.7 : 1.1, roughness: 0.42 })
     );
-    mesh.position.copy(enemy.mesh.position).add(new THREE.Vector3(0, 1.1, 0));
+    mesh.position.copy(origin);
     mesh.castShadow = true;
-    const velocity = this.player.position.clone().add(new THREE.Vector3(0, 0.7, 0)).sub(mesh.position).normalize().multiplyScalar(8.2);
     this.scene.add(mesh);
-    this.projectiles.push({ mesh, velocity, life: 3, damage: enemy.damage * 0.8 });
+    this.projectiles.push({ mesh, velocity, life: 4, damage, effect });
   }
 
   private updateProjectiles(dt: number) {
     for (const projectile of [...this.projectiles]) {
       projectile.life -= dt;
       projectile.mesh.position.addScaledVector(projectile.velocity, dt);
-      if (projectile.mesh.position.distanceTo(this.player.position.clone().add(new THREE.Vector3(0, 0.8, 0))) < 0.75) {
+      if (projectile.mesh.position.distanceTo(this.player.position.clone().add(new THREE.Vector3(0, 0.8, 0))) < (projectile.effect === 'freeze' ? 0.95 : 0.75)) {
         this.damagePlayer(projectile.damage);
+        if (projectile.effect === 'freeze' && this.invulnerable <= 0.7) {
+          this.frozenTime = Math.max(this.frozenTime, 1.15);
+          this.callbacks.onMessage('Frozen! Break free and keep moving.');
+        }
         projectile.life = 0;
       }
-      if (projectile.life <= 0) {
+      if (projectile.life <= 0 || projectile.mesh.position.length() > 32) {
         this.scene.remove(projectile.mesh);
         this.projectiles.splice(this.projectiles.indexOf(projectile), 1);
       }
@@ -448,7 +633,7 @@ export class TournamentGame {
     this.wave += 1;
     const isBossWave = this.wave % 5 === 0;
     if (isBossWave) {
-      const bosses = ['Karlof', 'Ash', 'Mr. Pale', 'Neuro', 'Griffin Turner', 'Master Chen'];
+      const bosses = ['Karlof', 'Ash', 'Mr. Pale', 'Neuro', 'Griffin Turner', 'Master Chen', 'Ronin'];
       const bossName = bosses[Math.floor((this.wave / 5 - 1) % bosses.length)];
       this.enemies.push(this.createEnemy('boss', 0, -7.2, bossName));
       const supportCount = Math.min(4, Math.floor(this.wave / 5));
@@ -492,10 +677,19 @@ export class TournamentGame {
       speed: (kind === 'heavy' ? 2.1 : kind === 'ranged' ? 2.6 : kind === 'boss' ? 2.45 : 3.0) + Math.min(1.2, this.wave * 0.035),
       damage: kind === 'boss' ? 1.15 : kind === 'heavy' ? 0.82 : 0.58,
       attackCooldown: 0.5 + Math.random(),
+      specialCooldown: kind === 'boss' ? 3.8 + Math.random() * 2 : 999,
+      hiddenTime: 0,
       knock: new THREE.Vector3(),
       bossName,
       hitFlash: 0
     };
+  }
+
+  private triggerArenaEvent() {
+    const roll = Math.random();
+    if (roll < 0.48) this.spawnBoulderEvent();
+    else if (roll < 0.78) this.spawnTitaniumDragonEvent();
+    else this.spawnCondraiCrusherEvent();
   }
 
   private spawnBoulderEvent() {
@@ -517,7 +711,25 @@ export class TournamentGame {
       this.scene.add(rock);
       this.boulders.push({ marker, rock, delay: 1.15 + i * 0.15, velocity: 0, active: false });
     }
-    this.callbacks.onMessage('Boulder basher! Move away from the red targets.');
+    this.callbacks.onMessage('Boulder Basher! Move away from the red targets.');
+  }
+
+  private spawnTitaniumDragonEvent() {
+    const angle = Math.random() * Math.PI * 2;
+    const start = new THREE.Vector3(Math.cos(angle) * 13.5, 1.0, Math.sin(angle) * 13.5);
+    const aim = this.player.position.clone().setY(0.75).sub(start).normalize();
+    this.spawnEnemyProjectile(start, aim.multiplyScalar(8.5), 0.35, 0x84dbff, 'freeze');
+    this.callbacks.onMessage('Titanium Dragon! Dodge the freezing ice ball.');
+  }
+
+  private spawnCondraiCrusherEvent() {
+    if (this.enemies.length >= 13) return;
+    const count = Math.min(3, 13 - this.enemies.length);
+    for (let i = 0; i < count; i++) {
+      const side = i % 2 ? 1 : -1;
+      this.enemies.push(this.createEnemy(i === 2 ? 'heavy' : 'melee', side * 9.4, (i - 1) * 2.6));
+    }
+    this.callbacks.onMessage('Condrai Crusher incoming — reinforcements deployed!');
   }
 
   private updateBoulders(dt: number) {
@@ -534,11 +746,49 @@ export class TournamentGame {
         if (boulder.rock.position.y <= 0.7) {
           if (boulder.rock.position.distanceTo(this.player.position) < 1.65) this.damagePlayer(1.35);
           for (const enemy of [...this.enemies]) {
-            if (boulder.rock.position.distanceTo(enemy.mesh.position) < 1.7) this.hitEnemy(enemy, 55, 6);
+            if (boulder.rock.position.distanceTo(enemy.mesh.position) < 1.7) this.hitEnemy(enemy, 55, 6, true);
           }
           this.scene.remove(boulder.marker, boulder.rock);
           this.boulders.splice(this.boulders.indexOf(boulder), 1);
         }
+      }
+    }
+  }
+
+  private spawnShockwave(origin: THREE.Vector3, speed: number, damage: number) {
+    const mesh = this.makeRing(0xd3a94d, 0.78);
+    mesh.position.copy(origin).setY(0.05);
+    mesh.scale.setScalar(0.1);
+    this.scene.add(mesh);
+    this.shockwaves.push({ mesh, origin: origin.clone(), radius: 0.1, speed, life: 1.25, hit: false, damage });
+  }
+
+  private updateShockwaves(dt: number) {
+    for (const wave of [...this.shockwaves]) {
+      wave.life -= dt;
+      wave.radius += wave.speed * dt;
+      wave.mesh.scale.setScalar(wave.radius);
+      const material = wave.mesh.material as THREE.MeshBasicMaterial;
+      material.opacity = clamp(wave.life, 0, 0.78);
+      const playerDistance = new THREE.Vector2(this.player.position.x - wave.origin.x, this.player.position.z - wave.origin.z).length();
+      if (!wave.hit && this.player.position.y < 0.42 && Math.abs(playerDistance - wave.radius) < 0.55) {
+        wave.hit = true;
+        this.damagePlayer(wave.damage);
+      }
+      if (wave.life <= 0) {
+        this.scene.remove(wave.mesh);
+        this.shockwaves.splice(this.shockwaves.indexOf(wave), 1);
+      }
+    }
+  }
+
+  private updateSpikeHazards() {
+    if (this.spikeCooldown > 0 || !this.grounded) return;
+    for (const spike of this.spikePositions) {
+      if (spike.distanceTo(this.player.position) < 0.95) {
+        this.spikeCooldown = 1.15;
+        this.damagePlayer(0.55);
+        break;
       }
     }
   }
@@ -630,6 +880,8 @@ export class TournamentGame {
 
     this.buildGong(-10.7, 0);
     this.buildGong(10.7, 0);
+    this.buildSpikeTrap(-4.4, -4.2);
+    this.buildSpikeTrap(4.6, 4.0);
 
     for (const z of [-6.2, 6.2]) {
       const brazier = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x5b3420, roughness: 0.8 }));
@@ -656,6 +908,30 @@ export class TournamentGame {
     gong.position.set(x, 1.75, z);
     gong.castShadow = true;
     this.scene.add(gong);
+  }
+
+  private buildSpikeTrap(x: number, z: number) {
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x292d31, roughness: 0.9 }));
+    base.position.set(x, 0.045, z);
+    base.receiveShadow = true;
+    this.scene.add(base);
+    for (let i = 0; i < 7; i++) {
+      const angle = (i / 7) * Math.PI * 2;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.52, 8), new THREE.MeshStandardMaterial({ color: 0x85898d, metalness: 0.45, roughness: 0.42 }));
+      spike.position.set(x + Math.cos(angle) * 0.5, 0.28, z + Math.sin(angle) * 0.5);
+      spike.castShadow = true;
+      this.scene.add(spike);
+    }
+    this.spikePositions.push(new THREE.Vector3(x, 0, z));
+  }
+
+  private makeRing(color: number, opacity: number) {
+    const mesh = new THREE.Mesh(
+      new THREE.RingGeometry(0.82, 1, 48),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false })
+    );
+    mesh.rotation.x = -Math.PI / 2;
+    return mesh;
   }
 
   private createFighter(primary: number, accent: number, scale: number) {
