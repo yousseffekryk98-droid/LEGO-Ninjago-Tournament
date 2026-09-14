@@ -13,14 +13,19 @@ Implemented now:
 - original-inspired diagonal/isometric arena presentation;
 - mobile virtual joystick and four-button combat cluster;
 - desktop WASD/arrow controls;
-- attack, block, jump, jump-slam, grab/throw, dodge and charged Spinjitzu;
+- attack, block, jump, jump-slam, grab/throw and swipe/Q dodge;
 - combo counter and escalating stud multiplier;
 - melee, heavy and ranged enemies;
 - escalating waves and boss waves;
 - boss-specific mechanics for Karlof, Ash, Mr. Pale, Neuro, Griffin Turner, Master Chen and Ronin;
 - gong instant-KO throws;
 - Boulder Basher, Titanium Dragon freeze projectile, Condrai reinforcement and spike hazards;
-- procedural block-style fighters and environment (no ripped game art);
+- Roto Jet-style arena flyovers with physical falling supply crates;
+- supply rewards for hearts, studs, special-meter charge and temporary combat boosts;
+- seven data-driven special families: Spinjitzu, Boost, Charge Attack, Overload, Air Strike, Toxic Cloud and Shout;
+- **43** playable roster entries/variants based on currently verified public reference lists;
+- a dedicated 3D Dojo tutorial with seven interactive training steps;
+- procedural block-style fighters and environments (no ripped game art);
 - unlockable roster with local stud bank/progression;
 - five-level fighter potential/XP system with stat growth;
 - daily free prize draw plus three daily challenges that award extra draws;
@@ -49,13 +54,23 @@ npm run preview
 
 ## Controls
 
-Desktop: WASD / arrows to move, `Space` or `J` attack, `K` jump, `L` grab/throw, `Shift` block, `E` Spinjitzu, `Q` dodge. Attack while airborne to perform a jump slam.
+Desktop: WASD / arrows to move, `Space` or `J` attack, `K` jump, `L` grab/throw, `Shift` block, `E` special, `Q` dodge. Attack while airborne to perform a jump slam.
 
-Mobile: left virtual joystick plus the on-screen action cluster. Swipe across the arena to dodge. Fill the special meter by landing hits, then press the spiral button.
+Mobile: left virtual joystick plus the on-screen action cluster. Swipe across the arena/Dojo to dodge. Fill the special meter by landing hits, then press the spiral button.
 
-## Next fidelity work
+## What remains for a release-quality remake
 
-The largest remaining original-loop pieces are a fully playable scripted Dojo tutorial, Roto Jet supply drops/destructible training props, consumable power-ups, deeper character-specific special abilities, a larger verified roster/variant set, stronger animation/VFX/audio hooks, controller support, PWA/offline packaging and optional Android packaging.
+The current project is a substantial playable reconstruction, but it is not yet a pixel-for-pixel/content-complete replacement for the original commercial game. The most valuable remaining work is:
+
+- better authored combat animations, hit-stop, camera shake and VFX;
+- original/licensed audio, music and voice hooks;
+- destructible training props and a more detailed Roto Jet event set;
+- more verified suit variants and enemy faction behaviors;
+- challenge variety beyond the current daily set;
+- controller support and remappable controls;
+- PWA/offline packaging and optional Android packaging;
+- performance presets and broader device testing;
+- fully original or properly licensed production art replacing procedural placeholders.
 
 ## Legal / project scope
 
