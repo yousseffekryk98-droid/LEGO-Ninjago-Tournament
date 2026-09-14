@@ -1,5 +1,5 @@
 import './styles.css';
-import { TournamentGame, type HudState } from './game';
+import { TournamentGame, type HudState } from './content-game';
 import { DojoGame, type DojoAction, type DojoStep } from './dojo';
 import { ROSTER, findCharacter, type CharacterDef } from './roster';
 
@@ -212,7 +212,7 @@ function showRoster() {
   });
   document.querySelectorAll<HTMLButtonElement>('[data-unlock]').forEach((button) => {
     button.addEventListener('click', () => {
-      const fighter = findCharacter(button.dataset.unlock!);
+      const fighter = findCharacter(button.dataset.unlock!;
       if (save.unlocked.includes(fighter.id) || save.bankStuds < fighter.cost) return;
       save.bankStuds -= fighter.cost;
       save.unlocked.push(fighter.id);
