@@ -1,8 +1,31 @@
-const CACHE = 'ninja-tournament-v1';
-const CORE = ['/', '/index.html', '/manifest.webmanifest', '/icons/ninja-tournament.svg'];
+const CACHE = 'ninja-tournament-v2';
+const scopeUrl = new URL(self.registration.scope);
+const shellUrl = new URL('./index.html', scopeUrl).toString();
+const CORE = [
+  shellUrl,
+  new URL('./manifest.webmanifest', scopeUrl).toString(),
+  new URL('./icons/ninja-tournament.svg', scopeUrl).toString()
+];
+
+async function precacheBuiltShell() {
+  const cache = await caches.open(CACHE);
+  const response = await fetch(shellUrl, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Unable to precache app shell: ${response.status}`);
+
+  const html = await response.clone().text();
+  await cache.put(shellUrl, response);
+
+  // Vite fingerprints production JS/CSS names. Discover those names from the
+  // generated HTML at install time so offline boot stays valid after every build.
+  const assets = new Set(CORE.slice(1));
+  for (const match of html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css))["']/gi)) {
+    assets.add(new URL(match[1], shellUrl).toString());
+  }
+  await cache.addAll([...assets]);
+}
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)).then(() => self.skipWaiting()));
+  event.waitUntil(precacheBuiltShell().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -19,27 +42,32 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put('/index.html', copy));
-          return response;
-        })
-        .catch(() => caches.match('/index.html'))
-    );
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) await cache.put(shellUrl, response.clone());
+        return response;
+      } catch {
+        return (await cache.match(shellUrl)) || Response.error();
+      }
+    })());
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok) caches.open(CACHE).then((cache) => cache.put(event.request, response.clone()));
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
-  );
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(event.request);
+    if (cached) return cached;
+
+    try {
+      const response = await fetch(event.request);
+      // Wait for cache persistence before resolving an uncached request. This
+      // prevents a fast online->offline transition from racing cache.put().
+      if (response.ok) await cache.put(event.request, response.clone());
+      return response;
+    } catch {
+      return Response.error();
+    }
+  })());
 });
