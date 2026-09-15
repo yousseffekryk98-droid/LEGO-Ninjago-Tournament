@@ -18,12 +18,12 @@ export class DojoGame {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(47, 1, 0.1, 70);
   private renderer: THREE.WebGLRenderer;
-  private clock = new THREE.Clock();
-  private accumulator = 0;
   private player: THREE.Group;
   private dummy: THREE.Group;
   private shadow: THREE.Mesh;
   private frame = 0;
+  private simulationTimer = 0;
+  private lastSimulationAt = performance.now();
   private running = true;
   private keyboard = new Set<string>();
   private input = { x: 0, y: 0, block: false };
@@ -74,6 +74,12 @@ export class DojoGame {
     window.addEventListener('keyup', this.keyUp);
     this.resize();
     this.announceStep();
+
+    // Simulation is deliberately decoupled from rendering. On low-end devices,
+    // WebGL can temporarily render far below 60 FPS; controls and tutorial progress
+    // must still advance according to elapsed time rather than rendered frames.
+    this.lastSimulationAt = performance.now();
+    this.simulationTimer = window.setInterval(this.simulationTick, 1000 / 60);
     this.loop();
   }
 
@@ -107,6 +113,7 @@ export class DojoGame {
   destroy() {
     this.running = false;
     cancelAnimationFrame(this.frame);
+    window.clearInterval(this.simulationTimer);
     window.removeEventListener('resize', this.resize);
     window.removeEventListener('keydown', this.keyDown);
     window.removeEventListener('keyup', this.keyUp);
@@ -142,22 +149,21 @@ export class DojoGame {
     this.camera.updateProjectionMatrix();
   };
 
+  private simulationTick = () => {
+    if (!this.running) return;
+    const now = performance.now();
+    let remaining = Math.min(MAX_CATCHUP_SECONDS, Math.max(0, (now - this.lastSimulationAt) / 1000));
+    this.lastSimulationAt = now;
+    while (remaining > 0.0001) {
+      const step = Math.min(FIXED_STEP, remaining);
+      this.update(step);
+      remaining -= step;
+    }
+  };
+
   private loop = () => {
     if (!this.running) return;
     this.frame = requestAnimationFrame(this.loop);
-
-    // A capped variable delta used to discard most elapsed time on slow devices.
-    // Fixed-step catch-up keeps movement, cooldowns, blocking and tutorial progress
-    // tied to real elapsed time even when rendering temporarily falls below 25 FPS.
-    this.accumulator += Math.min(this.clock.getDelta(), MAX_CATCHUP_SECONDS);
-    let steps = 0;
-    while (this.accumulator >= FIXED_STEP && steps < 15) {
-      this.update(FIXED_STEP);
-      this.accumulator -= FIXED_STEP;
-      steps += 1;
-    }
-    if (steps === 15 && this.accumulator > MAX_CATCHUP_SECONDS) this.accumulator = MAX_CATCHUP_SECONDS;
-
     this.renderer.render(this.scene, this.camera);
   };
 
@@ -199,7 +205,7 @@ export class DojoGame {
       this.player.rotation.z *= Math.pow(0.01, dt);
       if (this.currentStep() === 'move') {
         this.moveDistance += before.distanceTo(this.player.position);
-        this.callbacks.onStep('move', 'Movement', 'Use the joystick or WASD / arrow keys. Move around the dojo.', Math.min(1, this.moveDistance / 4.5));
+        this.callbacks.onStep('move', 'Movement', 'Use the joystick, controller stick, WASD, or arrow keys. Move around the dojo.', Math.min(1, this.moveDistance / 4.5));
         if (this.moveDistance >= 4.5) this.advance();
       }
     }
@@ -223,7 +229,7 @@ export class DojoGame {
 
     if (this.input.block && this.currentStep() === 'block') {
       this.blockTime += dt;
-      this.callbacks.onStep('block', 'Block', 'Hold the shield button or Shift until the guard meter fills.', Math.min(1, this.blockTime / 1.25));
+      this.callbacks.onStep('block', 'Block', 'Hold the shield button, controller LB, or Shift until the guard meter fills.', Math.min(1, this.blockTime / 1.25));
       if (this.blockTime >= 1.25) this.advance();
     }
 
@@ -295,13 +301,13 @@ export class DojoGame {
   private announceStep() {
     const step = this.currentStep();
     const copy: Record<DojoStep, [string, string]> = {
-      move: ['Movement', 'Use the joystick or WASD / arrow keys. Move around the dojo.'],
-      attack: ['Attack', 'Move close to the training dummy and land three attacks.'],
-      jump: ['Jump', 'Press the jump button or K.'],
-      block: ['Block', 'Hold the shield button or Shift until the guard meter fills.'],
-      grab: ['Grab & Throw', 'Move close to the dummy and press grab / L.'],
-      dodge: ['Dodge', 'Swipe across the dojo or press Q to evade.'],
-      special: ['Special', 'Your meter is full. Activate your special with the spiral button or E.'],
+      move: ['Movement', 'Use the joystick, controller stick, WASD, or arrow keys. Move around the dojo.'],
+      attack: ['Attack', 'Move close to the training dummy and land three attacks. Controller: A.'],
+      jump: ['Jump', 'Press the jump button, controller RB, or K.'],
+      block: ['Block', 'Hold the shield button, controller LB, or Shift until the guard meter fills.'],
+      grab: ['Grab & Throw', 'Move close to the dummy and press grab / controller X / L.'],
+      dodge: ['Dodge', 'Swipe across the dojo, press controller B, or press Q to evade.'],
+      special: ['Special', 'Your meter is full. Activate special with the spiral button, controller Y, or E.'],
       complete: ['Training Complete', 'You have learned the core tournament controls.']
     };
     this.callbacks.onStep(step, copy[step][0], copy[step][1], step === 'complete' ? 1 : 0);
