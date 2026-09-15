@@ -18,8 +18,8 @@ export default defineConfig({
     }
   },
   projects: [
-    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chromium', use: { ...devices['Pixel 7'] }, grep: /@mobile/ }
+    { name: 'desktop-chromium', grepInvert: /@mobile/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile-chromium', grep: /@mobile/, use: { ...devices['Pixel 7'] } }
   ],
   webServer: {
     command: 'npm run preview -- --port 4173 --strictPort',
