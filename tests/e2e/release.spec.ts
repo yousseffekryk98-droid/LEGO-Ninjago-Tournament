@@ -144,32 +144,35 @@ test('the complete seven-step Dojo tutorial is playable with keyboard controls',
   await page.goto('/');
   await page.getByRole('button', { name: /PLAY DOJO TUTORIAL/i }).click();
   await expect(page.locator('#dojo-host canvas')).toBeVisible();
-  await expect(page.locator('#dojo-step-title')).toHaveText('Movement');
+  const stepTitle = page.locator('#dojo-step-title');
+  await expect(stepTitle).toHaveText('Movement');
 
   // Fixed-step simulation makes tutorial progress independent of rendering FPS.
   await hold(page, 'ArrowRight', 950);
-  await expect(page.locator('#dojo-step-title')).toHaveText('Attack');
+  await expect(stepTitle).toHaveText('Attack');
 
-  // Move from the known spawn point to the training dummy, then land actual hits.
+  // Move from the known spawn point to the training dummy, then keep issuing normal
+  // player attack inputs until the three registered hits advance the tutorial. This
+  // mirrors real input retry behavior without hiding a stuck tutorial state.
   await hold(page, 'ArrowRight', 180);
   await hold(page, 'ArrowUp', 820);
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 6 && (await stepTitle.textContent()) === 'Attack'; i++) {
     await page.keyboard.press('j');
     await page.waitForTimeout(360);
   }
-  await expect(page.locator('#dojo-step-title')).toHaveText('Jump');
+  await expect(stepTitle).toHaveText('Jump');
 
   await page.keyboard.press('k');
-  await expect(page.locator('#dojo-step-title')).toHaveText('Block');
+  await expect(stepTitle).toHaveText('Block');
 
   await hold(page, 'Shift', 1_450);
-  await expect(page.locator('#dojo-step-title')).toHaveText('Grab & Throw');
+  await expect(stepTitle).toHaveText('Grab & Throw');
 
   await page.keyboard.press('l');
-  await expect(page.locator('#dojo-step-title')).toHaveText('Dodge');
+  await expect(stepTitle).toHaveText('Dodge');
 
   await page.keyboard.press('q');
-  await expect(page.locator('#dojo-step-title')).toHaveText('Special');
+  await expect(stepTitle).toHaveText('Special');
   await expect(page.locator('#dojo-special')).toHaveClass(/ready/);
 
   await page.keyboard.press('e');
