@@ -146,24 +146,23 @@ test('the complete seven-step Dojo tutorial is playable with keyboard controls',
   await expect(page.locator('#dojo-host canvas')).toBeVisible();
   await expect(page.locator('#dojo-step-title')).toHaveText('Movement');
 
-  // Software WebGL in CI can render substantially below a phone/desktop frame rate,
-  // so use generous holds while still exercising the real keyboard handlers.
-  await hold(page, 'ArrowRight', 3_200);
+  // Fixed-step simulation makes tutorial progress independent of rendering FPS.
+  await hold(page, 'ArrowRight', 950);
   await expect(page.locator('#dojo-step-title')).toHaveText('Attack');
 
-  // Move toward the known training-dummy quadrant, then land actual attacks.
-  await hold(page, 'ArrowLeft', 700);
-  await hold(page, 'ArrowUp', 2_800);
+  // Move from the known spawn point to the training dummy, then land actual hits.
+  await hold(page, 'ArrowRight', 180);
+  await hold(page, 'ArrowUp', 820);
   for (let i = 0; i < 3; i++) {
     await page.keyboard.press('j');
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(360);
   }
   await expect(page.locator('#dojo-step-title')).toHaveText('Jump');
 
   await page.keyboard.press('k');
   await expect(page.locator('#dojo-step-title')).toHaveText('Block');
 
-  await hold(page, 'Shift', 3_200);
+  await hold(page, 'Shift', 1_450);
   await expect(page.locator('#dojo-step-title')).toHaveText('Grab & Throw');
 
   await page.keyboard.press('l');
