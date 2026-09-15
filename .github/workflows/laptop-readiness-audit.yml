@@ -1,0 +1,29 @@
+name: Laptop readiness dependency audit
+
+on:
+  push:
+    branches: [qa/laptop-readiness]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Capture exact dependency audit
+        shell: bash
+        run: |
+          npm audit --json > npm-audit.json || true
+          npm ls --all --json > npm-tree.json || true
+      - name: Upload audit and generated lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: laptop-readiness-audit
+          path: |
+            npm-audit.json
+            npm-tree.json
+            package-lock.json
