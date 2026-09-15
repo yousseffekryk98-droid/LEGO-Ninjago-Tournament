@@ -1,0 +1,19 @@
+{
+  "name": "Ninja Tournament — Fan Remake",
+  "short_name": "Ninja Tournament",
+  "description": "A clean-room, offline-capable tournament arena fan remake.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0712",
+  "theme_color": "#1b1029",
+  "icons": [
+    {
+      "src": "/icons/ninja-tournament.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
