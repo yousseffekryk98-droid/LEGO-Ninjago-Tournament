@@ -1,3 +1,5 @@
+export {};
+
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
@@ -50,9 +52,6 @@ function updateGamepad() {
   setControllerKey('ArrowUp', axisPressed(y, -1) || Boolean(pad.buttons[12]?.pressed));
   setControllerKey('ArrowDown', axisPressed(y, 1) || Boolean(pad.buttons[13]?.pressed));
 
-  // Standard Gamepad mapping: A attack, B dodge, X grab, Y special,
-  // LB block, RB jump. The mapping deliberately emits the same keyboard
-  // events as desktop controls so all game modes share one input contract.
   setControllerKey('KeyJ', Boolean(pad.buttons[0]?.pressed));
   setControllerKey('KeyQ', Boolean(pad.buttons[1]?.pressed));
   setControllerKey('KeyL', Boolean(pad.buttons[2]?.pressed));
