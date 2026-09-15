@@ -1,14 +1,15 @@
-name: Build fan remake
+name: Build and release-test fan remake
 
 on:
   push:
-    branches: [main, remake/playable-prototype]
+    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
-  build:
+  release-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,3 +18,14 @@ jobs:
       - run: npm install
       - run: npm run typecheck
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
