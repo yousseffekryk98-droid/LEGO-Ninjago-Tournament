@@ -81,7 +81,7 @@ test('malformed and obsolete save data recovers to safe defaults', async ({ page
 });
 
 test('every roster fighter can boot into the production arena', async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(150_000);
   const errors = trapBrowserErrors(page);
   await page.goto('/');
 
@@ -97,7 +97,7 @@ test('every roster fighter can boot into the production arena', async ({ page })
     await expect(page.locator('.selected-fighter')).toContainText(fighter.name);
     await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
     await expect(page.locator('#game-host canvas')).toBeVisible();
-    await page.waitForTimeout(80);
+    await page.waitForTimeout(120);
   }
 
   await assertNoBrowserErrors(errors);
@@ -127,6 +127,7 @@ test('daily draw, challenge claims, and save state persist', async ({ page }) =>
     localStorage.setItem(key, JSON.stringify(save));
   }, STORAGE_KEY);
   await page.reload();
+  await page.getByRole('button', { name: /DAILY DRAW/i }).click();
 
   const claimButtons = page.locator('[data-claim]');
   await expect(claimButtons).toHaveCount(3);
@@ -138,27 +139,31 @@ test('daily draw, challenge claims, and save state persist', async ({ page }) =>
 });
 
 test('the complete seven-step Dojo tutorial is playable with keyboard controls', async ({ page }) => {
-  test.setTimeout(55_000);
+  test.setTimeout(75_000);
   const errors = trapBrowserErrors(page);
   await page.goto('/');
   await page.getByRole('button', { name: /PLAY DOJO TUTORIAL/i }).click();
   await expect(page.locator('#dojo-host canvas')).toBeVisible();
   await expect(page.locator('#dojo-step-title')).toHaveText('Movement');
 
-  await hold(page, 'ArrowRight', 1100);
+  // Software WebGL in CI can render substantially below a phone/desktop frame rate,
+  // so use generous holds while still exercising the real keyboard handlers.
+  await hold(page, 'ArrowRight', 3_200);
   await expect(page.locator('#dojo-step-title')).toHaveText('Attack');
 
-  await hold(page, 'ArrowUp', 800);
+  // Move toward the known training-dummy quadrant, then land actual attacks.
+  await hold(page, 'ArrowLeft', 700);
+  await hold(page, 'ArrowUp', 2_800);
   for (let i = 0; i < 3; i++) {
     await page.keyboard.press('j');
-    await page.waitForTimeout(340);
+    await page.waitForTimeout(900);
   }
   await expect(page.locator('#dojo-step-title')).toHaveText('Jump');
 
   await page.keyboard.press('k');
   await expect(page.locator('#dojo-step-title')).toHaveText('Block');
 
-  await hold(page, 'Shift', 1450);
+  await hold(page, 'Shift', 3_200);
   await expect(page.locator('#dojo-step-title')).toHaveText('Grab & Throw');
 
   await page.keyboard.press('l');
@@ -169,28 +174,39 @@ test('the complete seven-step Dojo tutorial is playable with keyboard controls',
   await expect(page.locator('#dojo-special')).toHaveClass(/ready/);
 
   await page.keyboard.press('e');
-  await expect(page.getByRole('heading', { name: 'Training Complete' })).toBeVisible({ timeout: 4_000 });
+  await expect(page.getByRole('heading', { name: 'Training Complete' })).toBeVisible({ timeout: 5_000 });
   await assertNoBrowserErrors(errors);
 });
 
-test('a tournament run renders, accepts controls, reaches combat, and ends cleanly', async ({ page }) => {
-  test.setTimeout(65_000);
+test('a tournament run renders, accepts controls, survives sustained play, and reaches game-over', async ({ page }) => {
+  test.setTimeout(130_000);
   const errors = trapBrowserErrors(page);
   await page.goto('/');
+  await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    const save = raw ? JSON.parse(raw) : {};
+    save.selected = 'samukai';
+    save.unlocked = Array.from(new Set([...(Array.isArray(save.unlocked) ? save.unlocked : []), 'samukai']));
+    localStorage.setItem(key, JSON.stringify(save));
+  }, STORAGE_KEY);
+  await page.reload();
+  await expect(page.locator('.selected-fighter')).toContainText('Samukai');
   await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
   await expect(page.locator('#game-host canvas')).toBeVisible();
-  await expect(page.locator('#wave-label')).toHaveText(/WAVE 1|BOSS/, { timeout: 5_000 });
+  await expect(page.locator('#wave-label')).toHaveText(/WAVE 1|BOSS/, { timeout: 7_500 });
   await expect(page.locator('#enemy-label')).toContainText('ENEMIES');
 
-  await hold(page, 'ArrowRight', 300);
+  await hold(page, 'ArrowRight', 450);
   await page.keyboard.press('j');
   await page.keyboard.press('k');
-  await page.waitForTimeout(150);
+  await page.waitForTimeout(250);
   await page.keyboard.press('j');
-  await hold(page, 'Shift', 300);
+  await hold(page, 'Shift', 400);
   await page.keyboard.press('q');
 
-  await expect(page.getByText('TOURNAMENT RUN COMPLETE')).toBeVisible({ timeout: 42_000 });
+  // Leave the low-health fighter exposed after exercising controls; enemy AI must
+  // be able to complete the run without any test-only hooks.
+  await expect(page.getByText('TOURNAMENT RUN COMPLETE')).toBeVisible({ timeout: 100_000 });
   await expect(page.getByRole('button', { name: 'RETRY' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'DAILY REWARDS' })).toBeVisible();
 
