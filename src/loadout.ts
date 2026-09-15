@@ -94,29 +94,39 @@ function showPowerups() {
   const state = readPowerups();
   const save = readMainSave();
   const bank = Math.max(0, Number(save.bankStuds ?? 0));
+  const active = POWERUPS.find((item) => item.id === state.active);
   const overlay = document.createElement('div');
   overlay.id = 'powerup-overlay';
   overlay.className = 'powerup-overlay';
   overlay.innerHTML = `
     <section class="powerup-panel">
-      <header><div><small>PRE-FIGHT LOADOUT</small><h2>Power-Ups</h2></div><button id="powerup-close" aria-label="Close">×</button></header>
-      <p>Choose one consumable for your next tournament or challenge run. Prize draws also award a bonus power-up.</p>
+      <header><div><small>TOURNAMENT MARKET</small><h2>Shop & Loadout</h2></div><button id="powerup-close" aria-label="Close">×</button></header>
+      <p>Spend banked studs on one-run boosts or jump into the fighter market to unlock more tournament characters. Equip one consumable before entering the arena.</p>
       <strong class="powerup-bank">◉ ${bank.toLocaleString()} banked studs</strong>
+      <div class="shop-hero">
+        <div><small>FIGHTER MARKET</small><h3>Unlock more fighters</h3><p>Browse the full ${ROSTER.length}-fighter archive, compare stats and unlock fighters using banked studs.</p></div>
+        <button class="gold-button primary" id="fighter-market-btn">OPEN FIGHTERS</button>
+      </div>
+      <div class="shop-section-label">CONSUMABLE POWER-UPS · ONE ACTIVE PER RUN</div>
       <div class="powerup-grid">
         ${POWERUPS.map((item) => {
           const count = state.inventory[item.id];
-          const active = state.active === item.id;
-          return `<article class="${active ? 'active' : ''}" data-powerup-card="${item.id}">
-            <i>${item.icon}</i><small>${active ? 'EQUIPPED FOR NEXT RUN' : 'CONSUMABLE'}</small><h3>${item.name}</h3><p>${item.description}</p><b>Owned ×${count}</b>
-            <div><button class="gold-button" data-buy-powerup="${item.id}" ${bank >= item.cost ? '' : 'disabled'}>BUY ◉ ${item.cost.toLocaleString()}</button><button class="gold-button primary" data-equip-powerup="${item.id}" ${count > 0 ? '' : 'disabled'}>${active ? 'UNEQUIP' : 'EQUIP'}</button></div>
+          const equipped = state.active === item.id;
+          return `<article class="${equipped ? 'active' : ''}" data-powerup-card="${item.id}">
+            <i>${item.icon}</i><small>${equipped ? 'EQUIPPED FOR NEXT RUN' : 'CONSUMABLE'}</small><h3>${item.name}</h3><p>${item.description}</p><b>Owned ×${count}</b>
+            <div><button class="gold-button" data-buy-powerup="${item.id}" ${bank >= item.cost ? '' : 'disabled'}>BUY ◉ ${item.cost.toLocaleString()}</button><button class="gold-button primary" data-equip-powerup="${item.id}" ${count > 0 ? '' : 'disabled'}>${equipped ? 'UNEQUIP' : 'EQUIP'}</button></div>
           </article>`;
         }).join('')}
       </div>
-      <p class="powerup-note">A selected power-up is consumed when a new arena instance starts.</p>
+      <p class="powerup-note">${active ? `${active.icon} ${active.name} is equipped and will be consumed when your next tournament or challenge arena starts.` : 'No power-up equipped. Your inventory is saved locally.'}</p>
     </section>`;
   document.body.appendChild(overlay);
 
   overlay.querySelector('#powerup-close')?.addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#fighter-market-btn')?.addEventListener('click', () => {
+    overlay.remove();
+    document.querySelector<HTMLButtonElement>('#fighters-btn')?.click();
+  });
   overlay.querySelectorAll<HTMLButtonElement>('[data-buy-powerup]').forEach((button) => {
     button.addEventListener('click', () => {
       const id = button.dataset.buyPowerup as PowerupId;
@@ -152,9 +162,11 @@ function ensurePowerupButton() {
   button.id = 'powerup-menu-btn';
   const state = readPowerups();
   const active = POWERUPS.find((item) => item.id === state.active);
-  button.textContent = active ? `⚡ POWER-UPS · ${active.name.toUpperCase()}` : '⚡ POWER-UPS';
+  button.textContent = active ? `🛒 SHOP & LOADOUT · ${active.name.toUpperCase()}` : '🛒 SHOP & LOADOUT';
   button.addEventListener('click', showPowerups);
-  menu.appendChild(button);
+  const playButton = menu.querySelector('#play-btn');
+  if (playButton?.nextSibling) menu.insertBefore(button, playButton.nextSibling);
+  else menu.appendChild(button);
 }
 
 function wirePrizeDrawBonus() {
