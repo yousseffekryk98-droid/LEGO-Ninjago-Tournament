@@ -94,19 +94,20 @@ export class DojoGame {
   }
 
   setMove(x: number, y: number) {
+    this.syncInputBoundary();
     this.input.x = Math.max(-1, Math.min(1, x));
     this.input.y = Math.max(-1, Math.min(1, y));
   }
 
   setBlock(active: boolean) {
-    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
+    this.syncInputBoundary(MAX_ACTION_RECONCILE_SECONDS);
     this.input.block = active;
   }
 
   action(action: DojoAction) {
     // A WebGL render can monopolize the main thread on software/low-end GPUs.
     // Reconcile real elapsed simulation time before evaluating cooldown-gated actions.
-    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
+    this.syncInputBoundary(MAX_ACTION_RECONCILE_SECONDS);
     if (action === 'attack') this.attack();
     if (action === 'jump') this.jump();
     if (action === 'grab') this.grab();
@@ -114,7 +115,7 @@ export class DojoGame {
   }
 
   dodge(x = 0, y = 0) {
-    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
+    this.syncInputBoundary(MAX_ACTION_RECONCILE_SECONDS);
     if (!this.grounded || this.dodgeTime > 0) return;
     const dir = new THREE.Vector3(x, 0, y);
     if (dir.lengthSq() < 0.04) dir.set(Math.sin(this.player.rotation.y), 0, Math.cos(this.player.rotation.y));
@@ -141,7 +142,10 @@ export class DojoGame {
   }
 
   private keyDown = (event: KeyboardEvent) => {
-    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
+    // Input transitions are authoritative time boundaries. Any simulation debt left
+    // after reconciliation belongs to the old input state and must not be replayed
+    // using the newly pressed key.
+    this.syncInputBoundary(MAX_ACTION_RECONCILE_SECONDS);
     this.keyboard.add(event.code);
     if (!event.repeat && TIMED_KEYS.has(event.code)) {
       this.heldStartedAt.set(event.code, performance.now());
@@ -157,7 +161,7 @@ export class DojoGame {
   };
 
   private keyUp = (event: KeyboardEvent) => {
-    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
+    this.syncInputBoundary(MAX_INPUT_RECONCILE_SECONDS);
     this.reconcileHeldInput(event.code);
     this.keyboard.delete(event.code);
     this.heldStartedAt.delete(event.code);
@@ -173,10 +177,18 @@ export class DojoGame {
     this.camera.updateProjectionMatrix();
   };
 
+  private syncInputBoundary(maxCatchup = MAX_INPUT_RECONCILE_SECONDS) {
+    this.simulationTick(maxCatchup);
+    // A remaining backlog predates the input transition. Replaying it after the
+    // transition would make a new key/joystick direction act in the past.
+    this.simulationDebt = 0;
+  }
+
   private simulationTick = (maxCatchup = MAX_CATCHUP_SECONDS) => {
     if (!this.running) return;
     const now = performance.now();
-    this.simulationDebt += Math.max(0, (now - this.lastSimulationAt) / 1000);
+    const elapsed = Math.max(0, (now - this.lastSimulationAt) / 1000);
+    this.simulationDebt = Math.min(MAX_INPUT_RECONCILE_SECONDS, this.simulationDebt + elapsed);
     this.lastSimulationAt = now;
 
     let remaining = Math.min(maxCatchup, this.simulationDebt);
