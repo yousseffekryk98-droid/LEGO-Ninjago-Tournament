@@ -31,6 +31,7 @@ export class DojoGame {
   private frame = 0;
   private simulationTimer = 0;
   private lastSimulationAt = performance.now();
+  private simulationDebt = 0;
   private running = true;
   private keyboard = new Set<string>();
   private heldStartedAt = new Map<string, number>();
@@ -175,8 +176,11 @@ export class DojoGame {
   private simulationTick = (maxCatchup = MAX_CATCHUP_SECONDS) => {
     if (!this.running) return;
     const now = performance.now();
-    let remaining = Math.min(maxCatchup, Math.max(0, (now - this.lastSimulationAt) / 1000));
+    this.simulationDebt += Math.max(0, (now - this.lastSimulationAt) / 1000);
     this.lastSimulationAt = now;
+
+    let remaining = Math.min(maxCatchup, this.simulationDebt);
+    this.simulationDebt -= remaining;
     while (remaining > 0.0001) {
       const step = Math.min(FIXED_STEP, remaining);
       this.update(step);
