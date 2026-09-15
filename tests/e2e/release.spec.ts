@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ROSTER } from '../../src/roster';
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
 
@@ -53,6 +54,55 @@ test('home, roster unlock/selection, and persistence work', async ({ page }) => 
   await assertNoBrowserErrors(errors);
 });
 
+test('malformed and obsolete save data recovers to safe defaults', async ({ page }) => {
+  const errors = trapBrowserErrors(page);
+  await page.goto('/');
+  await page.evaluate((key) => localStorage.setItem(key, '{not-json'), STORAGE_KEY);
+  await page.reload();
+  await expect(page.locator('.selected-fighter')).toContainText('Lloyd (Tournament)');
+
+  await page.evaluate((key) => {
+    localStorage.setItem(key, JSON.stringify({
+      bankStuds: -500,
+      unlocked: ['removed-character'],
+      selected: 'removed-character',
+      bestWave: -9,
+      bestRun: -100,
+      totalRuns: -2,
+      fighterXp: null,
+      daily: { date: '1900-01-01', draws: 999, runs: 999, studs: 999999, bestWave: 999, claimed: ['run'] }
+    }));
+  }, STORAGE_KEY);
+  await page.reload();
+  await expect(page.locator('.selected-fighter')).toContainText('Lloyd (Tournament)');
+  await expect(page.locator('.save-stats')).toContainText('0 banked studs');
+  await expect(page.getByRole('button', { name: /DAILY DRAW & CHALLENGES \(1\)/i })).toBeVisible();
+  await assertNoBrowserErrors(errors);
+});
+
+test('every roster fighter can boot into the production arena', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = trapBrowserErrors(page);
+  await page.goto('/');
+
+  for (const fighter of ROSTER) {
+    await page.evaluate(({ key, fighterId }) => {
+      const raw = localStorage.getItem(key);
+      const save = raw ? JSON.parse(raw) : {};
+      save.selected = fighterId;
+      save.unlocked = Array.from(new Set([...(Array.isArray(save.unlocked) ? save.unlocked : []), fighterId]));
+      localStorage.setItem(key, JSON.stringify(save));
+    }, { key: STORAGE_KEY, fighterId: fighter.id });
+    await page.reload();
+    await expect(page.locator('.selected-fighter')).toContainText(fighter.name);
+    await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
+    await expect(page.locator('#game-host canvas')).toBeVisible();
+    await page.waitForTimeout(80);
+  }
+
+  await assertNoBrowserErrors(errors);
+});
+
 test('daily draw, challenge claims, and save state persist', async ({ page }) => {
   const errors = trapBrowserErrors(page);
   await page.goto('/');
@@ -80,9 +130,7 @@ test('daily draw, challenge claims, and save state persist', async ({ page }) =>
 
   const claimButtons = page.locator('[data-claim]');
   await expect(claimButtons).toHaveCount(3);
-  for (let i = 0; i < 3; i++) {
-    await expect(claimButtons.nth(i)).toBeEnabled();
-  }
+  for (let i = 0; i < 3; i++) await expect(claimButtons.nth(i)).toBeEnabled();
   await claimButtons.nth(0).click();
   await expect(page.locator('.draw-orb')).toHaveText('1');
   await expect(page.locator('[data-claim="run"]')).toHaveText('CLAIMED');
