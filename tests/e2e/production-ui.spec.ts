@@ -13,7 +13,9 @@ test('default launch is Safe graphics and exposes graphics controls', async ({ p
   await expect(graphics).toContainText('SAFE GPU');
   await graphics.click();
   await expect(page.getByRole('heading', { name: 'Graphics Mode' })).toBeVisible();
-  await expect(page.getByText(/30 FPS.*low-power GPU.*shadows off/i)).toBeVisible();
+  await expect(page.locator('.graphics-current')).toContainText('Safe');
+  await expect(page.locator('.graphics-current')).toContainText('30 FPS');
+  await expect(page.locator('.graphics-current')).toContainText('shadows off');
 });
 
 test('Shop & Loadout is a visible main-menu destination', async ({ page }) => {
