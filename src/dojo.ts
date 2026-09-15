@@ -13,6 +13,7 @@ export interface DojoCallbacks {
 const STEP_ORDER: DojoStep[] = ['move', 'attack', 'jump', 'block', 'grab', 'dodge', 'special', 'complete'];
 const FIXED_STEP = 1 / 60;
 const MAX_CATCHUP_SECONDS = 0.25;
+const MAX_ACTION_RECONCILE_SECONDS = 1.25;
 const MAX_INPUT_RECONCILE_SECONDS = 2.5;
 const TIMED_KEYS = new Set([
   'KeyA', 'ArrowLeft', 'KeyD', 'ArrowRight',
@@ -87,7 +88,7 @@ export class DojoGame {
     // WebGL can temporarily render far below 60 FPS; controls and tutorial progress
     // must still advance according to elapsed time rather than rendered frames.
     this.lastSimulationAt = performance.now();
-    this.simulationTimer = window.setInterval(this.simulationTick, 1000 / 60);
+    this.simulationTimer = window.setInterval(() => this.simulationTick(), 1000 / 60);
     this.loop();
   }
 
@@ -97,10 +98,14 @@ export class DojoGame {
   }
 
   setBlock(active: boolean) {
+    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
     this.input.block = active;
   }
 
   action(action: DojoAction) {
+    // A WebGL render can monopolize the main thread on software/low-end GPUs.
+    // Reconcile real elapsed simulation time before evaluating cooldown-gated actions.
+    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
     if (action === 'attack') this.attack();
     if (action === 'jump') this.jump();
     if (action === 'grab') this.grab();
@@ -108,6 +113,7 @@ export class DojoGame {
   }
 
   dodge(x = 0, y = 0) {
+    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
     if (!this.grounded || this.dodgeTime > 0) return;
     const dir = new THREE.Vector3(x, 0, y);
     if (dir.lengthSq() < 0.04) dir.set(Math.sin(this.player.rotation.y), 0, Math.cos(this.player.rotation.y));
@@ -134,6 +140,7 @@ export class DojoGame {
   }
 
   private keyDown = (event: KeyboardEvent) => {
+    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
     this.keyboard.add(event.code);
     if (!event.repeat && TIMED_KEYS.has(event.code)) {
       this.heldStartedAt.set(event.code, performance.now());
@@ -149,6 +156,7 @@ export class DojoGame {
   };
 
   private keyUp = (event: KeyboardEvent) => {
+    this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
     this.reconcileHeldInput(event.code);
     this.keyboard.delete(event.code);
     this.heldStartedAt.delete(event.code);
@@ -164,10 +172,10 @@ export class DojoGame {
     this.camera.updateProjectionMatrix();
   };
 
-  private simulationTick = () => {
+  private simulationTick = (maxCatchup = MAX_CATCHUP_SECONDS) => {
     if (!this.running) return;
     const now = performance.now();
-    let remaining = Math.min(MAX_CATCHUP_SECONDS, Math.max(0, (now - this.lastSimulationAt) / 1000));
+    let remaining = Math.min(maxCatchup, Math.max(0, (now - this.lastSimulationAt) / 1000));
     this.lastSimulationAt = now;
     while (remaining > 0.0001) {
       const step = Math.min(FIXED_STEP, remaining);
