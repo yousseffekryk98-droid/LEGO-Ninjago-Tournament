@@ -1,0 +1,23 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Android/Gradle generated output (the android project itself may be committed after `npm run android:init`)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.jks
+*.keystore
+*.aab
+*.apk
+
+# IDE local state
+.idea/
+.vscode/*.log
