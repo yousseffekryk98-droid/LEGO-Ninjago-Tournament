@@ -1,0 +1,180 @@
+import { expect, test, type Page } from '@playwright/test';
+
+const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
+
+function trapBrowserErrors(page: Page) {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(`console.error: ${message.text()}`);
+  });
+  return errors;
+}
+
+async function assertNoBrowserErrors(errors: string[]) {
+  expect(errors, errors.join('\n')).toEqual([]);
+}
+
+async function hold(page: Page, key: string, ms: number) {
+  await page.keyboard.down(key);
+  await page.waitForTimeout(ms);
+  await page.keyboard.up(key);
+}
+
+test('home, roster unlock/selection, and persistence work', async ({ page }) => {
+  const errors = trapBrowserErrors(page);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /NINJA/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /ENTER TOURNAMENT/i })).toBeVisible();
+
+  await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    const save = raw ? JSON.parse(raw) : {};
+    save.bankStuds = 100_000;
+    localStorage.setItem(key, JSON.stringify(save));
+  }, STORAGE_KEY);
+  await page.reload();
+
+  await page.getByRole('button', { name: /FIGHTERS/i }).click();
+  const cards = page.locator('.fighter-card');
+  await expect(cards).toHaveCount(43);
+
+  const zane = cards.filter({ hasText: 'Zane (Techno)' }).first();
+  await expect(zane).toBeVisible();
+  const unlock = zane.locator('.unlock-btn');
+  await expect(unlock).toBeEnabled();
+  await unlock.click();
+  await expect(zane.locator('.select-btn')).toHaveText('SELECTED');
+
+  await page.getByRole('button', { name: '‹' }).click();
+  await expect(page.locator('.selected-fighter')).toContainText('Zane (Techno)');
+  await page.reload();
+  await expect(page.locator('.selected-fighter')).toContainText('Zane (Techno)');
+  await assertNoBrowserErrors(errors);
+});
+
+test('daily draw, challenge claims, and save state persist', async ({ page }) => {
+  const errors = trapBrowserErrors(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: /DAILY DRAW/i }).click();
+  await expect(page.locator('.draw-orb')).toHaveText('1');
+  await page.getByRole('button', { name: /DRAW A PRIZE/i }).click();
+  await expect(page.locator('#draw-result')).toContainText('STUD PRIZE');
+  await expect(page.locator('.draw-orb')).toHaveText('0');
+
+  await page.getByRole('button', { name: '‹' }).click();
+  await page.reload();
+  await page.getByRole('button', { name: /DAILY DRAW/i }).click();
+  await expect(page.locator('.draw-orb')).toHaveText('0');
+
+  await page.evaluate((key) => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const raw = localStorage.getItem(key);
+    const save = raw ? JSON.parse(raw) : {};
+    save.daily = { date, draws: 0, runs: 1, studs: 3000, bestWave: 5, claimed: [] };
+    localStorage.setItem(key, JSON.stringify(save));
+  }, STORAGE_KEY);
+  await page.reload();
+
+  const claimButtons = page.locator('[data-claim]');
+  await expect(claimButtons).toHaveCount(3);
+  for (let i = 0; i < 3; i++) {
+    await expect(claimButtons.nth(i)).toBeEnabled();
+  }
+  await claimButtons.nth(0).click();
+  await expect(page.locator('.draw-orb')).toHaveText('1');
+  await expect(page.locator('[data-claim="run"]')).toHaveText('CLAIMED');
+  await assertNoBrowserErrors(errors);
+});
+
+test('the complete seven-step Dojo tutorial is playable with keyboard controls', async ({ page }) => {
+  test.setTimeout(55_000);
+  const errors = trapBrowserErrors(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: /PLAY DOJO TUTORIAL/i }).click();
+  await expect(page.locator('#dojo-host canvas')).toBeVisible();
+  await expect(page.locator('#dojo-step-title')).toHaveText('Movement');
+
+  await hold(page, 'ArrowRight', 1100);
+  await expect(page.locator('#dojo-step-title')).toHaveText('Attack');
+
+  await hold(page, 'ArrowUp', 800);
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press('j');
+    await page.waitForTimeout(340);
+  }
+  await expect(page.locator('#dojo-step-title')).toHaveText('Jump');
+
+  await page.keyboard.press('k');
+  await expect(page.locator('#dojo-step-title')).toHaveText('Block');
+
+  await hold(page, 'Shift', 1450);
+  await expect(page.locator('#dojo-step-title')).toHaveText('Grab & Throw');
+
+  await page.keyboard.press('l');
+  await expect(page.locator('#dojo-step-title')).toHaveText('Dodge');
+
+  await page.keyboard.press('q');
+  await expect(page.locator('#dojo-step-title')).toHaveText('Special');
+  await expect(page.locator('#dojo-special')).toHaveClass(/ready/);
+
+  await page.keyboard.press('e');
+  await expect(page.getByRole('heading', { name: 'Training Complete' })).toBeVisible({ timeout: 4_000 });
+  await assertNoBrowserErrors(errors);
+});
+
+test('a tournament run renders, accepts controls, reaches combat, and ends cleanly', async ({ page }) => {
+  test.setTimeout(65_000);
+  const errors = trapBrowserErrors(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
+  await expect(page.locator('#game-host canvas')).toBeVisible();
+  await expect(page.locator('#wave-label')).toHaveText(/WAVE 1|BOSS/, { timeout: 5_000 });
+  await expect(page.locator('#enemy-label')).toContainText('ENEMIES');
+
+  await hold(page, 'ArrowRight', 300);
+  await page.keyboard.press('j');
+  await page.keyboard.press('k');
+  await page.waitForTimeout(150);
+  await page.keyboard.press('j');
+  await hold(page, 'Shift', 300);
+  await page.keyboard.press('q');
+
+  await expect(page.getByText('TOURNAMENT RUN COMPLETE')).toBeVisible({ timeout: 42_000 });
+  await expect(page.getByRole('button', { name: 'RETRY' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'DAILY REWARDS' })).toBeVisible();
+
+  const persistedRuns = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw).totalRuns : 0;
+  }, STORAGE_KEY);
+  expect(persistedRuns).toBeGreaterThanOrEqual(1);
+  await assertNoBrowserErrors(errors);
+});
+
+test('@mobile phone layout keeps gameplay controls usable', async ({ page }) => {
+  const errors = trapBrowserErrors(page);
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: /ENTER TOURNAMENT/i })).toBeVisible();
+  await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).tap();
+  await expect(page.locator('#game-host canvas')).toBeVisible();
+
+  const controls = ['#joystick', '.action-button.attack', '.action-button.jump', '.action-button.block', '.action-button.grab', '#special-btn'];
+  const viewport = page.viewportSize()!;
+  for (const selector of controls) {
+    const locator = page.locator(selector);
+    await expect(locator).toBeVisible();
+    const box = await locator.boundingBox();
+    expect(box, `${selector} has no bounding box`).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(-1);
+    expect(box!.y).toBeGreaterThanOrEqual(-1);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height + 1);
+  }
+
+  await page.locator('.action-button.attack').tap();
+  await page.locator('.action-button.jump').tap();
+  await assertNoBrowserErrors(errors);
+});
