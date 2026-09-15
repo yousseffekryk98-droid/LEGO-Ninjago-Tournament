@@ -4,9 +4,15 @@ The web/PWA build remains the canonical game build. Android uses Capacitor 8.5.2
 
 ## Requirements
 
-- Node.js 22+
-- Android Studio with a current Android SDK/JDK configuration
-- USB debugging or an Android emulator for device testing
+For Capacitor 8, use:
+
+- Node.js 22 or newer;
+- Android Studio 2025.2.1 or newer;
+- Android SDK Platform 36 for the current release target (Capacitor 8 supports API 24+ devices);
+- Android Studio's bundled JDK for local development;
+- USB debugging or an Android emulator for device testing.
+
+The GitHub release workflow independently regenerates the Android project and compiles a debug APK using Java 21 and Android SDK 36, so packaging regressions are caught before merge.
 
 ## First native setup
 
@@ -45,14 +51,17 @@ Open the Android project with `npm run android:open`, then use Android Studio's 
 
 For Google Play, prefer an AAB. For direct device testing, a debug or signed APK is sufficient.
 
+CI uploads an unsigned/debug APK from every successful release-candidate run. That artifact is for acceptance testing, not store distribution.
+
 ## Release checklist
 
 1. `npm run test:release`
-2. `npm run android:sync`
-3. Test touch controls, controller input, audio, pause/resume and offline startup on a real Android device.
-4. Test at least one low/mid-range device and one high-refresh device.
-5. Verify landscape orientation, safe areas and no controls are obscured by gesture/navigation bars.
-6. Generate a signed AAB/APK only after browser and Android acceptance pass.
+2. Confirm the GitHub `android-debug` job compiles and uploads its APK artifact.
+3. `npm run android:sync`
+4. Test touch controls, controller input, audio, pause/resume and offline startup on a real Android device.
+5. Test at least one low/mid-range device and one high-refresh device.
+6. Verify landscape orientation, safe areas and no controls are obscured by gesture/navigation bars.
+7. Generate a signed AAB/APK only after browser and Android acceptance pass.
 
 ## IP boundary
 
