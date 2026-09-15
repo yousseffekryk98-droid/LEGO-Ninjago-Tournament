@@ -7,12 +7,22 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit --pretty false",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "test:e2e": "playwright test",
+    "test:release": "npm run typecheck && npm run build && playwright test",
+    "android:init": "npm run build && cap add android && cap sync android",
+    "android:sync": "npm run build && cap sync android",
+    "android:open": "cap open android",
+    "android:run": "npm run android:sync && cap run android"
   },
   "dependencies": {
+    "@capacitor/core": "8.5.2",
     "three": "^0.180.0"
   },
   "devDependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/cli": "8.5.2",
+    "@playwright/test": "^1.55.0",
     "@types/three": "^0.180.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.5"

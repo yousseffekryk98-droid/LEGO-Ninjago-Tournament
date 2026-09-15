@@ -4,13 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#1b1029" />
-    <meta name="description" content="Clean-room fan remake prototype inspired by the 2015 Ninjago tournament arena brawler." />
+    <meta name="description" content="Clean-room fan remake inspired by the discontinued 2015 tournament arena brawler, with original procedural art and offline play." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/ninja-tournament.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/ninja-tournament.svg" />
     <link rel="stylesheet" href="/src/fidelity.css" />
     <link rel="stylesheet" href="/src/content.css" />
+    <link rel="stylesheet" href="/src/platform.css" />
+    <link rel="stylesheet" href="/src/challenges.css" />
+    <link rel="stylesheet" href="/src/loadout.css" />
+    <link rel="stylesheet" href="/src/gallery.css" />
+    <link rel="stylesheet" href="/src/feedback.css" />
     <title>Ninja Tournament — Fan Remake</title>
   </head>
   <body>
     <div id="app"></div>
+    <script type="module" src="/src/platform.ts"></script>
+    <script type="module" src="/src/challenges.ts"></script>
+    <script type="module" src="/src/loadout.ts"></script>
+    <script type="module" src="/src/save-sync.ts"></script>
+    <script type="module" src="/src/gallery.ts"></script>
+    <script type="module" src="/src/feedback.ts"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

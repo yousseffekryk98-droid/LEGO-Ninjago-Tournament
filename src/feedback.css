@@ -1,0 +1,64 @@
+.sfx-toggle {
+  position: fixed;
+  z-index: 92;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  border: 1px solid rgba(233, 207, 126, .42);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(11, 7, 18, .76);
+  color: #d7ca9b;
+  font: 800 10px/1 system-ui, sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  opacity: .82;
+}
+.sfx-toggle:hover { filter: brightness(1.15); }
+.game-screen.feedback-flash::after {
+  content: '';
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(255,255,255,.13), rgba(244,186,82,.07) 30%, transparent 68%);
+  animation: impact-flash .18s ease-out both;
+}
+#game-host canvas.impact-shake,
+#dojo-host canvas.impact-shake {
+  animation: tournament-shake .18s cubic-bezier(.2,.8,.2,1);
+}
+#game-host canvas.impact-shake-heavy,
+#dojo-host canvas.impact-shake-heavy {
+  animation: tournament-shake-heavy .28s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes impact-flash {
+  from { opacity: .95; }
+  to { opacity: 0; }
+}
+@keyframes tournament-shake {
+  0%,100% { transform: translate3d(0,0,0); }
+  20% { transform: translate3d(-3px,2px,0); }
+  45% { transform: translate3d(3px,-2px,0); }
+  70% { transform: translate3d(-2px,1px,0); }
+}
+@keyframes tournament-shake-heavy {
+  0%,100% { transform: translate3d(0,0,0) scale(1); }
+  14% { transform: translate3d(-7px,4px,0) scale(1.004); }
+  32% { transform: translate3d(6px,-4px,0) scale(1.006); }
+  52% { transform: translate3d(-5px,-2px,0) scale(1.003); }
+  72% { transform: translate3d(4px,3px,0) scale(1.002); }
+}
+@media (max-width: 700px) {
+  .sfx-toggle { opacity: .64; padding: 6px 8px; font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #game-host canvas.impact-shake,
+  #dojo-host canvas.impact-shake,
+  #game-host canvas.impact-shake-heavy,
+  #dojo-host canvas.impact-shake-heavy,
+  .game-screen.feedback-flash::after {
+    animation: none !important;
+  }
+}
