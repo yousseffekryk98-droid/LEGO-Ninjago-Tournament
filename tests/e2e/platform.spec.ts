@@ -4,8 +4,12 @@ test('PWA manifest, service worker and offline boot are release-ready', async ({
   await page.goto('/');
 
   const manifest = page.locator('link[rel="manifest"]');
-  await expect(manifest).toHaveAttribute('href', '/manifest.webmanifest');
-  const manifestResponse = await page.request.get('/manifest.webmanifest');
+  // Vite can normalize a root-relative public asset to a production-relative URL.
+  // Both resolve to the same manifest, so verify the resource rather than a single serialization.
+  await expect(manifest).toHaveAttribute('href', /(?:^|\/)manifest\.webmanifest$/);
+  const manifestHref = await manifest.getAttribute('href');
+  expect(manifestHref).toBeTruthy();
+  const manifestResponse = await page.request.get(new URL(manifestHref!, page.url()).toString());
   expect(manifestResponse.ok()).toBeTruthy();
   const manifestJson = await manifestResponse.json();
   expect(manifestJson.display).toBe('standalone');
