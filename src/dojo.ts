@@ -11,12 +11,15 @@ export interface DojoCallbacks {
 }
 
 const STEP_ORDER: DojoStep[] = ['move', 'attack', 'jump', 'block', 'grab', 'dodge', 'special', 'complete'];
+const FIXED_STEP = 1 / 60;
+const MAX_CATCHUP_SECONDS = 0.25;
 
 export class DojoGame {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(47, 1, 0.1, 70);
   private renderer: THREE.WebGLRenderer;
   private clock = new THREE.Clock();
+  private accumulator = 0;
   private player: THREE.Group;
   private dummy: THREE.Group;
   private shadow: THREE.Mesh;
@@ -142,8 +145,19 @@ export class DojoGame {
   private loop = () => {
     if (!this.running) return;
     this.frame = requestAnimationFrame(this.loop);
-    const dt = Math.min(this.clock.getDelta(), 0.04);
-    this.update(dt);
+
+    // A capped variable delta used to discard most elapsed time on slow devices.
+    // Fixed-step catch-up keeps movement, cooldowns, blocking and tutorial progress
+    // tied to real elapsed time even when rendering temporarily falls below 25 FPS.
+    this.accumulator += Math.min(this.clock.getDelta(), MAX_CATCHUP_SECONDS);
+    let steps = 0;
+    while (this.accumulator >= FIXED_STEP && steps < 15) {
+      this.update(FIXED_STEP);
+      this.accumulator -= FIXED_STEP;
+      steps += 1;
+    }
+    if (steps === 15 && this.accumulator > MAX_CATCHUP_SECONDS) this.accumulator = MAX_CATCHUP_SECONDS;
+
     this.renderer.render(this.scene, this.camera);
   };
 
