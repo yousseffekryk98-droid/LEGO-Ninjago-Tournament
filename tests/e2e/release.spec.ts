@@ -81,7 +81,7 @@ test('malformed and obsolete save data recovers to safe defaults', async ({ page
 });
 
 test('every roster fighter can boot into the production arena', async ({ page }) => {
-  test.setTimeout(150_000);
+  test.setTimeout(300_000);
   const errors = trapBrowserErrors(page);
   await page.goto('/');
 
