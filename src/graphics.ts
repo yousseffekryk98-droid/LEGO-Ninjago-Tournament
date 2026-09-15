@@ -19,6 +19,10 @@ const RECOVERY_KEY = 'ninja-tournament-gpu-recovery-v1';
 const RENDER_GUARD_KEY = 'ninja-tournament-render-guard-v1';
 const STABLE_TIMER_MS = 18000;
 
+// Read this once. An accelerated render sets the guard for the *next* launch;
+// it must not force the current healthy render back to Safe immediately.
+const RECOVERY_AT_BOOT = localStorage.getItem(RECOVERY_KEY) === '1' || localStorage.getItem(RENDER_GUARD_KEY) === 'armed';
+
 const SAFE: GraphicsProfile = {
   mode: 'safe',
   label: 'Safe',
@@ -29,6 +33,7 @@ const SAFE: GraphicsProfile = {
   powerPreference: 'low-power',
   sceneDress: 'lite'
 };
+
 const BALANCED: GraphicsProfile = {
   mode: 'balanced',
   label: 'Balanced',
@@ -39,6 +44,7 @@ const BALANCED: GraphicsProfile = {
   powerPreference: 'default',
   sceneDress: 'full'
 };
+
 const HIGH: GraphicsProfile = {
   mode: 'high',
   label: 'High',
@@ -55,27 +61,13 @@ function readPreference(): GraphicsPreference {
   return value === 'safe' || value === 'balanced' || value === 'high' || value === 'auto' ? value : 'auto';
 }
 
-function lowSpecSignals() {
-  const nav = navigator as Navigator & { deviceMemory?: number };
-  const memory = nav.deviceMemory ?? 0;
-  const cores = navigator.hardwareConcurrency ?? 0;
-  const coarse = matchMedia?.('(pointer: coarse)').matches ?? false;
-  const reducedMotion = matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  return (memory > 0 && memory <= 4) || (cores > 0 && cores <= 4) || coarse || reducedMotion;
-}
-
 export function getGraphicsProfile(): GraphicsProfile {
-  const recovery = localStorage.getItem(RECOVERY_KEY) === '1' || localStorage.getItem(RENDER_GUARD_KEY) === 'armed';
-  if (recovery) return SAFE;
+  if (RECOVERY_AT_BOOT) return SAFE;
   const preference = readPreference();
-  if (preference === 'safe') return SAFE;
   if (preference === 'balanced') return BALANCED;
   if (preference === 'high') return HIGH;
-
-  // Auto is intentionally conservative. The first local launch is Safe so a
-  // problematic WebGL/hybrid-GPU driver cannot take the whole laptop down.
-  // Users with a stable machine can opt into Balanced or High from Settings.
-  if (lowSpecSignals()) return SAFE;
+  // Auto and a fresh install deliberately start Safe. This is conservative by
+  // design: the user can prove the machine stable before opting into more GPU load.
   return SAFE;
 }
 
@@ -87,13 +79,12 @@ function setPreference(preference: GraphicsPreference) {
 
 function markGpuRecovery() {
   localStorage.setItem(RECOVERY_KEY, '1');
-  localStorage.removeItem(RENDER_GUARD_KEY);
+  localStorage.setItem(RENDER_GUARD_KEY, 'armed');
   document.documentElement.dataset.gpuRecovery = 'true';
 }
 
 function armRenderGuard(profile: GraphicsProfile) {
-  if (profile.mode === 'safe') return;
-  localStorage.setItem(RENDER_GUARD_KEY, 'armed');
+  if (profile.mode !== 'safe') localStorage.setItem(RENDER_GUARD_KEY, 'armed');
 }
 
 function clearRenderGuard() {
@@ -102,33 +93,42 @@ function clearRenderGuard() {
 
 const frameTimes = new WeakMap<THREE.WebGLRenderer, number>();
 const stableSince = new WeakMap<THREE.WebGLRenderer, number>();
-const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
-(HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => RenderingContext | null }).getContext = function patchedGetContext(
+// THREE requests its WebGL context inside the renderer constructor. Intercepting
+// this one browser API lets Safe mode neutralize antialiasing and the game's old
+// high-performance GPU request before the context is created.
+type LooseCanvasGetContext = (this: HTMLCanvasElement, type: string, attributes?: any) => any;
+const canvasPrototype = HTMLCanvasElement.prototype as unknown as { getContext: LooseCanvasGetContext };
+const originalGetContext = canvasPrototype.getContext;
+
+canvasPrototype.getContext = function patchedGetContext(
+  this: HTMLCanvasElement,
   type: string,
-  attributes?: WebGLContextAttributes
-) {
+  attributes?: any
+): any {
   const profile = getGraphicsProfile();
   const isWebGl = type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl';
-  if (isWebGl) {
-    armRenderGuard(profile);
-    if (!this.dataset.gpuGuardWired) {
-      this.dataset.gpuGuardWired = 'true';
-      this.addEventListener('webglcontextlost', (event) => {
-        event.preventDefault();
-        markGpuRecovery();
-      });
-    }
-    const guardedAttributes = {
-      ...(attributes ?? {}),
-      antialias: profile.antialias,
-      powerPreference: profile.powerPreference,
-      preserveDrawingBuffer: false
-    } as WebGLContextAttributes;
-    return originalGetContext.call(this, type as 'webgl2', guardedAttributes);
+  if (!isWebGl) return originalGetContext.call(this, type, attributes);
+
+  armRenderGuard(profile);
+  if (!this.dataset.gpuGuardWired) {
+    this.dataset.gpuGuardWired = 'true';
+    this.addEventListener('webglcontextlost', (event: Event) => {
+      event.preventDefault();
+      markGpuRecovery();
+    });
   }
-  return originalGetContext.call(this, type as '2d', attributes as CanvasRenderingContext2DSettings);
-} as typeof HTMLCanvasElement.prototype.getContext;
+
+  const baseAttributes = attributes && typeof attributes === 'object' ? attributes : {};
+  const guardedAttributes: WebGLContextAttributes = {
+    ...baseAttributes,
+    antialias: profile.antialias,
+    powerPreference: profile.powerPreference,
+    preserveDrawingBuffer: false,
+    failIfMajorPerformanceCaveat: false
+  };
+  return originalGetContext.call(this, type, guardedAttributes);
+};
 
 const rendererPrototype = THREE.WebGLRenderer.prototype as unknown as {
   setPixelRatio: (value: number) => void;
@@ -206,12 +206,15 @@ function addBanner(parent: THREE.Group, angle: number, lite: boolean) {
   const z = Math.sin(angle) * radius;
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.9, 8), material(0x241b19, 0.85));
   pole.position.set(x, 1.45, z);
-  const banner = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 1.55), new THREE.MeshStandardMaterial({
-    color: 0x8f211f,
-    side: THREE.DoubleSide,
-    roughness: 0.74,
-    emissive: lite ? 0x000000 : 0x170302
-  }));
+  const banner = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.95, 1.55),
+    new THREE.MeshStandardMaterial({
+      color: 0x8f211f,
+      side: THREE.DoubleSide,
+      roughness: 0.74,
+      emissive: lite ? 0x000000 : 0x170302
+    })
+  );
   banner.position.set(x, 2.15, z);
   banner.rotation.y = -angle + Math.PI / 2;
   parent.add(pole, banner);
@@ -225,7 +228,13 @@ function enhanceScene(scene: THREE.Scene, profile: GraphicsProfile) {
 
   const emblem = new THREE.Mesh(
     new THREE.RingGeometry(3.2, 3.38, lite ? 32 : 64),
-    new THREE.MeshBasicMaterial({ color: 0xc9972d, transparent: true, opacity: lite ? 0.24 : 0.38, side: THREE.DoubleSide, depthWrite: false })
+    new THREE.MeshBasicMaterial({
+      color: 0xc9972d,
+      transparent: true,
+      opacity: lite ? 0.24 : 0.38,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    })
   );
   emblem.rotation.x = -Math.PI / 2;
   emblem.position.y = 0.055;
@@ -266,7 +275,6 @@ function enhanceFighters(scene: THREE.Scene, profile: GraphicsProfile) {
     const gold = material(0xc99832, 0.44, 0.32);
     const shoulder = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.14, 0.58), dark);
     shoulder.position.set(0, 1.62, 0);
-    shoulder.rotation.z = 0.02;
     const crest = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.07, 16), gold);
     crest.rotation.x = Math.PI / 2;
     crest.position.set(0, 1.34, 0.27);
@@ -307,19 +315,18 @@ function mountGraphicsUi() {
     document.querySelector('#graphics-settings-overlay')?.remove();
     const profile = getGraphicsProfile();
     const preference = readPreference();
-    const recovery = localStorage.getItem(RECOVERY_KEY) === '1' || localStorage.getItem(RENDER_GUARD_KEY) === 'armed';
     const overlay = document.createElement('div');
     overlay.id = 'graphics-settings-overlay';
     overlay.className = 'graphics-settings-overlay';
     overlay.innerHTML = `
       <section class="graphics-settings-panel">
         <header><div><small>DEVICE PROTECTION</small><h2>Graphics Mode</h2></div><button id="graphics-close" aria-label="Close">×</button></header>
-        ${recovery ? '<div class="gpu-recovery-note"><b>SAFE FALLBACK ACTIVE</b><span>A previous accelerated render did not finish cleanly, so the game protected this launch.</span></div>' : ''}
+        ${RECOVERY_AT_BOOT ? '<div class="gpu-recovery-note"><b>SAFE FALLBACK ACTIVE</b><span>The previous accelerated session did not finish cleanly, so this launch has been protected automatically.</span></div>' : ''}
         <p class="graphics-current">Current renderer: <strong>${profile.label}</strong> · ${modeDescription(profile)}</p>
         <div class="graphics-mode-grid">
-          <button data-graphics="auto" class="${preference === 'auto' ? 'active' : ''}"><b>AUTO SAFE</b><span>Recommended. Starts in Safe mode and keeps crash recovery enabled.</span></button>
+          <button data-graphics="auto" class="${preference === 'auto' ? 'active' : ''}"><b>AUTO SAFE</b><span>Recommended first launch. Keeps GPU recovery enabled and starts conservatively.</span></button>
           <button data-graphics="safe" class="${preference === 'safe' ? 'active' : ''}"><b>SAFE</b><span>30 FPS, 1× resolution, low-power GPU, no realtime shadows.</span></button>
-          <button data-graphics="balanced" class="${preference === 'balanced' ? 'active' : ''}"><b>BALANCED</b><span>Better lighting and detail with a moderate GPU load.</span></button>
+          <button data-graphics="balanced" class="${preference === 'balanced' ? 'active' : ''}"><b>BALANCED</b><span>60 FPS, better lighting and detail with a moderate GPU load.</span></button>
           <button data-graphics="high" class="${preference === 'high' ? 'active' : ''}"><b>HIGH</b><span>Best visuals. Only use this after Balanced is stable on your laptop.</span></button>
         </div>
         <p class="graphics-warning">Changing mode reloads the game so WebGL can recreate the renderer safely.</p>
