@@ -31,6 +31,7 @@ Implemented now:
 - Temple Gallery-style collection archive with fighter filters, lock state, stats and enemy codex;
 - Single Challenge, timed Score Attack and Boss Challenge modes;
 - shared procedural 3D minifigure models with named animation parts, character-specific silhouettes/equipment and no ripped game art;
+- live rotating 3D fighter viewer in the roster, including locked fighters, with Zane and every other character shown by primary name plus suit/variant;
 - unlockable roster with local stud bank/progression;
 - five-level fighter potential/XP system with stat growth;
 - daily free prize draw plus three daily challenges that award extra draws;
