@@ -25,7 +25,8 @@ Implemented now:
 - destructible training/punching-bag props with debris and stud rewards;
 - supply rewards for hearts, studs, special-meter charge and temporary combat boosts;
 - seven data-driven special families: Spinjitzu, Boost, Charge Attack, Overload, Air Strike, Toxic Cloud and Shout;
-- **43** playable roster entries/variants based on currently verified public reference lists;
+- visible element-colored Spinjitzu tornado VFX with AoE hits, invulnerability window and a clearly labeled special control;
+- **46** playable roster entries/variants covering the documented playable cast plus the regional Tox variant (Ronin remains boss-only);
 - a dedicated 3D Dojo tutorial with seven interactive training steps and low-FPS input reconciliation;
 - Temple Gallery-style collection archive with fighter filters, lock state, stats and enemy codex;
 - Single Challenge, timed Score Attack and Boss Challenge modes;
@@ -97,7 +98,7 @@ Desktop: WASD / arrows to move, `Space` or `J` attack, `K` jump, `L` grab/throw,
 
 Controller: left stick/D-pad move, A attack, RB jump, X grab, LB block, Y special, B dodge.
 
-Mobile: left virtual joystick plus the on-screen action cluster. Swipe across the arena/Dojo to dodge. Fill the special meter by landing hits, then press the spiral button.
+Mobile: left virtual joystick plus the on-screen action cluster. Swipe across the arena/Dojo to dodge. Fill the special meter by landing hits, then press the labeled spiral button to trigger Spinjitzu or the selected fighter's special.
 
 ## What still depends on production assets / real-device acceptance
 
