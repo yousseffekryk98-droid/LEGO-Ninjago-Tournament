@@ -15,7 +15,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+          cache: npm
+      - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=moderate
       - run: npm run typecheck
       - run: npm run build
       - run: npx playwright install --with-deps chromium
@@ -41,6 +44,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - name: Set up Java
         uses: actions/setup-java@v6
         with:
@@ -53,7 +57,7 @@ jobs:
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
-      - run: npm install
+      - run: npm ci
       - run: npm run build
       - name: Generate Capacitor Android project
         run: npx cap add android
