@@ -28,4 +28,6 @@ export interface FighterModelProfile {
   metallic: boolean;
   faceColor?: number;
   eyeColor?: number;
+  weaponColor?: number;
+  truePotentialGlow?: number;
 }
