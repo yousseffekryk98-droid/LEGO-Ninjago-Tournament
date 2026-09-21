@@ -21,7 +21,8 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
       extraArms: false,
       metallic: true,
       faceColor: 0xd7e0e4,
-      eyeColor: 0x79dcff
+      eyeColor: 0x79dcff,
+      battleDamaged: id.includes('battle-damaged')
     };
   }
 
@@ -68,6 +69,8 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     element.includes('serpentine') ||
     element.includes('venomari') ||
     element.includes('anacondrai') ||
+    element.includes('constrictai') ||
+    element.includes('hypnobrai') ||
     id === 'pythor' ||
     id === 'acidicus'
   ) {
@@ -79,7 +82,8 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
       extraArms: false,
       metallic: false,
       faceColor: character.color,
-      eyeColor: 0xf4df55
+      eyeColor: id === 'skales' ? 0xd94b4b : 0xf4df55,
+      serpentineTail: !['snike', 'bytar'].includes(id)
     };
   }
 
