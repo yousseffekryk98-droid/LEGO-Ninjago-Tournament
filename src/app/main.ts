@@ -1,4 +1,4 @@
-import '../styles.css';
+import './styles.css';
 import { TournamentGame, type HudState } from '../features/combat';
 import { DojoGame, type DojoAction, type DojoStep } from '../features/dojo/DojoGame';
 import {
