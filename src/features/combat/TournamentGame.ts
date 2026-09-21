@@ -952,7 +952,7 @@ export class TournamentGame {
     }
   }
 
-  private spawnStudBurst(origin: THREE.Vector3, totalValue: number, amount: number) {
+  protected spawnStudBurst(origin: THREE.Vector3, totalValue: number, amount: number) {
     const safeAmount = Math.max(1, amount);
     const baseValue = Math.floor(totalValue / safeAmount);
     let remainder = totalValue - baseValue * safeAmount;
