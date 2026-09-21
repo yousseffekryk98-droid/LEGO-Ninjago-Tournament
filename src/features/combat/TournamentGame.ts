@@ -196,6 +196,25 @@ export class TournamentGame {
     if (!paused) this.clock.getDelta();
   }
 
+  continueRun() {
+    if (this.health > 0) return false;
+    this.health = this.character.maxHealth;
+    this.paused = false;
+    this.invulnerable = 2.2;
+    this.combo = 0;
+    this.special = Math.max(this.special, 35);
+    this.frozenTime = 0;
+    this.dodgeTime = 0;
+    this.spinTime = 0;
+    this.stopSpinjitzuVfx();
+    this.player.position.set(0, 0, 2.5);
+    this.player.rotation.set(0, 0, 0);
+    this.clock.getDelta();
+    this.emitHud();
+    this.callbacks.onMessage('Continue! Back into the tournament.');
+    return true;
+  }
+
   destroy() {
     this.running = false;
     cancelAnimationFrame(this.animationFrame);
