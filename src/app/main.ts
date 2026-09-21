@@ -97,6 +97,10 @@ let save = loadSave();
 let activeGame: TournamentGame | null = null;
 let activeDojo: DojoGame | null = null;
 let activeCharacterPreview: CharacterPreview | null = null;
+let continueUsedThisRun = false;
+let lastHudWave = 0;
+let lastHudEnemies = 0;
+let stageBannerTimer = 0;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function persist() {
@@ -439,6 +443,9 @@ function updateDojoStep(step: DojoStep, title: string, copy: string, progress: n
 
 function startGame() {
   cleanupGame();
+  continueUsedThisRun = false;
+  lastHudWave = 0;
+  lastHudEnemies = 0;
   const baseFighter = findCharacter(save.selected);
   const fighter = upgradedCharacter(baseFighter);
   const identity = getCharacterIdentity(baseFighter);
@@ -450,6 +457,7 @@ function startGame() {
       <div class="hud hud-center"><b id="wave-label">WAVE 0</b><small id="enemy-label">GET READY</small></div>
       <div class="hud hud-right"><b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small></div>
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
+      <div id="stage-banner" class="stage-banner" aria-live="polite"><small></small><b></b></div>
       <div id="message" class="arena-message"></div>
       <div class="special-wrap"><button id="special-btn" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="special-meter"></i></div></div>
       <div class="joystick" id="joystick"><div class="joystick-ring"><span id="stick"></span></div></div>
@@ -467,7 +475,7 @@ function startGame() {
   const game = new TournamentGame(host, fighter, {
     onHud: updateHud,
     onMessage: showArenaMessage,
-    onGameOver: (runStuds, wave) => showGameOver(runStuds, wave, baseFighter.id)
+    onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id)
   });
   activeGame = game;
 
@@ -519,6 +527,26 @@ function updateHud(state: HudState) {
   if (enemies) enemies.textContent = `${state.enemies} ENEMIES`;
   if (meter) meter.style.width = `${Math.round(state.special)}%`;
   document.querySelector('#special-btn')?.classList.toggle('ready', state.special >= 100);
+
+  if (state.wave > 0 && state.wave !== lastHudWave) {
+    showStageBanner(state.bossName ? 'ELEMENTAL MASTER' : 'TOURNAMENT STAGE', state.bossName ? state.bossName : `WAVE ${state.wave}`);
+    lastHudWave = state.wave;
+  } else if (lastHudEnemies > 0 && state.enemies === 0 && state.wave > 0) {
+    showStageBanner('STAGE COMPLETE', `WAVE ${state.wave} CLEARED`);
+  }
+  lastHudEnemies = state.enemies;
+}
+
+function showStageBanner(kicker: string, title: string) {
+  const banner = document.querySelector<HTMLElement>('#stage-banner');
+  if (!banner) return;
+  const small = banner.querySelector('small');
+  const heading = banner.querySelector('b');
+  if (small) small.textContent = kicker;
+  if (heading) heading.textContent = title;
+  banner.classList.add('show');
+  window.clearTimeout(stageBannerTimer);
+  stageBannerTimer = window.setTimeout(() => banner.classList.remove('show'), 1350);
 }
 
 let messageTimer = 0;
@@ -531,7 +559,44 @@ function showArenaMessage(text: string) {
   messageTimer = window.setTimeout(() => el.classList.remove('show'), 1900);
 }
 
-function showGameOver(runStuds: number, wave: number, fighterId: string) {
+function showDefeatScreen(game: TournamentGame, runStuds: number, wave: number, fighterId: string) {
+  const continueCost = 1000;
+  const overlay = document.querySelector<HTMLElement>('#game-over');
+  if (!overlay) return;
+
+  if (!continueUsedThisRun && save.bankStuds >= continueCost) {
+    overlay.classList.remove('hidden');
+    overlay.innerHTML = `
+      <section>
+        <small>KNOCKED OUT</small>
+        <h2>Continue?</h2>
+        <p>Spend ◉ ${formatStuds(continueCost)} from your bank to revive once and keep this run.</p>
+        <p>Bank balance: ◉ ${formatStuds(save.bankStuds)}</p>
+        <div class="menu-actions">
+          <button class="gold-button primary" id="continue-btn">CONTINUE · ◉ ${formatStuds(continueCost)}</button>
+          <button class="gold-button" id="finish-run-btn">END RUN</button>
+        </div>
+      </section>`;
+
+    document.querySelector('#continue-btn')?.addEventListener('click', () => {
+      if (continueUsedThisRun || save.bankStuds < continueCost) return;
+      save.bankStuds -= continueCost;
+      continueUsedThisRun = true;
+      persist();
+      if (game.continueRun()) {
+        overlay.classList.add('hidden');
+        overlay.replaceChildren();
+      }
+    });
+
+    document.querySelector('#finish-run-btn')?.addEventListener('click', () => finalizeRun(runStuds, wave, fighterId));
+    return;
+  }
+
+  finalizeRun(runStuds, wave, fighterId);
+}
+
+function finalizeRun(runStuds: number, wave: number, fighterId: string) {
   const beforeLevel = fighterLevel(fighterId);
   const xpEarned = Math.floor(250 + wave * 120 + Math.min(2000, runStuds * 0.03));
   save.bankStuds += Math.floor(runStuds);
