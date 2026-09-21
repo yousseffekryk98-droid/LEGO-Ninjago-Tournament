@@ -1,14 +1,14 @@
 import * as THREE from 'three';
-import type { CharacterArchetype, CharacterModelProfile, CharacterWeapon } from '../../features/characters/types';
+import type { FighterArchetype, FighterModelProfile, FighterWeapon } from './model-types';
 
 export interface MinifigureModelOptions {
   primary: number;
   accent: number;
   scale?: number;
-  profile?: CharacterModelProfile;
+  profile?: FighterModelProfile;
 }
 
-const DEFAULT_PROFILE: CharacterModelProfile = {
+const DEFAULT_PROFILE: FighterModelProfile = {
   archetype: 'ninja',
   weapon: 'katana',
   hood: true,
@@ -101,7 +101,7 @@ function addClaws(group: THREE.Group, accent: THREE.Material) {
   }
 }
 
-function addWeapon(group: THREE.Group, weapon: CharacterWeapon, accent: THREE.Material) {
+function addWeapon(group: THREE.Group, weapon: FighterWeapon, accent: THREE.Material) {
   if (weapon === 'none') return;
   if (weapon === 'katana') return addKatana(group, accent, 1);
   if (weapon === 'dual-katana') {
@@ -145,7 +145,7 @@ function addExtraArms(group: THREE.Group, primary: THREE.Material, hand: THREE.M
   }
 }
 
-function addHeadgear(group: THREE.Group, profile: CharacterModelProfile, primary: THREE.Material, accent: THREE.Material) {
+function addHeadgear(group: THREE.Group, profile: FighterModelProfile, primary: THREE.Material, accent: THREE.Material) {
   if (profile.hood) {
     addMesh(group, 'hoodTop', new THREE.CylinderGeometry(0.42, 0.38, 0.32, 18), primary, [0, 2.28, 0]);
     addMesh(group, 'hoodBack', new THREE.BoxGeometry(0.7, 0.45, 0.16), primary, [0, 2.1, -0.25]);
@@ -240,8 +240,8 @@ export function createGenericFighterModel(
   primary: number,
   accent: number,
   scale = 1,
-  archetype: CharacterArchetype = 'villain',
-  weapon: CharacterWeapon = 'katana'
+  archetype: FighterArchetype = 'villain',
+  weapon: FighterWeapon = 'katana'
 ) {
   return createMinifigureModel({
     primary,
