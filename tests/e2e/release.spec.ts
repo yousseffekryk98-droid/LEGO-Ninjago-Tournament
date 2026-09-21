@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ROSTER } from '../../src/roster';
+import { ROSTER, getCharacterIdentity } from '../../src/features/characters';
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
 
@@ -38,19 +38,23 @@ test('home, roster unlock/selection, and persistence work', async ({ page }) => 
 
   await page.getByRole('button', { name: /FIGHTERS/i }).click();
   const cards = page.locator('.fighter-card');
-  await expect(cards).toHaveCount(43);
+  await expect(cards).toHaveCount(46);
 
-  const zane = cards.filter({ hasText: 'Zane (Techno)' }).first();
+  const zane = page.locator('.fighter-card[data-id="zane-techno"]');
   await expect(zane).toBeVisible();
+  await expect(zane.locator('.fighter-primary-name')).toHaveText('Zane');
+  await expect(zane.locator('.fighter-variant')).toHaveText('Techno');
   const unlock = zane.locator('.unlock-btn');
   await expect(unlock).toBeEnabled();
   await unlock.click();
   await expect(zane.locator('.select-btn')).toHaveText('SELECTED');
 
   await page.getByRole('button', { name: '‹' }).click();
-  await expect(page.locator('.selected-fighter')).toContainText('Zane (Techno)');
+  await expect(page.locator('.selected-fighter .fighter-primary-name')).toHaveText('Zane');
+  await expect(page.locator('.selected-fighter .fighter-variant')).toHaveText('Techno');
   await page.reload();
-  await expect(page.locator('.selected-fighter')).toContainText('Zane (Techno)');
+  await expect(page.locator('.selected-fighter .fighter-primary-name')).toHaveText('Zane');
+  await expect(page.locator('.selected-fighter .fighter-variant')).toHaveText('Techno');
   await assertNoBrowserErrors(errors);
 });
 
@@ -59,7 +63,8 @@ test('malformed and obsolete save data recovers to safe defaults', async ({ page
   await page.goto('/');
   await page.evaluate((key) => localStorage.setItem(key, '{not-json'), STORAGE_KEY);
   await page.reload();
-  await expect(page.locator('.selected-fighter')).toContainText('Lloyd (Tournament)');
+  await expect(page.locator('.selected-fighter .fighter-primary-name')).toHaveText('Lloyd');
+  await expect(page.locator('.selected-fighter .fighter-variant')).toHaveText('Tournament');
 
   await page.evaluate((key) => {
     localStorage.setItem(key, JSON.stringify({
@@ -74,7 +79,8 @@ test('malformed and obsolete save data recovers to safe defaults', async ({ page
     }));
   }, STORAGE_KEY);
   await page.reload();
-  await expect(page.locator('.selected-fighter')).toContainText('Lloyd (Tournament)');
+  await expect(page.locator('.selected-fighter .fighter-primary-name')).toHaveText('Lloyd');
+  await expect(page.locator('.selected-fighter .fighter-variant')).toHaveText('Tournament');
   await expect(page.locator('.save-stats')).toContainText('0 banked studs');
   await expect(page.getByRole('button', { name: /DAILY DRAW & CHALLENGES \(1\)/i })).toBeVisible();
   await assertNoBrowserErrors(errors);
@@ -94,7 +100,9 @@ test('every roster fighter can boot into the production arena', async ({ page })
       localStorage.setItem(key, JSON.stringify(save));
     }, { key: STORAGE_KEY, fighterId: fighter.id });
     await page.reload();
-    await expect(page.locator('.selected-fighter')).toContainText(fighter.name);
+    const identity = getCharacterIdentity(fighter);
+    await expect(page.locator('.selected-fighter .fighter-primary-name')).toHaveText(identity.name);
+    if (identity.variant) await expect(page.locator('.selected-fighter .fighter-variant')).toHaveText(identity.variant);
     await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
     await expect(page.locator('#game-host canvas')).toBeVisible();
     await page.waitForTimeout(120);
