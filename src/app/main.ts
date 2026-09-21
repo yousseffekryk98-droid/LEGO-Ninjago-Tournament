@@ -446,7 +446,7 @@ function startGame() {
   app.innerHTML = `
     <main class="game-screen">
       <div id="game-host"></div>
-      <div class="hud hud-left"><div class="portrait-ring"><span style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}"></span></div><div class="player-hud-copy"><b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small><div id="hearts" class="hearts"></div><div id="studs" class="studs">◉ 0 · LV ${fighterLevel(baseFighter.id)}</div></div></div>
+      <div class="hud hud-left"><div class="portrait-ring"><span style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}"></span></div><div class="player-hud-copy"><b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small><div id="hearts" class="hearts"></div><div id="studs" class="studs"><span class="stud-icon" aria-hidden="true"></span><span class="stud-copy"><b id="stud-count">0</b><small>RUN STUDS · BANK ${formatStuds(save.bankStuds)} · LV ${fighterLevel(baseFighter.id)}</small></span></div></div></div>
       <div class="hud hud-center"><b id="wave-label">WAVE 0</b><small id="enemy-label">GET READY</small></div>
       <div class="hud hud-right"><b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small></div>
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
@@ -500,15 +500,20 @@ function startGame() {
 
 function updateHud(state: HudState) {
   const hearts = document.querySelector('#hearts');
-  const studs = document.querySelector('#studs');
+  const studCount = document.querySelector('#stud-count');
   const multiplier = document.querySelector('#multiplier');
   const combo = document.querySelector('#combo');
   const wave = document.querySelector('#wave-label');
   const enemies = document.querySelector('#enemy-label');
   const meter = document.querySelector<HTMLElement>('#special-meter');
   if (hearts) hearts.textContent = Array.from({ length: state.maxHealth }, (_, i) => i < state.health ? '♥' : '♡').join('');
-  if (studs) studs.textContent = `◉ ${formatStuds(state.studs)} · LV ${fighterLevel(save.selected)}`;
+  if (studCount) studCount.textContent = formatStuds(state.studs);
   if (multiplier) multiplier.textContent = `${state.multiplier}×`;
+
+  const screen = document.querySelector<HTMLElement>('.game-screen');
+  const healthRatio = state.maxHealth > 0 ? state.health / state.maxHealth : 0;
+  screen?.classList.toggle('low-health', healthRatio > 0 && healthRatio <= 0.5);
+  screen?.classList.toggle('critical-health', healthRatio > 0 && healthRatio <= 0.25);
   if (combo) combo.textContent = `${state.combo} HIT COMBO`;
   if (wave) wave.textContent = state.bossName ? `BOSS · ${state.bossName}` : `WAVE ${state.wave}`;
   if (enemies) enemies.textContent = `${state.enemies} ENEMIES`;
