@@ -14,6 +14,7 @@ export interface CharacterDef {
   maxHealth: number;
   cost: number;
   unlockedByDefault?: boolean;
+  potentialLevel?: number;
 }
 
 export interface CharacterIdentity {

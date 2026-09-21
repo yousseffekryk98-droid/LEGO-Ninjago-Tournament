@@ -38,7 +38,7 @@ test('home, roster unlock/selection, and persistence work', async ({ page }) => 
 
   await page.getByRole('button', { name: /FIGHTERS/i }).click();
   const cards = page.locator('.fighter-card');
-  await expect(cards).toHaveCount(46);
+  await expect(cards).toHaveCount(50);
 
   const zane = page.locator('.fighter-card[data-id="zane-techno"]');
   await expect(zane).toBeVisible();
@@ -59,7 +59,7 @@ test('home, roster unlock/selection, and persistence work', async ({ page }) => 
 
   const search = page.locator('#fighter-search');
   await search.fill('Zane');
-  await expect(page.locator('.fighter-card:not([hidden])')).toHaveCount(4);
+  await expect(page.locator('.fighter-card:not([hidden])')).toHaveCount(5);
   await search.fill('');
 
   await page.getByRole('button', { name: '‹' }).click();

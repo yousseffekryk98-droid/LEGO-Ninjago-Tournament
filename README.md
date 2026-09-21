@@ -25,8 +25,10 @@ Implemented now:
 - destructible training/punching-bag props with debris and stud rewards;
 - supply rewards for hearts, studs, special-meter charge and temporary combat boosts;
 - seven data-driven special families: Spinjitzu, Boost, Charge Attack, Overload, Air Strike, Toxic Cloud and Shout;
-- visible element-colored Spinjitzu tornado VFX with AoE hits, invulnerability window and a clearly labeled special control;
-- **46** playable roster entries/variants covering the documented playable cast plus the regional Tox variant (Ronin remains boss-only), with primary names and suit/variant labels separated in the UI;
+- visible element-colored Spinjitzu tornado VFX with movable AoE attack, helical energy bands, debris, dust, light, invulnerability window and a clearly labeled special control;
+- physical stud drops from defeated enemies, training props and supply crates, with scatter/bounce/magnet collection;
+- original-style stage introduction/completion presentation, low-health red vignette, boss health bar and a one-use stud-funded Continue flow;
+- **50** playable roster entries/variants covering the documented cast, regional Tox variant and supplied-video legacy fighters (Ronin remains boss-only), with primary names and suit/variant labels separated in the UI;
 - a dedicated 3D Dojo tutorial with seven interactive training steps and low-FPS input reconciliation;
 - Temple Gallery-style collection archive with fighter filters, lock state, stats and enemy codex;
 - Single Challenge, timed Score Attack and Boss Challenge modes;
@@ -45,7 +47,7 @@ Implemented now:
 - Capacitor **8.5.2** Android build/sync/open/run configuration;
 - automated TypeScript, production build and Playwright browser acceptance coverage.
 
-See [`docs/RESEARCH.md`](docs/RESEARCH.md) for the gameplay research and clean-room rules, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the feature-first source/model architecture, and [`docs/ANDROID.md`](docs/ANDROID.md) for Android packaging.
+See [`docs/RESEARCH.md`](docs/RESEARCH.md) for gameplay research and clean-room rules, [`docs/VIDEO-FIDELITY.md`](docs/VIDEO-FIDELITY.md) for the supplied-video feature matrix, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the feature-first source/model architecture, and [`docs/ANDROID.md`](docs/ANDROID.md) for Android packaging.
 
 ## Run locally
 

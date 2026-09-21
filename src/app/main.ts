@@ -97,6 +97,10 @@ let save = loadSave();
 let activeGame: TournamentGame | null = null;
 let activeDojo: DojoGame | null = null;
 let activeCharacterPreview: CharacterPreview | null = null;
+let continueUsedThisRun = false;
+let lastHudWave = 0;
+let lastHudEnemies = 0;
+let stageBannerTimer = 0;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function persist() {
@@ -133,7 +137,8 @@ function upgradedCharacter(base: CharacterDef): CharacterDef {
     ...base,
     speed: base.speed + bonus * 0.12,
     damage: Math.round(base.damage * (1 + bonus * 0.07)),
-    maxHealth: base.maxHealth + (level >= 3 ? 1 : 0) + (level >= 5 ? 1 : 0)
+    maxHealth: base.maxHealth + (level >= 3 ? 1 : 0) + (level >= 5 ? 1 : 0),
+    potentialLevel: level
   };
 }
 
@@ -252,12 +257,12 @@ function showRoster() {
     });
   };
 
-  setPreview(findCharacter(save.selected));
+  setPreview(upgradedCharacter(findCharacter(save.selected)));
 
   document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach((button) => {
     button.addEventListener('click', () => {
       const fighter = findCharacter(button.dataset.preview!);
-      setPreview(fighter);
+      setPreview(upgradedCharacter(fighter));
       document.querySelector('.character-showcase')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   });
@@ -439,6 +444,9 @@ function updateDojoStep(step: DojoStep, title: string, copy: string, progress: n
 
 function startGame() {
   cleanupGame();
+  continueUsedThisRun = false;
+  lastHudWave = 0;
+  lastHudEnemies = 0;
   const baseFighter = findCharacter(save.selected);
   const fighter = upgradedCharacter(baseFighter);
   const identity = getCharacterIdentity(baseFighter);
@@ -446,10 +454,11 @@ function startGame() {
   app.innerHTML = `
     <main class="game-screen">
       <div id="game-host"></div>
-      <div class="hud hud-left"><div class="portrait-ring"><span style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}"></span></div><div class="player-hud-copy"><b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small><div id="hearts" class="hearts"></div><div id="studs" class="studs">◉ 0 · LV ${fighterLevel(baseFighter.id)}</div></div></div>
-      <div class="hud hud-center"><b id="wave-label">WAVE 0</b><small id="enemy-label">GET READY</small></div>
+      <div class="hud hud-left"><div class="portrait-ring"><span style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}"></span></div><div class="player-hud-copy"><b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small><div id="hearts" class="hearts"></div><div id="studs" class="studs"><span class="stud-icon" aria-hidden="true"></span><span class="stud-copy"><b id="stud-count">0</b><small>RUN STUDS · BANK ${formatStuds(save.bankStuds)} · LV ${fighterLevel(baseFighter.id)}</small></span></div></div></div>
+      <div class="hud hud-center"><b id="wave-label">WAVE 0</b><small id="enemy-label">GET READY</small><div id="boss-health" class="boss-health hidden"><span><i id="boss-health-fill"></i></span><em id="boss-health-copy"></em></div></div>
       <div class="hud hud-right"><b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small></div>
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
+      <div id="stage-banner" class="stage-banner" aria-live="polite"><small></small><b></b></div>
       <div id="message" class="arena-message"></div>
       <div class="special-wrap"><button id="special-btn" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="special-meter"></i></div></div>
       <div class="joystick" id="joystick"><div class="joystick-ring"><span id="stick"></span></div></div>
@@ -467,7 +476,7 @@ function startGame() {
   const game = new TournamentGame(host, fighter, {
     onHud: updateHud,
     onMessage: showArenaMessage,
-    onGameOver: (runStuds, wave) => showGameOver(runStuds, wave, baseFighter.id)
+    onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id)
   });
   activeGame = game;
 
@@ -500,20 +509,57 @@ function startGame() {
 
 function updateHud(state: HudState) {
   const hearts = document.querySelector('#hearts');
-  const studs = document.querySelector('#studs');
+  const studCount = document.querySelector('#stud-count');
   const multiplier = document.querySelector('#multiplier');
   const combo = document.querySelector('#combo');
   const wave = document.querySelector('#wave-label');
   const enemies = document.querySelector('#enemy-label');
+  const bossHealth = document.querySelector<HTMLElement>('#boss-health');
+  const bossHealthFill = document.querySelector<HTMLElement>('#boss-health-fill');
+  const bossHealthCopy = document.querySelector<HTMLElement>('#boss-health-copy');
   const meter = document.querySelector<HTMLElement>('#special-meter');
   if (hearts) hearts.textContent = Array.from({ length: state.maxHealth }, (_, i) => i < state.health ? '♥' : '♡').join('');
-  if (studs) studs.textContent = `◉ ${formatStuds(state.studs)} · LV ${fighterLevel(save.selected)}`;
+  if (studCount) studCount.textContent = formatStuds(state.studs);
   if (multiplier) multiplier.textContent = `${state.multiplier}×`;
+
+  const screen = document.querySelector<HTMLElement>('.game-screen');
+  const healthRatio = state.maxHealth > 0 ? state.health / state.maxHealth : 0;
+  screen?.classList.toggle('low-health', healthRatio > 0 && healthRatio <= 0.5);
+  screen?.classList.toggle('critical-health', healthRatio > 0 && healthRatio <= 0.25);
   if (combo) combo.textContent = `${state.combo} HIT COMBO`;
   if (wave) wave.textContent = state.bossName ? `BOSS · ${state.bossName}` : `WAVE ${state.wave}`;
   if (enemies) enemies.textContent = `${state.enemies} ENEMIES`;
+  if (bossHealth && bossHealthFill && bossHealthCopy) {
+    const visible = Boolean(state.bossName && state.bossMaxHealth);
+    bossHealth.classList.toggle('hidden', !visible);
+    if (visible) {
+      const ratio = Math.max(0, Math.min(1, (state.bossHealth ?? 0) / (state.bossMaxHealth ?? 1)));
+      bossHealthFill.style.width = `${Math.round(ratio * 100)}%`;
+      bossHealthCopy.textContent = `${state.bossName} · ${Math.ceil(state.bossHealth ?? 0)}/${Math.ceil(state.bossMaxHealth ?? 0)}`;
+    }
+  }
   if (meter) meter.style.width = `${Math.round(state.special)}%`;
   document.querySelector('#special-btn')?.classList.toggle('ready', state.special >= 100);
+
+  if (state.wave > 0 && state.wave !== lastHudWave) {
+    showStageBanner(state.bossName ? 'ELEMENTAL MASTER' : 'TOURNAMENT STAGE', state.bossName ? state.bossName : `WAVE ${state.wave}`);
+    lastHudWave = state.wave;
+  } else if (lastHudEnemies > 0 && state.enemies === 0 && state.wave > 0) {
+    showStageBanner('STAGE COMPLETE', `WAVE ${state.wave} CLEARED`);
+  }
+  lastHudEnemies = state.enemies;
+}
+
+function showStageBanner(kicker: string, title: string) {
+  const banner = document.querySelector<HTMLElement>('#stage-banner');
+  if (!banner) return;
+  const small = banner.querySelector('small');
+  const heading = banner.querySelector('b');
+  if (small) small.textContent = kicker;
+  if (heading) heading.textContent = title;
+  banner.classList.add('show');
+  window.clearTimeout(stageBannerTimer);
+  stageBannerTimer = window.setTimeout(() => banner.classList.remove('show'), 1350);
 }
 
 let messageTimer = 0;
@@ -526,7 +572,44 @@ function showArenaMessage(text: string) {
   messageTimer = window.setTimeout(() => el.classList.remove('show'), 1900);
 }
 
-function showGameOver(runStuds: number, wave: number, fighterId: string) {
+function showDefeatScreen(game: TournamentGame, runStuds: number, wave: number, fighterId: string) {
+  const continueCost = 1000;
+  const overlay = document.querySelector<HTMLElement>('#game-over');
+  if (!overlay) return;
+
+  if (!continueUsedThisRun && save.bankStuds >= continueCost) {
+    overlay.classList.remove('hidden');
+    overlay.innerHTML = `
+      <section>
+        <small>KNOCKED OUT</small>
+        <h2>Continue?</h2>
+        <p>Spend ◉ ${formatStuds(continueCost)} from your bank to revive once and keep this run.</p>
+        <p>Bank balance: ◉ ${formatStuds(save.bankStuds)}</p>
+        <div class="menu-actions">
+          <button class="gold-button primary" id="continue-btn">CONTINUE · ◉ ${formatStuds(continueCost)}</button>
+          <button class="gold-button" id="finish-run-btn">END RUN</button>
+        </div>
+      </section>`;
+
+    document.querySelector('#continue-btn')?.addEventListener('click', () => {
+      if (continueUsedThisRun || save.bankStuds < continueCost) return;
+      save.bankStuds -= continueCost;
+      continueUsedThisRun = true;
+      persist();
+      if (game.continueRun()) {
+        overlay.classList.add('hidden');
+        overlay.replaceChildren();
+      }
+    });
+
+    document.querySelector('#finish-run-btn')?.addEventListener('click', () => finalizeRun(runStuds, wave, fighterId));
+    return;
+  }
+
+  finalizeRun(runStuds, wave, fighterId);
+}
+
+function finalizeRun(runStuds: number, wave: number, fighterId: string) {
   const beforeLevel = fighterLevel(fighterId);
   const xpEarned = Math.floor(250 + wave * 120 + Math.min(2000, runStuds * 0.03));
   save.bankStuds += Math.floor(runStuds);

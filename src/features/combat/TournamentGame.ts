@@ -13,6 +13,8 @@ export interface HudState {
   wave: number;
   enemies: number;
   bossName?: string;
+  bossHealth?: number;
+  bossMaxHealth?: number;
 }
 
 export interface GameCallbacks {
@@ -66,6 +68,14 @@ interface Shockwave {
   damage: number;
 }
 
+interface StudPickup {
+  group: THREE.Group;
+  value: number;
+  velocity: THREE.Vector3;
+  life: number;
+  age: number;
+}
+
 const ARENA_RADIUS = 11.25;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -80,6 +90,7 @@ export class TournamentGame {
   private projectiles: Projectile[] = [];
   private boulders: Boulder[] = [];
   private shockwaves: Shockwave[] = [];
+  private studPickups: StudPickup[] = [];
   private spikePositions: THREE.Vector3[] = [];
   private callbacks: GameCallbacks;
   private character: CharacterDef;
@@ -187,10 +198,30 @@ export class TournamentGame {
     if (!paused) this.clock.getDelta();
   }
 
+  continueRun() {
+    if (this.health > 0) return false;
+    this.health = this.character.maxHealth;
+    this.paused = false;
+    this.invulnerable = 2.2;
+    this.combo = 0;
+    this.special = Math.max(this.special, 35);
+    this.frozenTime = 0;
+    this.dodgeTime = 0;
+    this.spinTime = 0;
+    this.stopSpinjitzuVfx();
+    this.player.position.set(0, 0, 2.5);
+    this.player.rotation.set(0, 0, 0);
+    this.clock.getDelta();
+    this.emitHud();
+    this.callbacks.onMessage('Continue! Back into the tournament.');
+    return true;
+  }
+
   destroy() {
     this.running = false;
     cancelAnimationFrame(this.animationFrame);
     this.stopSpinjitzuVfx();
+    for (const pickup of [...this.studPickups]) this.removeStudPickup(pickup);
     window.removeEventListener('resize', this.resize);
     window.removeEventListener('keydown', this.keyDown);
     window.removeEventListener('keyup', this.keyUp);
@@ -245,6 +276,7 @@ export class TournamentGame {
     this.updateProjectiles(dt);
     this.updateBoulders(dt);
     this.updateShockwaves(dt);
+    this.updateStudPickups(dt);
     this.updateSpikeHazards();
 
     if (this.enemies.length === 0 && this.intermission <= 0) {
@@ -288,14 +320,21 @@ export class TournamentGame {
     } else if (this.spinTime > 0) {
       this.spinTime = Math.max(0, this.spinTime - dt);
       this.spinTick -= dt;
-      this.player.rotation.y += dt * 18;
-      this.invulnerable = Math.max(this.invulnerable, 0.12);
+      this.player.rotation.y += dt * 24;
+      this.invulnerable = Math.max(this.invulnerable, 0.14);
+
+      if (move.lengthSq() > 0.01) {
+        const spinSpeed = this.character.speed * 0.78;
+        this.player.position.x += move.x * spinSpeed * dt;
+        this.player.position.z += move.y * spinSpeed * dt;
+      }
+
       this.updateSpinjitzuVfx(dt);
       if (this.spinTick <= 0) {
-        this.spinTick = 0.16;
+        this.spinTick = 0.12;
         for (const enemy of [...this.enemies]) {
           const distance = enemy.mesh.position.distanceTo(this.player.position);
-          if (distance < 3.25) this.hitEnemy(enemy, this.character.damage * 0.9, 4.5, true);
+          if (distance < 3.45) this.hitEnemy(enemy, this.character.damage * 0.82, 5.4, true);
         }
       }
       if (this.spinTime <= 0) this.stopSpinjitzuVfx();
@@ -307,6 +346,17 @@ export class TournamentGame {
       this.player.rotation.z = 0;
     } else {
       this.player.rotation.z *= Math.pow(0.02, dt);
+    }
+
+    const potentialAura = this.player.getObjectByName('truePotentialAura');
+    if (potentialAura) {
+      potentialAura.rotation.z += dt * 2.4;
+      const pulse = 1 + Math.sin(this.elapsed * 5.2) * 0.08;
+      potentialAura.scale.setScalar(pulse);
+    }
+    const potentialLight = this.player.getObjectByName('truePotentialLight');
+    if (potentialLight instanceof THREE.PointLight) {
+      potentialLight.intensity = 1.6 + Math.sin(this.elapsed * 6.4) * 0.45;
     }
 
     const planar = new THREE.Vector2(this.player.position.x, this.player.position.z);
@@ -418,7 +468,7 @@ export class TournamentGame {
   private performSpecial() {
     if (this.special < 100 || this.spinTime > 0 || !this.grounded || this.dodgeTime > 0) return;
     this.special = 0;
-    this.spinTime = 1.65;
+    this.spinTime = 2.1;
     this.spinTick = 0;
     this.startSpinjitzuVfx();
     this.callbacks.onMessage(`${this.character.element} Spinjitzu!`);
@@ -428,8 +478,10 @@ export class TournamentGame {
     this.stopSpinjitzuVfx();
 
     const aura = new THREE.Group();
+    aura.name = 'spinjitzuAura';
+
     const funnel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.62, 1.95, 2.85, 36, 1, true),
+      new THREE.CylinderGeometry(0.58, 2.12, 3.05, 40, 1, true),
       new THREE.MeshBasicMaterial({
         color: this.character.color,
         transparent: true,
@@ -438,10 +490,36 @@ export class TournamentGame {
         depthWrite: false
       })
     );
-    funnel.position.y = 1.25;
+    funnel.position.y = 1.32;
+    funnel.userData.spinRate = -3.5;
     aura.add(funnel);
 
-    for (let i = 0; i < 5; i++) {
+    for (let band = 0; band < 3; band++) {
+      const points: THREE.Vector3[] = [];
+      for (let step = 0; step <= 34; step++) {
+        const t = step / 34;
+        const radius = 0.58 + t * 1.42;
+        const angle = t * Math.PI * 5.4 + band * (Math.PI * 2 / 3);
+        points.push(new THREE.Vector3(
+          Math.cos(angle) * radius,
+          0.12 + t * 2.85,
+          Math.sin(angle) * radius
+        ));
+      }
+      const spiral = new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 54, 0.045, 7, false),
+        new THREE.MeshBasicMaterial({
+          color: band === 1 ? this.character.accent : this.character.color,
+          transparent: true,
+          opacity: band === 1 ? 0.86 : 0.68,
+          depthWrite: false
+        })
+      );
+      spiral.userData.spinRate = band % 2 ? 5.6 : -4.8;
+      aura.add(spiral);
+    }
+
+    for (let i = 0; i < 6; i++) {
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.82 + i * 0.23, 0.045 + i * 0.006, 8, 44),
         new THREE.MeshBasicMaterial({
@@ -453,11 +531,12 @@ export class TournamentGame {
       );
       ring.rotation.x = Math.PI / 2;
       ring.rotation.z = i * 0.37;
-      ring.position.y = 0.32 + i * 0.48;
+      ring.position.y = 0.26 + i * 0.43;
+      ring.userData.spinRate = i % 2 === 0 ? 5.2 : -5.2;
       aura.add(ring);
     }
 
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 18; i++) {
       const shard = new THREE.Mesh(
         new THREE.BoxGeometry(0.08, 0.08, 0.34 + (i % 3) * 0.08),
         new THREE.MeshBasicMaterial({
@@ -467,12 +546,32 @@ export class TournamentGame {
           depthWrite: false
         })
       );
-      const angle = (i / 12) * Math.PI * 2;
-      const radius = 1.05 + (i % 4) * 0.18;
-      shard.position.set(Math.cos(angle) * radius, 0.35 + (i % 5) * 0.48, Math.sin(angle) * radius);
+      const angle = (i / 18) * Math.PI * 2;
+      const radius = 0.9 + (i % 5) * 0.2;
+      shard.position.set(Math.cos(angle) * radius, 0.22 + (i % 7) * 0.4, Math.sin(angle) * radius);
       shard.rotation.set(angle * 0.35, angle, angle * 0.6);
+      shard.userData.spinRate = i % 2 === 0 ? 7.2 : -6.2;
       aura.add(shard);
     }
+
+    const dust = new THREE.Mesh(
+      new THREE.RingGeometry(0.9, 2.35, 56),
+      new THREE.MeshBasicMaterial({
+        color: this.character.accent,
+        transparent: true,
+        opacity: 0.22,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    dust.rotation.x = -Math.PI / 2;
+    dust.position.y = 0.05;
+    dust.userData.spinRate = 2.5;
+    aura.add(dust);
+
+    const glow = new THREE.PointLight(this.character.color, 3.6, 7.5, 2);
+    glow.position.y = 1.35;
+    aura.add(glow);
 
     aura.position.copy(this.player.position);
     this.scene.add(aura);
@@ -482,16 +581,16 @@ export class TournamentGame {
   private updateSpinjitzuVfx(dt: number) {
     if (!this.spinAura) return;
     this.spinAura.position.copy(this.player.position);
-    this.spinAura.rotation.y += dt * 9.5;
-    const pulse = 1 + Math.sin(this.elapsed * 20) * 0.055;
+    this.spinAura.rotation.y += dt * 10.8;
+    const pulse = 1 + Math.sin(this.elapsed * 22) * 0.065;
     this.spinAura.scale.setScalar(pulse);
 
     this.spinAura.children.forEach((child, index) => {
-      if (index === 0) {
-        child.rotation.y -= dt * 3.5;
-        return;
-      }
-      child.rotation.z += dt * (index % 2 === 0 ? 4.5 : -4.5);
+      const rate = typeof child.userData.spinRate === 'number'
+        ? child.userData.spinRate as number
+        : (index % 2 === 0 ? 4.5 : -4.5);
+      child.rotation.y += dt * rate;
+      child.rotation.z += dt * rate * 0.45;
     });
   }
 
@@ -527,13 +626,13 @@ export class TournamentGame {
     this.enemies.splice(index, 1);
     const multiplier = this.getMultiplier();
     const payout = (enemy.kind === 'boss' ? 500 : enemy.kind === 'heavy' ? 80 : enemy.kind === 'ranged' ? 60 : 45) * multiplier;
-    this.studs += payout;
     this.special = clamp(this.special + (enemy.kind === 'boss' ? 35 : 12), 0, 100);
 
     const origin = enemy.mesh.position.clone();
     this.scene.remove(enemy.mesh);
     this.spawnBrickBurst(origin, enemy.kind === 'boss' ? 12 : 6);
-    if (enemy.kind === 'boss') this.callbacks.onMessage(`${enemy.bossName ?? 'Boss'} defeated! +${payout.toLocaleString()} studs`);
+    this.spawnStudBurst(origin, payout, enemy.kind === 'boss' ? 12 : enemy.kind === 'heavy' ? 7 : 5);
+    if (enemy.kind === 'boss') this.callbacks.onMessage(`${enemy.bossName ?? 'Boss'} defeated! Collect the dropped studs.`);
   }
 
   private damagePlayer(amount: number) {
@@ -886,6 +985,94 @@ export class TournamentGame {
     }
   }
 
+  protected spawnStudBurst(origin: THREE.Vector3, totalValue: number, amount: number) {
+    const safeAmount = Math.max(1, amount);
+    const baseValue = Math.floor(totalValue / safeAmount);
+    let remainder = totalValue - baseValue * safeAmount;
+
+    for (let i = 0; i < safeAmount; i++) {
+      const value = baseValue + (remainder-- > 0 ? 1 : 0);
+      const group = new THREE.Group();
+      group.name = 'studPickup';
+
+      const gold = new THREE.MeshStandardMaterial({
+        color: 0xf2c94c,
+        emissive: 0x5b3a00,
+        emissiveIntensity: 0.34,
+        metalness: 0.72,
+        roughness: 0.24
+      });
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.12, 18), gold);
+      base.rotation.x = Math.PI / 2;
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.09, 16), gold);
+      cap.rotation.x = Math.PI / 2;
+      cap.position.z = 0.085;
+      base.castShadow = true;
+      cap.castShadow = true;
+      group.add(base, cap);
+
+      const angle = (i / safeAmount) * Math.PI * 2 + Math.random() * 0.45;
+      const speed = 1.6 + Math.random() * 2.4;
+      group.position.copy(origin).add(new THREE.Vector3(0, 0.55 + Math.random() * 0.35, 0));
+      group.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      this.scene.add(group);
+
+      this.studPickups.push({
+        group,
+        value,
+        velocity: new THREE.Vector3(Math.cos(angle) * speed, 3.2 + Math.random() * 2.2, Math.sin(angle) * speed),
+        life: 12,
+        age: 0
+      });
+    }
+  }
+
+  private updateStudPickups(dt: number) {
+    for (const pickup of [...this.studPickups]) {
+      pickup.life -= dt;
+      pickup.age += dt;
+      pickup.velocity.y -= 8.5 * dt;
+      pickup.group.position.addScaledVector(pickup.velocity, dt);
+
+      if (pickup.group.position.y < 0.2) {
+        pickup.group.position.y = 0.2;
+        if (pickup.velocity.y < 0) pickup.velocity.y *= -0.42;
+        pickup.velocity.x *= Math.pow(0.18, dt);
+        pickup.velocity.z *= Math.pow(0.18, dt);
+      }
+
+      pickup.group.rotation.y += dt * 8.5;
+      pickup.group.rotation.x += dt * 3.2;
+
+      const toPlayer = this.player.position.clone().add(new THREE.Vector3(0, 0.7, 0)).sub(pickup.group.position);
+      const distance = toPlayer.length();
+      if (pickup.age > 0.3 && distance < 5.25) {
+        const magnetSpeed = 4.6 + (5.25 - distance) * 3.4;
+        pickup.group.position.addScaledVector(toPlayer.normalize(), magnetSpeed * dt);
+      }
+
+      if (distance < 0.72) {
+        this.studs += pickup.value;
+        this.removeStudPickup(pickup);
+        continue;
+      }
+
+      if (pickup.life <= 0) this.removeStudPickup(pickup);
+    }
+  }
+
+  private removeStudPickup(pickup: StudPickup) {
+    const index = this.studPickups.indexOf(pickup);
+    if (index >= 0) this.studPickups.splice(index, 1);
+    this.scene.remove(pickup.group);
+    pickup.group.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.geometry.dispose();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => material.dispose());
+    });
+  }
+
   private spawnBrickBurst(origin: THREE.Vector3, amount: number) {
     for (let i = 0; i < amount; i++) {
       const piece = new THREE.Mesh(
@@ -920,7 +1107,12 @@ export class TournamentGame {
     key.shadow.camera.right = 15;
     key.shadow.camera.top = 15;
     key.shadow.camera.bottom = -15;
+    key.shadow.bias = -0.00045;
     this.scene.add(key);
+
+    const rim = new THREE.DirectionalLight(0x798dba, 1.25);
+    rim.position.set(10, 8, -12);
+    this.scene.add(rim);
 
     const floor = new THREE.Mesh(
       new THREE.CylinderGeometry(12.4, 12.4, 0.55, 64),
@@ -945,6 +1137,7 @@ export class TournamentGame {
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.04;
     this.scene.add(ring);
+    this.buildCenterSigil();
 
     for (let i = 0; i < 24; i++) {
       const angle = (i / 24) * Math.PI * 2;
@@ -971,6 +1164,12 @@ export class TournamentGame {
       this.scene.add(wall);
     }
 
+    this.buildArenaGate();
+    this.buildSerpentPillar(-8.9, -8.4, 0.28);
+    this.buildSerpentPillar(8.9, -8.4, -0.28);
+    this.buildSerpentPillar(-9.7, 7.6, 0.2);
+    this.buildSerpentPillar(9.7, 7.6, -0.2);
+
     this.buildGong(-10.7, 0);
     this.buildGong(10.7, 0);
     this.buildSpikeTrap(-4.4, -4.2);
@@ -981,10 +1180,137 @@ export class TournamentGame {
       brazier.position.set(0, 0.4, z);
       brazier.castShadow = true;
       this.scene.add(brazier);
-      const flame = new THREE.PointLight(0xff7a2d, 4, 7, 2);
+      const flameMesh = new THREE.Mesh(
+        new THREE.ConeGeometry(0.22, 0.62, 10),
+        new THREE.MeshBasicMaterial({ color: 0xffa43b, transparent: true, opacity: 0.9 })
+      );
+      flameMesh.position.set(0, 1.2, z);
+      this.scene.add(flameMesh);
+
+      const flame = new THREE.PointLight(0xff7a2d, 4.8, 8.5, 2);
       flame.position.set(0, 1.5, z);
       this.scene.add(flame);
     }
+  }
+
+  private buildCenterSigil() {
+    const lineMaterial = new THREE.MeshBasicMaterial({
+      color: 0x24292f,
+      transparent: true,
+      opacity: 0.82,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    for (const [innerRadius, outerRadius] of [[2.05, 2.18], [3.35, 3.49], [5.05, 5.17]] as const) {
+      const circle = new THREE.Mesh(new THREE.RingGeometry(innerRadius, outerRadius, 64), lineMaterial);
+      circle.rotation.x = -Math.PI / 2;
+      circle.position.y = 0.065;
+      this.scene.add(circle);
+    }
+
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+      const mark = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.025, 2.45), lineMaterial);
+      mark.position.set(Math.cos(angle) * 4.05, 0.067, Math.sin(angle) * 4.05);
+      mark.rotation.y = -angle;
+      this.scene.add(mark);
+    }
+
+    const crest = new THREE.Mesh(
+      new THREE.RingGeometry(0.68, 1.42, 6, 1, Math.PI / 6),
+      new THREE.MeshBasicMaterial({
+        color: 0x6d5030,
+        transparent: true,
+        opacity: 0.56,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    crest.rotation.x = -Math.PI / 2;
+    crest.rotation.z = Math.PI / 6;
+    crest.position.y = 0.071;
+    this.scene.add(crest);
+  }
+
+  private buildArenaGate() {
+    const stone = new THREE.MeshStandardMaterial({ color: 0x3b3d42, roughness: 0.94 });
+    const darkStone = new THREE.MeshStandardMaterial({ color: 0x292c31, roughness: 0.97 });
+    const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x661e24, roughness: 0.72, metalness: 0.06 });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xb8872c, roughness: 0.38, metalness: 0.52 });
+
+    const z = -12.45;
+    const leftTower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 5.4, 2.1), stone);
+    leftTower.position.set(-4.05, 2.4, z);
+    const rightTower = leftTower.clone();
+    rightTower.position.x = 4.05;
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(10.3, 1.2, 2.25), darkStone);
+    lintel.position.set(0, 5.0, z);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.38, 3.0), stone);
+    roof.position.set(0, 5.78, z);
+    roof.rotation.z = 0.015;
+
+    for (const mesh of [leftTower, rightTower, lintel, roof]) {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.scene.add(mesh);
+    }
+
+    for (const side of [-1, 1]) {
+      const door = new THREE.Mesh(new THREE.BoxGeometry(3.45, 4.3, 0.28), doorMaterial);
+      door.position.set(side * 1.76, 2.12, z + 1.18);
+      door.castShadow = true;
+      door.receiveShadow = true;
+      this.scene.add(door);
+
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 3; col++) {
+          const stud = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.08, 10), gold);
+          stud.rotation.x = Math.PI / 2;
+          stud.position.set(side * (0.72 + col * 0.55), 0.75 + row * 0.88, z + 1.36);
+          this.scene.add(stud);
+        }
+      }
+    }
+
+    const crestRing = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.12, 10, 32), gold);
+    crestRing.position.set(0, 5.0, z + 1.25);
+    this.scene.add(crestRing);
+    const crestCore = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.14, 18), doorMaterial);
+    crestCore.rotation.x = Math.PI / 2;
+    crestCore.position.set(0, 5.0, z + 1.25);
+    this.scene.add(crestCore);
+  }
+
+  private buildSerpentPillar(x: number, z: number, lean: number) {
+    const stone = new THREE.MeshStandardMaterial({ color: 0x35383e, roughness: 0.92 });
+    const serpent = new THREE.MeshStandardMaterial({
+      color: 0x612846,
+      roughness: 0.58,
+      metalness: 0.05
+    });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xa97928, roughness: 0.38, metalness: 0.45 });
+
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.9, 5.5, 14), stone);
+    pillar.position.set(x, 2.45, z);
+    pillar.rotation.z = lean * 0.12;
+    pillar.castShadow = true;
+    pillar.receiveShadow = true;
+    this.scene.add(pillar);
+
+    for (let i = 0; i < 5; i++) {
+      const coil = new THREE.Mesh(new THREE.TorusGeometry(0.81, 0.14, 8, 28), serpent);
+      coil.position.set(x, 0.8 + i * 0.88, z);
+      coil.rotation.x = Math.PI / 2 + lean;
+      coil.rotation.z = i * 0.5;
+      coil.castShadow = true;
+      this.scene.add(coil);
+    }
+
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.3, 14), gold);
+    crown.position.set(x, 5.25, z);
+    crown.castShadow = true;
+    this.scene.add(crown);
   }
 
   private buildGong(x: number, z: number) {
@@ -1048,7 +1374,9 @@ export class TournamentGame {
       special: this.special,
       wave: this.wave,
       enemies: this.enemies.length,
-      bossName: boss?.bossName
+      bossName: boss?.bossName,
+      bossHealth: boss ? Math.max(0, boss.hp) : undefined,
+      bossMaxHealth: boss?.maxHp
     });
   }
 }

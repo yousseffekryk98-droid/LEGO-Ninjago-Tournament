@@ -238,7 +238,7 @@ export class TournamentGame extends BaseTournamentGame {
   private collectCrate(crate: SupplyCrate) {
     const state = this.runtime(); const roll = Math.random();
     if (roll < 0.28) { state.health = Math.min(state.character.maxHealth, state.health + 1); state.callbacks.onMessage('Roto Jet crate: HEART +1'); this.spawnPulse(crate.group.position, 0xe84b57, 2.1); }
-    else if (roll < 0.57) { const reward = 300 * Math.max(1, state.getMultiplier()); state.studs += reward; state.callbacks.onMessage(`Roto Jet crate: +${reward.toLocaleString()} STUDS`); this.spawnPulse(crate.group.position, 0xe5c04f, 2.1); }
+    else if (roll < 0.57) { const reward = 300 * Math.max(1, state.getMultiplier()); this.spawnStudBurst(crate.group.position.clone(), reward, 8); state.callbacks.onMessage(`Roto Jet crate: ${reward.toLocaleString()} STUDS DROPPED`); this.spawnPulse(crate.group.position, 0xe5c04f, 2.1); }
     else if (roll < 0.8) { state.special = Math.min(100, state.special + 55); state.callbacks.onMessage('Roto Jet crate: SPECIAL CHARGE +55'); this.spawnPulse(crate.group.position, 0x9267d2, 2.1); }
     else { this.startBoost(8, 1.28, 1.22); state.callbacks.onMessage('Roto Jet crate: COMBAT BOOST 8s'); this.spawnPulse(crate.group.position, 0x6fd5ff, 2.1); }
     state.emitHud(); this.removeCrate(crate);
