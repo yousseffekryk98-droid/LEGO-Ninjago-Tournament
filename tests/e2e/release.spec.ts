@@ -51,9 +51,9 @@ test('home, roster unlock/selection, and persistence work', async ({ page }) => 
   await expect(page.locator('#character-preview-stage canvas')).toBeVisible();
   await expect(page.locator('#character-preview-stage')).toHaveAttribute('data-character-id', 'zane-techno');
 
-  const unlock = zane.locator('.unlock-btn');
-  await expect(unlock).toBeEnabled();
-  await unlock.click();
+  const select = zane.locator('.select-btn');
+  await expect(select).toHaveText('SELECT');
+  await select.click();
   const selectedZane = page.locator('.fighter-card[data-id="zane-techno"]');
   await expect(selectedZane.locator('.select-btn')).toHaveText('SELECTED');
 
