@@ -221,6 +221,7 @@ export class TournamentGame {
     this.running = false;
     cancelAnimationFrame(this.animationFrame);
     this.stopSpinjitzuVfx();
+    for (const pickup of [...this.studPickups]) this.removeStudPickup(pickup);
     window.removeEventListener('resize', this.resize);
     window.removeEventListener('keydown', this.keyDown);
     window.removeEventListener('keyup', this.keyUp);
@@ -345,6 +346,17 @@ export class TournamentGame {
       this.player.rotation.z = 0;
     } else {
       this.player.rotation.z *= Math.pow(0.02, dt);
+    }
+
+    const potentialAura = this.player.getObjectByName('truePotentialAura');
+    if (potentialAura) {
+      potentialAura.rotation.z += dt * 2.4;
+      const pulse = 1 + Math.sin(this.elapsed * 5.2) * 0.08;
+      potentialAura.scale.setScalar(pulse);
+    }
+    const potentialLight = this.player.getObjectByName('truePotentialLight');
+    if (potentialLight instanceof THREE.PointLight) {
+      potentialLight.intensity = 1.6 + Math.sin(this.elapsed * 6.4) * 0.45;
     }
 
     const planar = new THREE.Vector2(this.player.position.x, this.player.position.z);
