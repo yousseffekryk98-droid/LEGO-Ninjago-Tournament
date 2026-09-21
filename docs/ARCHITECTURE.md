@@ -16,7 +16,8 @@ src/
 │  │  ├─ roster.ts
 │  │  ├─ identity.ts
 │  │  ├─ model-profile.ts
-│  │  └─ model.ts
+│  │  ├─ model.ts
+│  │  └─ CharacterPreview.ts
 │  ├─ combat/
 │  │  ├─ index.ts
 │  │  ├─ TournamentGame.ts
@@ -96,3 +97,19 @@ Shared infrastructure must not import feature modules. This keeps the Three.js m
 3. Keep the primary character name/variant behavior in `identity.ts`.
 4. Run the roster/model acceptance tests.
 5. Do not commit extracted commercial game assets.
+
+
+## Where the character models live
+
+The current playable 3D models are generated as original Three.js geometry rather than stored as copied commercial GLB files.
+
+- roster and names: `src/features/characters/roster.ts`
+- primary-name / variant parsing: `src/features/characters/identity.ts`
+- per-character visual profiles: `src/features/characters/model-profile.ts`
+- character-to-model factory: `src/features/characters/model.ts`
+- reusable mesh builder: `src/shared/three/minifigure-model.ts`
+- live rotating roster viewer: `src/features/characters/CharacterPreview.ts`
+
+Zane is represented by the documented variants `zane-techno`, `zane-pink`, `zane-zx`, and `zane-teacher`. The UI always renders **Zane** as the primary name and the suit as the secondary variant.
+
+The procedural models are intentionally source-controlled as code. If original/licensed production GLB assets are introduced later, they should plug into the same character model factory rather than bypassing the feature architecture.
