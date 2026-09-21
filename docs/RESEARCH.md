@@ -1,6 +1,6 @@
 # LEGO Ninjago: Tournament — Reconstruction Research
 
-_Last research pass: 2026-09-15._
+_Last research pass: 2026-09-21._
 
 This document is a clean-room behavior and presentation reference for the fan remake. It intentionally does **not** contain extracted APK/OBB code, proprietary models, textures, audio, animation files, logos, or other copyrighted game assets.
 
@@ -87,7 +87,9 @@ A community game page currently lists at least the following playable entries/va
 
 The same reference identifies bosses including Master Chen, Karlof, Ash, Mr. Pale, Neuro, Griffin Turner, and Ronin, plus enemy families such as Anacondrai Cultists, Nindroids, Serpentine, Stone Warriors, Skullkins, and Shade clones.
 
-Some fan posts claim a 70+ roster after updates, but reliable public pages currently expose a smaller explicitly enumerated list. The remake will not hard-code an unsupported final total; the roster system is data-driven so additional verified variants can be added without rewriting combat code.
+The current clean-room roster contains 46 data entries. It covers the explicitly documented playable list, the playable Elemental Master bosses supported by the public game documentation, Techno Wu, and the regional Tox replacement noted for the Bulgarian release. Ronin remains boss-only because the public game page specifically identifies him as the only unplayable boss.
+
+Some fan posts and modified-game videos claim larger 70+ rosters or show extra golden/hidden variants. Those are not treated as canonical playable entries without stronger evidence; the roster remains data-driven so newly verified variants can be added without rewriting combat code.
 
 ## Special ability vocabulary found in public references
 
