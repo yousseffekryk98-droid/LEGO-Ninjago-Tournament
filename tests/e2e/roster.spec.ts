@@ -7,11 +7,11 @@ import {
 } from '../../src/features/characters';
 
 test('roster data is complete, unique, and playable', () => {
-  expect(ROSTER.length).toBe(46);
+  expect(ROSTER.length).toBe(50);
   expect(new Set(ROSTER.map((fighter) => fighter.id)).size).toBe(ROSTER.length);
   expect(ROSTER.filter((fighter) => fighter.unlockedByDefault).length).toBeGreaterThanOrEqual(4);
 
-  for (const requiredId of ['master-chen', 'techno-wu', 'tox', 'karlof', 'paleman', 'neuro', 'griffin-turner', 'zane-techno']) {
+  for (const requiredId of ['master-chen', 'techno-wu', 'tox', 'karlof', 'paleman', 'neuro', 'griffin-turner', 'zane-techno', 'zane-battle-damaged', 'snike', 'bytar', 'skales']) {
     expect(ROSTER.some((fighter) => fighter.id === requiredId), `missing documented fighter ${requiredId}`).toBeTruthy();
   }
   expect(ROSTER.some((fighter) => fighter.id === 'ronin'), 'Ronin should remain boss-only').toBeFalsy();
@@ -75,4 +75,22 @@ test('level five fighters render True Potential visuals and documented obsidian 
   });
   expect(normalKai.getObjectByName('truePotentialAura')).toBeFalsy();
   expect(normalKai.userData.modelProfile.weaponColor).toBeUndefined();
+});
+
+
+test('video-observed legacy fighters have distinct model treatments', () => {
+  const damagedZane = createCharacterModel(findCharacter('zane-battle-damaged'));
+  expect(damagedZane.getObjectByName('damagedChestPanel')).toBeTruthy();
+  expect(damagedZane.getObjectByName('damagedFacePanel')).toBeTruthy();
+
+  const snike = createCharacterModel(findCharacter('snike'));
+  expect(snike.getObjectByName('leftLeg')).toBeTruthy();
+  expect(snike.getObjectByName('serpentineTail')).toBeFalsy();
+
+  const bytar = createCharacterModel(findCharacter('bytar'));
+  expect(bytar.getObjectByName('leftLeg')).toBeTruthy();
+  expect(bytar.getObjectByName('serpentineTail')).toBeFalsy();
+
+  const skales = createCharacterModel(findCharacter('skales'));
+  expect(skales.getObjectByName('serpentineTail')).toBeTruthy();
 });
