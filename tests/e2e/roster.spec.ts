@@ -58,3 +58,21 @@ test('every roster fighter builds a stable 3d model with animation parts', () =>
   expect(garmadon.getObjectByName('leftArmUpper')).toBeTruthy();
   expect(garmadon.getObjectByName('rightArmUpper')).toBeTruthy();
 });
+
+
+test('level five fighters render True Potential visuals and documented obsidian variants', () => {
+  const truePotentialKai = createCharacterModel({
+    ...findCharacter('kai-dx'),
+    potentialLevel: 5
+  });
+  expect(truePotentialKai.getObjectByName('truePotentialAura')).toBeTruthy();
+  expect(truePotentialKai.getObjectByName('truePotentialLight')).toBeTruthy();
+  expect(truePotentialKai.userData.modelProfile.weaponColor).toBe(0x252434);
+
+  const normalKai = createCharacterModel({
+    ...findCharacter('kai-dx'),
+    potentialLevel: 4
+  });
+  expect(normalKai.getObjectByName('truePotentialAura')).toBeFalsy();
+  expect(normalKai.userData.modelProfile.weaponColor).toBeUndefined();
+});
