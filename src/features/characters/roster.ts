@@ -11,6 +11,7 @@ export const ROSTER: CharacterDef[] = [
   { id: 'jay-tournament', name: 'Jay (Tournament)', element: 'Lightning', style: 'speed', special: 'spinjitzu', color: 0x1d5fbf, accent: 0xf4d03f, speed: 6.5, damage: 17, maxHealth: 4, cost: 0, unlockedByDefault: true },
   { id: 'cole-tournament', name: 'Cole (Tournament)', element: 'Earth', style: 'heavy', special: 'spinjitzu', color: 0x202124, accent: 0xd9822b, speed: 5.0, damage: 26, maxHealth: 5, cost: 0, unlockedByDefault: true },
   { id: 'zane-techno', name: 'Zane (Techno)', element: 'Ice', style: 'ranged', special: 'overload', color: 0xe7ecef, accent: 0x7fd8ff, speed: 5.5, damage: 19, maxHealth: 4, cost: 4500, unlockedByDefault: true },
+  { id: 'zane-battle-damaged', name: 'Zane (Battle Damaged)', element: 'Ice', style: 'ranged', special: 'overload', color: 0xd7dcdf, accent: 0x687983, speed: 5.6, damage: 21, maxHealth: 4, cost: 6500 },
 
   { id: 'lloyd-techno', name: 'Lloyd (Techno)', element: 'Energy', style: 'balanced', special: 'overload', color: 0x339b55, accent: 0xb7c9d3, speed: 5.9, damage: 21, maxHealth: 4, cost: 5000 },
   { id: 'lloyd-jungle', name: 'Lloyd (Jungle)', element: 'Energy', style: 'speed', special: 'boost', color: 0x2f8d49, accent: 0x634126, speed: 6.2, damage: 19, maxHealth: 4, cost: 7000 },
@@ -55,6 +56,9 @@ export const ROSTER: CharacterDef[] = [
   { id: 'zugu', name: 'Zugu', element: 'Cultist', style: 'heavy', special: 'charge', color: 0x5a2630, accent: 0xbb8b44, speed: 4.8, damage: 28, maxHealth: 6, cost: 9000 },
 
   { id: 'min-droid', name: 'Min-Droid', element: 'Nindroid', style: 'ranged', special: 'overload', color: 0x20242a, accent: 0xc9292d, speed: 5.8, damage: 22, maxHealth: 5, cost: 13000 },
+  { id: 'snike', name: 'Snike', element: 'Constrictai', style: 'heavy', special: 'charge', color: 0x3f4548, accent: 0xc98a2e, speed: 5.0, damage: 27, maxHealth: 5, cost: 9000 },
+  { id: 'bytar', name: 'Bytar', element: 'Constrictai', style: 'heavy', special: 'charge', color: 0x303438, accent: 0xd6a13b, speed: 4.8, damage: 29, maxHealth: 6, cost: 11500 },
+  { id: 'skales', name: 'Skales', element: 'Hypnobrai', style: 'ranged', special: 'shout', color: 0x243f73, accent: 0xe2c64d, speed: 5.8, damage: 21, maxHealth: 5, cost: 12500 },
   { id: 'pythor', name: 'Pythor', element: 'Serpentine', style: 'speed', special: 'toxic-cloud', color: 0x6b4b8a, accent: 0xf2e6c4, speed: 6.6, damage: 19, maxHealth: 5, cost: 14000 },
   { id: 'acidicus', name: 'Acidicus', element: 'Venomari', style: 'ranged', special: 'toxic-cloud', color: 0x4f7d42, accent: 0xe6cc4b, speed: 5.6, damage: 20, maxHealth: 5, cost: 12500 },
   { id: 'stone-army-scout', name: 'Stone Army Scout', element: 'Stone Army', style: 'heavy', special: 'charge', color: 0x3b3d40, accent: 0xc64031, speed: 4.7, damage: 29, maxHealth: 6, cost: 12000 },
