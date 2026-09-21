@@ -15,7 +15,6 @@ export function getCharacterIdentity(character: CharacterDef): CharacterIdentity
   }
 
   if (character.id === 'lloyd-garmadon') return { name: 'Lloyd', variant: 'Garmadon' };
-  if (character.id === 'samurai-x') return { name: 'Nya', variant: 'Samurai X' };
   if (character.id === 'techno-wu') return { name: 'Master Wu', variant: 'Techno' };
 
   return { name: character.name, variant: null };
