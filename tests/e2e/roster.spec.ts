@@ -39,14 +39,15 @@ test('Zane is surfaced as the primary character name with the suit as a variant'
   expect(getCharacterIdentity(zane)).toEqual({ name: 'Zane', variant: 'Techno' });
 });
 
-test('3d character models expose stable named animation parts', () => {
-  for (const fighter of [findCharacter('zane-techno'), findCharacter('kai-tournament'), findCharacter('master-garmadon')]) {
+test('every roster fighter builds a stable 3d model with animation parts', () => {
+  for (const fighter of ROSTER) {
     const model = createCharacterModel(fighter);
-    expect(model.name).toBe('fighterModel');
-    expect(model.getObjectByName('torso')).toBeTruthy();
-    expect(model.getObjectByName('head')).toBeTruthy();
-    expect(model.getObjectByName('leftArm')).toBeTruthy();
-    expect(model.getObjectByName('rightArm')).toBeTruthy();
+    expect(model.name, fighter.id).toBe('fighterModel');
+    expect(model.getObjectByName('torso'), `${fighter.id} missing torso`).toBeTruthy();
+    expect(model.getObjectByName('head'), `${fighter.id} missing head`).toBeTruthy();
+    expect(model.getObjectByName('leftArm'), `${fighter.id} missing leftArm`).toBeTruthy();
+    expect(model.getObjectByName('rightArm'), `${fighter.id} missing rightArm`).toBeTruthy();
+    expect(model.userData.modelProfile, `${fighter.id} missing model profile`).toBeTruthy();
   }
 
   const zane = createCharacterModel(findCharacter('zane-techno'));
