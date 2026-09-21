@@ -44,10 +44,14 @@ test('home, roster unlock/selection, and persistence work', async ({ page }) => 
   await expect(zane).toBeVisible();
   await expect(zane.locator('.fighter-primary-name')).toHaveText('Zane');
   await expect(zane.locator('.fighter-variant')).toHaveText('Techno');
-  const unlock = zane.locator('.unlock-btn');
-  await expect(unlock).toBeEnabled();
-  await unlock.click();
+  await expect(zane.locator('.select-btn')).toHaveText('SELECT');
+  await zane.locator('.select-btn').click();
   await expect(zane.locator('.select-btn')).toHaveText('SELECTED');
+
+  const search = page.locator('#fighter-search');
+  await search.fill('Zane');
+  await expect(page.locator('.fighter-card:not([hidden])')).toHaveCount(4);
+  await search.fill('');
 
   await page.getByRole('button', { name: '‹' }).click();
   await expect(page.locator('.selected-fighter .fighter-primary-name')).toHaveText('Zane');
