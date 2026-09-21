@@ -179,6 +179,9 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
   const skin = material(skinColor, profile.metallic, 0.54);
   const dark = material(0x17191c, false, 0.72);
   const eye = material(profile.eyeColor ?? 0xf4f1d8, profile.metallic, 0.28);
+  const weaponMaterial = profile.weaponColor !== undefined
+    ? material(profile.weaponColor, true, 0.24)
+    : accent;
 
   const skeleton = profile.archetype === 'skeleton';
   const serpentine = profile.archetype === 'serpentine';
@@ -230,7 +233,29 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
   addHeadgear(group, profile, primary, accent);
 
   if (profile.extraArms) addExtraArms(group, primary, skin);
-  addWeapon(group, profile.weapon, accent);
+  addWeapon(group, profile.weapon, weaponMaterial);
+
+  if (profile.truePotentialGlow !== undefined) {
+    const aura = addMesh(
+      group,
+      'truePotentialAura',
+      new THREE.TorusGeometry(0.86, 0.045, 8, 40),
+      new THREE.MeshBasicMaterial({
+        color: profile.truePotentialGlow,
+        transparent: true,
+        opacity: 0.52,
+        depthWrite: false
+      }),
+      [0, 0.12, 0],
+      [Math.PI / 2, 0, 0]
+    );
+    aura.userData.truePotential = true;
+
+    const glow = new THREE.PointLight(profile.truePotentialGlow, 1.8, 4.2, 2);
+    glow.name = 'truePotentialLight';
+    glow.position.y = 1.45;
+    group.add(glow);
+  }
 
   group.scale.setScalar(scale);
   return group;
