@@ -6,7 +6,7 @@ test('Temple Gallery exposes the full clean-room collection archive', async ({ p
   await page.goto('/');
   await page.getByRole('button', { name: /TEMPLE GALLERY/i }).click();
   await expect(page.getByRole('heading', { name: 'Temple Gallery' })).toBeVisible();
-  await expect(page.locator('.gallery-card')).toHaveCount(43);
+  await expect(page.locator('.gallery-card')).toHaveCount(46);
   await expect(page.locator('.gallery-codex')).toContainText('Anacondrai');
   await expect(page.locator('.gallery-codex')).toContainText('Nindroids');
   await expect(page.locator('.gallery-codex')).toContainText('Bombers');
@@ -35,4 +35,17 @@ test('equipped power-up applies to one arena run and is consumed', async ({ page
   const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), POWERUP_KEY);
   expect(state.active).toBeNull();
   expect(state.inventory['iron-heart']).toBe(0);
+});
+
+
+test('tournament HUD exposes collectible stud economy and stage presentation', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
+  await expect(page.locator('#game-host canvas')).toBeVisible();
+  await expect(page.locator('.stud-icon')).toBeVisible();
+  await expect(page.locator('#stud-count')).toHaveText('0');
+  await expect(page.locator('.stud-copy')).toContainText('RUN STUDS');
+  await expect(page.locator('.stud-copy')).toContainText('BANK');
+  await expect(page.locator('#stage-banner')).toBeAttached();
+  await expect(page.locator('#boss-health')).toBeAttached();
 });
