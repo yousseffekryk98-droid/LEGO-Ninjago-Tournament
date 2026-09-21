@@ -37,7 +37,7 @@ export const ROSTER: CharacterDef[] = [
   { id: 'jay-zx', name: 'Jay ZX', element: 'Lightning', style: 'speed', special: 'overload', color: 0x2761b8, accent: 0xd6c8ae, speed: 6.8, damage: 18, maxHealth: 4, cost: 9500 },
 
   { id: 'zane-techno', name: 'Zane (Techno)', element: 'Ice', style: 'ranged', special: 'overload', color: 0xe7ecef, accent: 0x7fd8ff, speed: 5.5, damage: 19, maxHealth: 4, cost: 4500 },
-  { id: 'zane-pink', name: 'Pink Zane', element: 'Ice', style: 'balanced', special: 'spinjitzu', color: 0xd995bd, accent: 0xf3f5f6, speed: 5.7, damage: 19, maxHealth: 4, cost: 5500 },
+  { id: 'zane-pink', name: 'Zane (Pink)', element: 'Ice', style: 'balanced', special: 'spinjitzu', color: 0xd995bd, accent: 0xf3f5f6, speed: 5.7, damage: 19, maxHealth: 4, cost: 5500 },
   { id: 'zane-zx', name: 'Zane ZX', element: 'Ice', style: 'ranged', special: 'airstrike', color: 0xe4e8ea, accent: 0xbecbd2, speed: 5.6, damage: 21, maxHealth: 4, cost: 10000 },
   { id: 'zane-teacher', name: 'Zane (Teacher)', element: 'Ice', style: 'balanced', special: 'shout', color: 0xe5e7e5, accent: 0xc9a871, speed: 5.3, damage: 18, maxHealth: 4, cost: 3000 },
 
@@ -46,7 +46,9 @@ export const ROSTER: CharacterDef[] = [
   { id: 'pixal', name: 'P.I.X.A.L.', element: 'Nindroid', style: 'ranged', special: 'overload', color: 0x9a2a45, accent: 0xd9dce0, speed: 5.8, damage: 21, maxHealth: 4, cost: 11500 },
 
   { id: 'master-garmadon', name: 'Master Garmadon', element: 'Creation', style: 'balanced', special: 'spinjitzu', color: 0x2b2d31, accent: 0xe5dfc7, speed: 5.6, damage: 22, maxHealth: 5, cost: 12000 },
-  { id: 'garmadon-robes', name: 'Garmadon (Robes)', element: 'Creation', style: 'heavy', special: 'shout', color: 0x1e2023, accent: 0xd9c79a, speed: 5.0, damage: 27, maxHealth: 6, cost: 15000 },
+  { id: 'garmadon-robes', name: 'Master Garmadon (Tournament)', element: 'Creation', style: 'heavy', special: 'spinjitzu', color: 0x1e2023, accent: 0xd9c79a, speed: 5.0, damage: 27, maxHealth: 6, cost: 15000 },
+  { id: 'master-chen', name: 'Master Chen', element: 'Staff of Elements', style: 'ranged', special: 'overload', color: 0x8f2d28, accent: 0xd3aa58, speed: 5.4, damage: 24, maxHealth: 5, cost: 16000 },
+  { id: 'techno-wu', name: 'Techno Wu', element: 'Creation', style: 'balanced', special: 'spinjitzu', color: 0xe8e1cf, accent: 0x596a78, speed: 5.5, damage: 23, maxHealth: 5, cost: 14500 },
 
   { id: 'ash', name: 'Ash', element: 'Smoke', style: 'speed', special: 'boost', color: 0x55575d, accent: 0xbcc1c7, speed: 6.8, damage: 16, maxHealth: 4, cost: 8000 },
   { id: 'karlof', name: 'Karlof', element: 'Metal', style: 'heavy', special: 'charge', color: 0x6c7177, accent: 0xb5b8ba, speed: 4.6, damage: 30, maxHealth: 6, cost: 10000 },
@@ -54,14 +56,15 @@ export const ROSTER: CharacterDef[] = [
   { id: 'skylor', name: 'Skylor', element: 'Amber', style: 'balanced', special: 'spinjitzu', color: 0xd56b1f, accent: 0xffc04d, speed: 6.0, damage: 20, maxHealth: 4, cost: 9500 },
   { id: 'shade', name: 'Shade', element: 'Shadow', style: 'speed', special: 'boost', color: 0x171820, accent: 0x744d91, speed: 6.7, damage: 18, maxHealth: 4, cost: 9000 },
   { id: 'chamille', name: 'Chamille', element: 'Form', style: 'balanced', special: 'boost', color: 0x6b8d45, accent: 0xcf7aa4, speed: 5.9, damage: 19, maxHealth: 4, cost: 7000 },
+  { id: 'tox', name: 'Tox', element: 'Poison', style: 'ranged', special: 'toxic-cloud', color: 0x4d9a43, accent: 0x28222f, speed: 5.9, damage: 19, maxHealth: 4, cost: 9500 },
   { id: 'griffin-turner', name: 'Griffin Turner', element: 'Speed', style: 'speed', special: 'boost', color: 0x355c8a, accent: 0xff6e40, speed: 7.4, damage: 15, maxHealth: 4, cost: 11000 },
   { id: 'neuro', name: 'Neuro', element: 'Mind', style: 'ranged', special: 'shout', color: 0x5b2c83, accent: 0x73e0d1, speed: 5.4, damage: 20, maxHealth: 4, cost: 10000 },
 
   { id: 'clouse', name: 'Clouse', element: 'Dark Magic', style: 'ranged', special: 'toxic-cloud', color: 0x3a2d46, accent: 0xb4252d, speed: 5.2, damage: 23, maxHealth: 5, cost: 13000 },
-  { id: 'clouse-robe', name: 'Clouse (Robe)', element: 'Dark Magic', style: 'ranged', special: 'airstrike', color: 0x2f2638, accent: 0xd7c49c, speed: 5.0, damage: 24, maxHealth: 5, cost: 15000 },
-  { id: 'chope-anacondrai', name: "Chope'rai", element: 'Anacondrai', style: 'speed', special: 'charge', color: 0x63334f, accent: 0xe0b35d, speed: 6.3, damage: 20, maxHealth: 5, cost: 10500 },
+  { id: 'clouse-robe', name: 'Clouse (Anacondrai)', element: 'Dark Magic', style: 'ranged', special: 'airstrike', color: 0x2f2638, accent: 0xd7c49c, speed: 5.0, damage: 24, maxHealth: 5, cost: 15000 },
+  { id: 'chope-anacondrai', name: "Chop'rai (Anacondrai)", element: 'Anacondrai', style: 'speed', special: 'charge', color: 0x63334f, accent: 0xe0b35d, speed: 6.3, damage: 20, maxHealth: 5, cost: 10500 },
   { id: 'eyezor', name: 'Eyezor', element: 'Anacondrai', style: 'heavy', special: 'shout', color: 0x563246, accent: 0xc89a45, speed: 5.0, damage: 27, maxHealth: 5, cost: 11500 },
-  { id: 'silvereye', name: 'Silvereye Anacondrai', element: 'Anacondrai', style: 'balanced', special: 'charge', color: 0x6d4b65, accent: 0xd8d8d8, speed: 5.9, damage: 22, maxHealth: 5, cost: 12000 },
+  { id: 'silvereye', name: 'Silvereye (Anacondrai)', element: 'Anacondrai', style: 'balanced', special: 'charge', color: 0x6d4b65, accent: 0xd8d8d8, speed: 5.9, damage: 22, maxHealth: 5, cost: 12000 },
   { id: 'zugu', name: 'Zugu', element: 'Cultist', style: 'heavy', special: 'charge', color: 0x5a2630, accent: 0xbb8b44, speed: 4.8, damage: 28, maxHealth: 6, cost: 9000 },
 
   { id: 'min-droid', name: 'Min-Droid', element: 'Nindroid', style: 'ranged', special: 'overload', color: 0x20242a, accent: 0xc9292d, speed: 5.8, damage: 22, maxHealth: 5, cost: 13000 },
@@ -70,7 +73,7 @@ export const ROSTER: CharacterDef[] = [
   { id: 'stone-army-scout', name: 'Stone Army Scout', element: 'Stone Army', style: 'heavy', special: 'charge', color: 0x3b3d40, accent: 0xc64031, speed: 4.7, damage: 29, maxHealth: 6, cost: 12000 },
   { id: 'samukai', name: 'Samukai', element: 'Skulkin', style: 'speed', special: 'shout', color: 0xe7e2d9, accent: 0x7d6a58, speed: 6.9, damage: 23, maxHealth: 3, cost: 15000 },
   { id: 'kruncha', name: 'Kruncha', element: 'Skulkin', style: 'heavy', special: 'charge', color: 0xe5dfd2, accent: 0x626a70, speed: 4.9, damage: 27, maxHealth: 5, cost: 9000 },
-  { id: 'dareth', name: 'Dareth', element: 'Brown Power', style: 'balanced', special: 'shout', color: 0x7a4d24, accent: 0xd8b36d, speed: 5.2, damage: 14, maxHealth: 4, cost: 2500 }
+  { id: 'dareth', name: 'Dareth (Brown Ninja)', element: 'Brown Power', style: 'balanced', special: 'shout', color: 0x7a4d24, accent: 0xd8b36d, speed: 5.2, damage: 14, maxHealth: 4, cost: 2500 }
 ];
 
 export const findCharacter = (id: string) => ROSTER.find((c) => c.id === id) ?? ROSTER[0];
