@@ -30,4 +30,6 @@ export interface FighterModelProfile {
   eyeColor?: number;
   weaponColor?: number;
   truePotentialGlow?: number;
+  serpentineTail?: boolean;
+  battleDamaged?: boolean;
 }
