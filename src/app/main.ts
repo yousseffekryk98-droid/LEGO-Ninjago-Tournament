@@ -454,7 +454,7 @@ function startGame() {
     <main class="game-screen">
       <div id="game-host"></div>
       <div class="hud hud-left"><div class="portrait-ring"><span style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}"></span></div><div class="player-hud-copy"><b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small><div id="hearts" class="hearts"></div><div id="studs" class="studs"><span class="stud-icon" aria-hidden="true"></span><span class="stud-copy"><b id="stud-count">0</b><small>RUN STUDS · BANK ${formatStuds(save.bankStuds)} · LV ${fighterLevel(baseFighter.id)}</small></span></div></div></div>
-      <div class="hud hud-center"><b id="wave-label">WAVE 0</b><small id="enemy-label">GET READY</small></div>
+      <div class="hud hud-center"><b id="wave-label">WAVE 0</b><small id="enemy-label">GET READY</small><div id="boss-health" class="boss-health hidden"><span><i id="boss-health-fill"></i></span><em id="boss-health-copy"></em></div></div>
       <div class="hud hud-right"><b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small></div>
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
       <div id="stage-banner" class="stage-banner" aria-live="polite"><small></small><b></b></div>
@@ -513,6 +513,9 @@ function updateHud(state: HudState) {
   const combo = document.querySelector('#combo');
   const wave = document.querySelector('#wave-label');
   const enemies = document.querySelector('#enemy-label');
+  const bossHealth = document.querySelector<HTMLElement>('#boss-health');
+  const bossHealthFill = document.querySelector<HTMLElement>('#boss-health-fill');
+  const bossHealthCopy = document.querySelector<HTMLElement>('#boss-health-copy');
   const meter = document.querySelector<HTMLElement>('#special-meter');
   if (hearts) hearts.textContent = Array.from({ length: state.maxHealth }, (_, i) => i < state.health ? '♥' : '♡').join('');
   if (studCount) studCount.textContent = formatStuds(state.studs);
@@ -525,6 +528,15 @@ function updateHud(state: HudState) {
   if (combo) combo.textContent = `${state.combo} HIT COMBO`;
   if (wave) wave.textContent = state.bossName ? `BOSS · ${state.bossName}` : `WAVE ${state.wave}`;
   if (enemies) enemies.textContent = `${state.enemies} ENEMIES`;
+  if (bossHealth && bossHealthFill && bossHealthCopy) {
+    const visible = Boolean(state.bossName && state.bossMaxHealth);
+    bossHealth.classList.toggle('hidden', !visible);
+    if (visible) {
+      const ratio = Math.max(0, Math.min(1, (state.bossHealth ?? 0) / (state.bossMaxHealth ?? 1)));
+      bossHealthFill.style.width = `${Math.round(ratio * 100)}%`;
+      bossHealthCopy.textContent = `${state.bossName} · ${Math.ceil(state.bossHealth ?? 0)}/${Math.ceil(state.bossMaxHealth ?? 0)}`;
+    }
+  }
   if (meter) meter.style.width = `${Math.round(state.special)}%`;
   document.querySelector('#special-btn')?.classList.toggle('ready', state.special >= 100);
 
