@@ -137,7 +137,8 @@ function upgradedCharacter(base: CharacterDef): CharacterDef {
     ...base,
     speed: base.speed + bonus * 0.12,
     damage: Math.round(base.damage * (1 + bonus * 0.07)),
-    maxHealth: base.maxHealth + (level >= 3 ? 1 : 0) + (level >= 5 ? 1 : 0)
+    maxHealth: base.maxHealth + (level >= 3 ? 1 : 0) + (level >= 5 ? 1 : 0),
+    potentialLevel: level
   };
 }
 
@@ -256,12 +257,12 @@ function showRoster() {
     });
   };
 
-  setPreview(findCharacter(save.selected));
+  setPreview(upgradedCharacter(findCharacter(save.selected)));
 
   document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach((button) => {
     button.addEventListener('click', () => {
       const fighter = findCharacter(button.dataset.preview!);
-      setPreview(fighter);
+      setPreview(upgradedCharacter(fighter));
       document.querySelector('.character-showcase')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   });
