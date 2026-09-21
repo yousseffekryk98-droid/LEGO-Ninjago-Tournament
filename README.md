@@ -26,11 +26,12 @@ Implemented now:
 - supply rewards for hearts, studs, special-meter charge and temporary combat boosts;
 - seven data-driven special families: Spinjitzu, Boost, Charge Attack, Overload, Air Strike, Toxic Cloud and Shout;
 - visible element-colored Spinjitzu tornado VFX with AoE hits, invulnerability window and a clearly labeled special control;
-- **46** playable roster entries/variants covering the documented playable cast plus the regional Tox variant (Ronin remains boss-only);
+- **46** playable roster entries/variants covering the documented playable cast plus the regional Tox variant (Ronin remains boss-only), with primary names and suit/variant labels separated in the UI;
 - a dedicated 3D Dojo tutorial with seven interactive training steps and low-FPS input reconciliation;
 - Temple Gallery-style collection archive with fighter filters, lock state, stats and enemy codex;
 - Single Challenge, timed Score Attack and Boss Challenge modes;
-- procedural block-style fighters and environments (no ripped game art);
+- shared procedural 3D minifigure models with named animation parts, character-specific silhouettes/equipment and no ripped game art;
+- live rotating 3D fighter viewer in the roster, including locked fighters, with Zane and every other character shown by primary name plus suit/variant;
 - unlockable roster with local stud bank/progression;
 - five-level fighter potential/XP system with stat growth;
 - daily free prize draw plus three daily challenges that award extra draws;
@@ -44,7 +45,7 @@ Implemented now:
 - Capacitor **8.5.2** Android build/sync/open/run configuration;
 - automated TypeScript, production build and Playwright browser acceptance coverage.
 
-See [`docs/RESEARCH.md`](docs/RESEARCH.md) for the gameplay research, public references and clean-room rules. See [`docs/ANDROID.md`](docs/ANDROID.md) for Android packaging.
+See [`docs/RESEARCH.md`](docs/RESEARCH.md) for the gameplay research and clean-room rules, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the feature-first source/model architecture, and [`docs/ANDROID.md`](docs/ANDROID.md) for Android packaging.
 
 ## Run locally
 

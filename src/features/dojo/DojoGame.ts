@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import type { CharacterDef } from './roster';
+import type { CharacterDef } from '../characters';
+import { createCharacterModel } from '../characters/model';
+import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 
 export type DojoAction = 'attack' | 'jump' | 'grab' | 'special';
 export type DojoStep = 'move' | 'attack' | 'jump' | 'block' | 'grab' | 'dodge' | 'special' | 'complete';
@@ -64,10 +66,10 @@ export class DojoGame {
     this.scene.background = new THREE.Color(0x18212a);
     this.scene.fog = new THREE.FogExp2(0x18212a, 0.032);
     this.buildDojo();
-    this.player = this.createFighter(character.color, character.accent, 1);
+    this.player = createCharacterModel(character, 1);
     this.player.position.set(-3.5, 0, 2.8);
     this.scene.add(this.player);
-    this.dummy = this.createFighter(0x553946, 0xcda85d, 0.96);
+    this.dummy = createGenericFighterModel(0x553946, 0xcda85d, 0.96, 'villain', 'katana');
     this.dummy.position.set(2.8, 0, -1.8);
     this.dummy.rotation.y = Math.PI;
     this.scene.add(this.dummy);
@@ -426,31 +428,5 @@ export class DojoGame {
     }
   }
 
-  private createFighter(primary: number, accent: number, scale: number) {
-    const group = new THREE.Group();
-    const p = new THREE.MeshStandardMaterial({ color: primary, roughness: 0.62 });
-    const a = new THREE.MeshStandardMaterial({ color: accent, roughness: 0.54 });
-    const skin = new THREE.MeshStandardMaterial({ color: 0xf2c64f, roughness: 0.58 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x18191c, roughness: 0.72 });
-    const meshes = [
-      [new THREE.BoxGeometry(.86,.92,.48), p, [0,1.28,0]],
-      [new THREE.BoxGeometry(.92,.16,.52), a, [0,.88,0]],
-      [new THREE.CylinderGeometry(.34,.34,.48,16), skin, [0,2,0]],
-      [new THREE.BoxGeometry(.72,.24,.5), p, [0,2.03,.02]],
-      [new THREE.BoxGeometry(.73,.12,.52), dark, [0,2.1,.01]],
-      [new THREE.BoxGeometry(.32,.72,.42), p, [-.23,.45,0]],
-      [new THREE.BoxGeometry(.32,.72,.42), p, [.23,.45,0]],
-      [new THREE.BoxGeometry(.22,.72,.24), p, [-.58,1.3,0]],
-      [new THREE.BoxGeometry(.22,.72,.24), p, [.58,1.3,0]]
-    ] as const;
-    for (const [geometry, material, position] of meshes) {
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(position[0], position[1], position[2]);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      group.add(mesh);
-    }
-    group.scale.setScalar(scale);
-    return group;
-  }
+
 }

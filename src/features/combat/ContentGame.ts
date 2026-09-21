@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { TournamentGame as StableContentGame, type HudState, type GameCallbacks } from './content-game-base';
-import type { CharacterDef } from './roster';
+import { TournamentGame as StableContentGame, type HudState, type GameCallbacks } from './ContentGameBase';
+import type { CharacterDef } from '../characters';
 
-export type { HudState, GameCallbacks } from './content-game-base';
+export type { HudState, GameCallbacks } from './ContentGameBase';
 
 type BaseAction = 'attack' | 'jump' | 'grab' | 'special';
 type EnemyFaction = 'anacondrai' | 'nindroid' | 'bomber';
@@ -176,8 +176,8 @@ export class TournamentGame extends StableContentGame {
     // Procedural minifigure motion: subtle arm/torso movement without imported
     // animation assets. The base fighter is intentionally block-built, so these
     // rotations remain safe across every clean-room character variant.
-    const leftArm = state.player.children[7];
-    const rightArm = state.player.children[8];
+    const leftArm = state.player.getObjectByName('leftArm');
+    const rightArm = state.player.getObjectByName('rightArm');
     if (leftArm && rightArm) {
       const swing = Math.sin(state.elapsed * 8) * 0.12;
       leftArm.rotation.x = swing;

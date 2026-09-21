@@ -1,4 +1,4 @@
-import { ROSTER } from './roster';
+import { ROSTER } from '../characters';
 
 const SAVE_KEY = 'ninja-tournament-fan-remake-v1';
 export const POWERUP_KEY = 'ninja-tournament-powerups-v1';

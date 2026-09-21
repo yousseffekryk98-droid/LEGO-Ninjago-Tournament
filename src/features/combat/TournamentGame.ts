@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import type { CharacterDef } from './roster';
+import type { CharacterDef } from '../characters';
+import { createCharacterModel } from '../characters/model';
+import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 
 export interface HudState {
   health: number;
@@ -130,7 +132,7 @@ export class TournamentGame {
     this.scene.fog = new THREE.FogExp2(0x151520, 0.024);
     this.buildArena();
 
-    this.player = this.createFighter(character.color, character.accent, 1);
+    this.player = createCharacterModel(character, 1);
     this.player.position.set(0, 0, 2.5);
     this.scene.add(this.player);
 
@@ -753,7 +755,9 @@ export class TournamentGame {
       boss: [0x7a261f, 0xd7a841]
     };
     const scale = kind === 'boss' ? 1.28 : kind === 'heavy' ? 1.12 : 1;
-    const mesh = this.createFighter(colors[kind][0], colors[kind][1], scale);
+    const enemyArchetype = kind === 'ranged' ? 'nindroid' : 'villain';
+    const enemyWeapon = kind === 'heavy' ? 'scythe' : kind === 'ranged' ? 'staff' : 'katana';
+    const mesh = createGenericFighterModel(colors[kind][0], colors[kind][1], scale, enemyArchetype, enemyWeapon);
     mesh.position.set(x, 0, z);
     this.scene.add(mesh);
     const waveScale = 1 + this.wave * 0.065;
@@ -1021,49 +1025,6 @@ export class TournamentGame {
     );
     mesh.rotation.x = -Math.PI / 2;
     return mesh;
-  }
-
-  private createFighter(primary: number, accent: number, scale: number) {
-    const group = new THREE.Group();
-    const primaryMat = new THREE.MeshStandardMaterial({ color: primary, roughness: 0.62 });
-    const accentMat = new THREE.MeshStandardMaterial({ color: accent, roughness: 0.54 });
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xf2c64f, roughness: 0.58 });
-    const darkMat = new THREE.MeshStandardMaterial({ color: 0x18191c, roughness: 0.72 });
-
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.92, 0.48), primaryMat);
-    torso.position.y = 1.28;
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.16, 0.52), accentMat);
-    belt.position.y = 0.88;
-    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.48, 16), skinMat);
-    head.position.y = 2.0;
-    const mask = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.24, 0.5), primaryMat);
-    mask.position.set(0, 2.03, 0.02);
-    const eyeBand = new THREE.Mesh(new THREE.BoxGeometry(0.73, 0.12, 0.52), darkMat);
-    eyeBand.position.set(0, 2.1, 0.01);
-    const legGeo = new THREE.BoxGeometry(0.32, 0.72, 0.42);
-    const armGeo = new THREE.BoxGeometry(0.22, 0.72, 0.24);
-    const leftLeg = new THREE.Mesh(legGeo, primaryMat);
-    const rightLeg = new THREE.Mesh(legGeo, primaryMat);
-    leftLeg.position.set(-0.23, 0.45, 0);
-    rightLeg.position.set(0.23, 0.45, 0);
-    const leftArm = new THREE.Mesh(armGeo, primaryMat);
-    const rightArm = new THREE.Mesh(armGeo, primaryMat);
-    leftArm.position.set(-0.58, 1.3, 0);
-    rightArm.position.set(0.58, 1.3, 0);
-    leftArm.rotation.z = -0.22;
-    rightArm.rotation.z = 0.22;
-    const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.35, 0.12), accentMat);
-    weapon.position.set(0.79, 1.35, 0.18);
-    weapon.rotation.z = -0.45;
-    weapon.rotation.x = 0.15;
-
-    for (const mesh of [torso, belt, head, mask, eyeBand, leftLeg, rightLeg, leftArm, rightArm, weapon]) {
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      group.add(mesh);
-    }
-    group.scale.setScalar(scale);
-    return group;
   }
 
   private getMultiplier() {

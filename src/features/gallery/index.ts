@@ -1,4 +1,4 @@
-import { ROSTER } from './roster';
+import { ROSTER, getCharacterIdentity } from '../characters';
 
 const SAVE_KEY = 'ninja-tournament-fan-remake-v1';
 
@@ -26,9 +26,12 @@ function showGallery() {
       <div class="gallery-grid">
         ${ROSTER.map((fighter) => {
           const open = unlocked.has(fighter.id) || fighter.unlockedByDefault;
+          const identity = getCharacterIdentity(fighter);
           return `<article class="gallery-card ${open ? 'unlocked' : 'locked'}" data-element="${fighter.element}" data-state="${open ? 'unlocked' : 'locked'}">
             <div class="gallery-figure" style="--fighter:#${fighter.color.toString(16).padStart(6,'0')};--accent:#${fighter.accent.toString(16).padStart(6,'0')}"><span></span><i></i><b></b></div>
-            <small>${open ? fighter.element : 'UNDISCOVERED'}</small><h3>${open ? fighter.name : '???'}</h3>
+            <small>${open ? fighter.element : 'UNDISCOVERED'}</small>
+            <h3>${open ? identity.name : '???'}</h3>
+            ${open && identity.variant ? `<em>${identity.variant}</em>` : ''}
             <p>${open ? `${fighter.style} · ${fighter.special.replace('-', ' ')}` : 'Unlock this fighter in the tournament archive.'}</p>
             ${open ? `<div><span>SPD ${fighter.speed.toFixed(1)}</span><span>DMG ${fighter.damage}</span><span>♥ ${fighter.maxHealth}</span></div>` : ''}
           </article>`;

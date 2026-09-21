@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { TournamentGame as BaseTournamentGame, type HudState, type GameCallbacks } from './game';
-import type { CharacterDef } from './roster';
+import { TournamentGame as BaseTournamentGame, type HudState, type GameCallbacks } from './TournamentGame';
+import type { CharacterDef } from '../characters';
 
-export type { HudState, GameCallbacks } from './game';
+export type { HudState, GameCallbacks } from './TournamentGame';
 
 type BaseAction = 'attack' | 'jump' | 'grab' | 'special';
 

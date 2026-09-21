@@ -1,5 +1,5 @@
-import { TournamentGame, type HudState } from './content-game';
-import { findCharacter } from './roster';
+import { TournamentGame, type HudState } from '../combat';
+import { findCharacter } from '../characters';
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
 
