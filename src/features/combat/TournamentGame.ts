@@ -13,6 +13,8 @@ export interface HudState {
   wave: number;
   enemies: number;
   bossName?: string;
+  bossHealth?: number;
+  bossMaxHealth?: number;
 }
 
 export interface GameCallbacks {
@@ -1360,7 +1362,9 @@ export class TournamentGame {
       special: this.special,
       wave: this.wave,
       enemies: this.enemies.length,
-      bossName: boss?.bossName
+      bossName: boss?.bossName,
+      bossHealth: boss ? Math.max(0, boss.hp) : undefined,
+      bossMaxHealth: boss?.maxHp
     });
   }
 }
