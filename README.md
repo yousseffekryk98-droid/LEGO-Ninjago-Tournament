@@ -49,10 +49,16 @@ Implemented now:
 
 See [`docs/RESEARCH.md`](docs/RESEARCH.md) for gameplay research and clean-room rules, [`docs/VIDEO-FIDELITY.md`](docs/VIDEO-FIDELITY.md) for the supplied-video feature matrix, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the feature-first source/model architecture, and [`docs/ANDROID.md`](docs/ANDROID.md) for Android packaging.
 
+## Graphics modes and laptop safety
+
+Fresh installs start in **Safe** graphics mode: 30 FPS, 1× render scale, low-power WebGL preference, antialiasing off and realtime shadows off. The graphics control on menu/panel screens lets players switch between **Auto Safe**, **Safe**, **Balanced** and **High**.
+
+Balanced and High sessions arm a recovery guard. If an accelerated WebGL session loses its context or does not finish cleanly, the next launch automatically falls back to Safe mode. This keeps the richer Three.js arena, 3D fighters and Spinjitzu effects usable on lower-power laptops without removing higher-fidelity options.
+
 ## Run locally
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -76,7 +82,7 @@ npm run preview
 First native setup on a machine with Android Studio/SDK:
 
 ```bash
-npm install
+npm ci
 npm run android:init
 npm run android:open
 ```
