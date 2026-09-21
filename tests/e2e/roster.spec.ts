@@ -2,9 +2,14 @@ import { expect, test } from '@playwright/test';
 import { ROSTER } from '../../src/roster';
 
 test('roster data is complete, unique, and playable', () => {
-  expect(ROSTER.length).toBe(43);
+  expect(ROSTER.length).toBe(46);
   expect(new Set(ROSTER.map((fighter) => fighter.id)).size).toBe(ROSTER.length);
   expect(ROSTER.filter((fighter) => fighter.unlockedByDefault).length).toBeGreaterThanOrEqual(4);
+
+  for (const requiredId of ['master-chen', 'techno-wu', 'tox', 'karlof', 'paleman', 'neuro', 'griffin-turner']) {
+    expect(ROSTER.some((fighter) => fighter.id === requiredId), `missing documented fighter ${requiredId}`).toBeTruthy();
+  }
+  expect(ROSTER.some((fighter) => fighter.id === 'ronin'), 'Ronin should remain boss-only').toBeFalsy();
 
   const specials = new Set(ROSTER.map((fighter) => fighter.special));
   for (const special of ['spinjitzu', 'boost', 'charge', 'overload', 'airstrike', 'toxic-cloud', 'shout']) {
