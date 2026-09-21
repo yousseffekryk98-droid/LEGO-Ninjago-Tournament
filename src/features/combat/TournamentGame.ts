@@ -1074,7 +1074,12 @@ export class TournamentGame {
     key.shadow.camera.right = 15;
     key.shadow.camera.top = 15;
     key.shadow.camera.bottom = -15;
+    key.shadow.bias = -0.00045;
     this.scene.add(key);
+
+    const rim = new THREE.DirectionalLight(0x798dba, 1.25);
+    rim.position.set(10, 8, -12);
+    this.scene.add(rim);
 
     const floor = new THREE.Mesh(
       new THREE.CylinderGeometry(12.4, 12.4, 0.55, 64),
@@ -1099,6 +1104,7 @@ export class TournamentGame {
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.04;
     this.scene.add(ring);
+    this.buildCenterSigil();
 
     for (let i = 0; i < 24; i++) {
       const angle = (i / 24) * Math.PI * 2;
@@ -1125,6 +1131,12 @@ export class TournamentGame {
       this.scene.add(wall);
     }
 
+    this.buildArenaGate();
+    this.buildSerpentPillar(-8.9, -8.4, 0.28);
+    this.buildSerpentPillar(8.9, -8.4, -0.28);
+    this.buildSerpentPillar(-9.7, 7.6, 0.2);
+    this.buildSerpentPillar(9.7, 7.6, -0.2);
+
     this.buildGong(-10.7, 0);
     this.buildGong(10.7, 0);
     this.buildSpikeTrap(-4.4, -4.2);
@@ -1135,10 +1147,137 @@ export class TournamentGame {
       brazier.position.set(0, 0.4, z);
       brazier.castShadow = true;
       this.scene.add(brazier);
-      const flame = new THREE.PointLight(0xff7a2d, 4, 7, 2);
+      const flameMesh = new THREE.Mesh(
+        new THREE.ConeGeometry(0.22, 0.62, 10),
+        new THREE.MeshBasicMaterial({ color: 0xffa43b, transparent: true, opacity: 0.9 })
+      );
+      flameMesh.position.set(0, 1.2, z);
+      this.scene.add(flameMesh);
+
+      const flame = new THREE.PointLight(0xff7a2d, 4.8, 8.5, 2);
       flame.position.set(0, 1.5, z);
       this.scene.add(flame);
     }
+  }
+
+  private buildCenterSigil() {
+    const lineMaterial = new THREE.MeshBasicMaterial({
+      color: 0x24292f,
+      transparent: true,
+      opacity: 0.82,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    for (const [innerRadius, outerRadius] of [[2.05, 2.18], [3.35, 3.49], [5.05, 5.17]] as const) {
+      const circle = new THREE.Mesh(new THREE.RingGeometry(innerRadius, outerRadius, 64), lineMaterial);
+      circle.rotation.x = -Math.PI / 2;
+      circle.position.y = 0.065;
+      this.scene.add(circle);
+    }
+
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+      const mark = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.025, 2.45), lineMaterial);
+      mark.position.set(Math.cos(angle) * 4.05, 0.067, Math.sin(angle) * 4.05);
+      mark.rotation.y = -angle;
+      this.scene.add(mark);
+    }
+
+    const crest = new THREE.Mesh(
+      new THREE.RingGeometry(0.68, 1.42, 6, 1, Math.PI / 6),
+      new THREE.MeshBasicMaterial({
+        color: 0x6d5030,
+        transparent: true,
+        opacity: 0.56,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    crest.rotation.x = -Math.PI / 2;
+    crest.rotation.z = Math.PI / 6;
+    crest.position.y = 0.071;
+    this.scene.add(crest);
+  }
+
+  private buildArenaGate() {
+    const stone = new THREE.MeshStandardMaterial({ color: 0x3b3d42, roughness: 0.94 });
+    const darkStone = new THREE.MeshStandardMaterial({ color: 0x292c31, roughness: 0.97 });
+    const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x661e24, roughness: 0.72, metalness: 0.06 });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xb8872c, roughness: 0.38, metalness: 0.52 });
+
+    const z = -12.45;
+    const leftTower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 5.4, 2.1), stone);
+    leftTower.position.set(-4.05, 2.4, z);
+    const rightTower = leftTower.clone();
+    rightTower.position.x = 4.05;
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(10.3, 1.2, 2.25), darkStone);
+    lintel.position.set(0, 5.0, z);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.38, 3.0), stone);
+    roof.position.set(0, 5.78, z);
+    roof.rotation.z = 0.015;
+
+    for (const mesh of [leftTower, rightTower, lintel, roof]) {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.scene.add(mesh);
+    }
+
+    for (const side of [-1, 1]) {
+      const door = new THREE.Mesh(new THREE.BoxGeometry(3.45, 4.3, 0.28), doorMaterial);
+      door.position.set(side * 1.76, 2.12, z + 1.18);
+      door.castShadow = true;
+      door.receiveShadow = true;
+      this.scene.add(door);
+
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 3; col++) {
+          const stud = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.08, 10), gold);
+          stud.rotation.x = Math.PI / 2;
+          stud.position.set(side * (0.72 + col * 0.55), 0.75 + row * 0.88, z + 1.36);
+          this.scene.add(stud);
+        }
+      }
+    }
+
+    const crestRing = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.12, 10, 32), gold);
+    crestRing.position.set(0, 5.0, z + 1.25);
+    this.scene.add(crestRing);
+    const crestCore = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.14, 18), doorMaterial);
+    crestCore.rotation.x = Math.PI / 2;
+    crestCore.position.set(0, 5.0, z + 1.25);
+    this.scene.add(crestCore);
+  }
+
+  private buildSerpentPillar(x: number, z: number, lean: number) {
+    const stone = new THREE.MeshStandardMaterial({ color: 0x35383e, roughness: 0.92 });
+    const serpent = new THREE.MeshStandardMaterial({
+      color: 0x612846,
+      roughness: 0.58,
+      metalness: 0.05
+    });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xa97928, roughness: 0.38, metalness: 0.45 });
+
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.9, 5.5, 14), stone);
+    pillar.position.set(x, 2.45, z);
+    pillar.rotation.z = lean * 0.12;
+    pillar.castShadow = true;
+    pillar.receiveShadow = true;
+    this.scene.add(pillar);
+
+    for (let i = 0; i < 5; i++) {
+      const coil = new THREE.Mesh(new THREE.TorusGeometry(0.81, 0.14, 8, 28), serpent);
+      coil.position.set(x, 0.8 + i * 0.88, z);
+      coil.rotation.x = Math.PI / 2 + lean;
+      coil.rotation.z = i * 0.5;
+      coil.castShadow = true;
+      this.scene.add(coil);
+    }
+
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.3, 14), gold);
+    crown.position.set(x, 5.25, z);
+    crown.castShadow = true;
+    this.scene.add(crown);
   }
 
   private buildGong(x: number, z: number) {
