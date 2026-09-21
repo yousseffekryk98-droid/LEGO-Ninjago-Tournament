@@ -13,21 +13,21 @@
     <link rel="apple-touch-icon" href="/icons/ninja-tournament.svg" />
     <link rel="stylesheet" href="/src/fidelity.css" />
     <link rel="stylesheet" href="/src/content.css" />
-    <link rel="stylesheet" href="/src/platform.css" />
-    <link rel="stylesheet" href="/src/challenges.css" />
-    <link rel="stylesheet" href="/src/loadout.css" />
-    <link rel="stylesheet" href="/src/gallery.css" />
-    <link rel="stylesheet" href="/src/feedback.css" />
+    <link rel="stylesheet" href="/src/shared/platform/styles.css" />
+    <link rel="stylesheet" href="/src/features/challenges/styles.css" />
+    <link rel="stylesheet" href="/src/features/loadout/styles.css" />
+    <link rel="stylesheet" href="/src/features/gallery/styles.css" />
+    <link rel="stylesheet" href="/src/shared/feedback/styles.css" />
     <title>Ninja Tournament — Fan Remake</title>
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/platform.ts"></script>
-    <script type="module" src="/src/challenges.ts"></script>
-    <script type="module" src="/src/loadout.ts"></script>
-    <script type="module" src="/src/save-sync.ts"></script>
-    <script type="module" src="/src/gallery.ts"></script>
-    <script type="module" src="/src/feedback.ts"></script>
+    <script type="module" src="/src/shared/platform/index.ts"></script>
+    <script type="module" src="/src/features/challenges/index.ts"></script>
+    <script type="module" src="/src/features/loadout/index.ts"></script>
+    <script type="module" src="/src/shared/storage/save-sync.ts"></script>
+    <script type="module" src="/src/features/gallery/index.ts"></script>
+    <script type="module" src="/src/shared/feedback/index.ts"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
