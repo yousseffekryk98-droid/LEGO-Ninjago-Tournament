@@ -101,6 +101,7 @@ export class TournamentGame {
   private jumpSlam = false;
   private spinTime = 0;
   private spinTick = 0;
+  private spinAura: THREE.Group | null = null;
   private dodgeTime = 0;
   private dodgeDirection = new THREE.Vector3();
   private frozenTime = 0;
@@ -187,6 +188,7 @@ export class TournamentGame {
   destroy() {
     this.running = false;
     cancelAnimationFrame(this.animationFrame);
+    this.stopSpinjitzuVfx();
     window.removeEventListener('resize', this.resize);
     window.removeEventListener('keydown', this.keyDown);
     window.removeEventListener('keyup', this.keyUp);
@@ -282,10 +284,11 @@ export class TournamentGame {
       this.player.rotation.z = Math.sin((0.28 - this.dodgeTime) * 18) * 0.22;
       this.invulnerable = Math.max(this.invulnerable, 0.12);
     } else if (this.spinTime > 0) {
-      this.spinTime -= dt;
+      this.spinTime = Math.max(0, this.spinTime - dt);
       this.spinTick -= dt;
       this.player.rotation.y += dt * 18;
       this.invulnerable = Math.max(this.invulnerable, 0.12);
+      this.updateSpinjitzuVfx(dt);
       if (this.spinTick <= 0) {
         this.spinTick = 0.16;
         for (const enemy of [...this.enemies]) {
@@ -293,6 +296,7 @@ export class TournamentGame {
           if (distance < 3.25) this.hitEnemy(enemy, this.character.damage * 0.9, 4.5, true);
         }
       }
+      if (this.spinTime <= 0) this.stopSpinjitzuVfx();
     } else if (move.lengthSq() > 0.01) {
       const speed = this.character.speed * (this.input.block ? 0.5 : 1);
       this.player.position.x += move.x * speed * dt;
@@ -414,7 +418,92 @@ export class TournamentGame {
     this.special = 0;
     this.spinTime = 1.65;
     this.spinTick = 0;
+    this.startSpinjitzuVfx();
     this.callbacks.onMessage(`${this.character.element} Spinjitzu!`);
+  }
+
+  private startSpinjitzuVfx() {
+    this.stopSpinjitzuVfx();
+
+    const aura = new THREE.Group();
+    const funnel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.62, 1.95, 2.85, 36, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: this.character.color,
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    funnel.position.y = 1.25;
+    aura.add(funnel);
+
+    for (let i = 0; i < 5; i++) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.82 + i * 0.23, 0.045 + i * 0.006, 8, 44),
+        new THREE.MeshBasicMaterial({
+          color: i % 2 === 0 ? this.character.accent : this.character.color,
+          transparent: true,
+          opacity: 0.72 - i * 0.08,
+          depthWrite: false
+        })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.rotation.z = i * 0.37;
+      ring.position.y = 0.32 + i * 0.48;
+      aura.add(ring);
+    }
+
+    for (let i = 0; i < 12; i++) {
+      const shard = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.08, 0.34 + (i % 3) * 0.08),
+        new THREE.MeshBasicMaterial({
+          color: i % 2 === 0 ? this.character.color : this.character.accent,
+          transparent: true,
+          opacity: 0.78,
+          depthWrite: false
+        })
+      );
+      const angle = (i / 12) * Math.PI * 2;
+      const radius = 1.05 + (i % 4) * 0.18;
+      shard.position.set(Math.cos(angle) * radius, 0.35 + (i % 5) * 0.48, Math.sin(angle) * radius);
+      shard.rotation.set(angle * 0.35, angle, angle * 0.6);
+      aura.add(shard);
+    }
+
+    aura.position.copy(this.player.position);
+    this.scene.add(aura);
+    this.spinAura = aura;
+  }
+
+  private updateSpinjitzuVfx(dt: number) {
+    if (!this.spinAura) return;
+    this.spinAura.position.copy(this.player.position);
+    this.spinAura.rotation.y += dt * 9.5;
+    const pulse = 1 + Math.sin(this.elapsed * 20) * 0.055;
+    this.spinAura.scale.setScalar(pulse);
+
+    this.spinAura.children.forEach((child, index) => {
+      if (index === 0) {
+        child.rotation.y -= dt * 3.5;
+        return;
+      }
+      child.rotation.z += dt * (index % 2 === 0 ? 4.5 : -4.5);
+    });
+  }
+
+  private stopSpinjitzuVfx() {
+    if (!this.spinAura) return;
+    const aura = this.spinAura;
+    this.spinAura = null;
+    this.scene.remove(aura);
+    aura.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.geometry.dispose();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => material.dispose());
+    });
   }
 
   private hitEnemy(enemy: Enemy, damage: number, knockback: number, force = false) {
