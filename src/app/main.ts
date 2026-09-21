@@ -3,6 +3,7 @@ import { TournamentGame, type HudState } from '../features/combat';
 import { DojoGame, type DojoAction, type DojoStep } from '../features/dojo/DojoGame';
 import {
   ROSTER,
+  CharacterPreview,
   characterSearchText,
   findCharacter,
   getCharacterIdentity,
@@ -95,6 +96,7 @@ function loadSave(): SaveData {
 let save = loadSave();
 let activeGame: TournamentGame | null = null;
 let activeDojo: DojoGame | null = null;
+let activeCharacterPreview: CharacterPreview | null = null;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function persist() {
@@ -140,6 +142,8 @@ function cleanupGame() {
   activeGame = null;
   activeDojo?.destroy();
   activeDojo = null;
+  activeCharacterPreview?.destroy();
+  activeCharacterPreview = null;
 }
 
 function showHome() {
@@ -196,7 +200,7 @@ function showRoster() {
     const identity = getCharacterIdentity(fighter);
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
-        <div class="fighter-avatar" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}"><span></span><i></i></div>
+        <button class="fighter-avatar preview-character-btn" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}"><span></span><i></i><small>3D</small></button>
         <div class="fighter-copy">
           <h3><span class="fighter-primary-name">${identity.name}</span> <small>LV ${progress.level}</small></h3>
           ${identity.variant ? `<span class="fighter-variant">${identity.variant}</span>` : ''}
@@ -217,8 +221,46 @@ function showRoster() {
         <label for="fighter-search">Find a fighter</label>
         <input id="fighter-search" type="search" autocomplete="off" placeholder="Search Zane, Kai, Ice, Spinjitzu..." />
       </section>
+      <section class="character-showcase" aria-label="3D fighter viewer">
+        <div class="character-preview-stage" id="character-preview-stage"></div>
+        <div class="character-preview-copy">
+          <small>LIVE 3D MODEL</small>
+          <h3 id="preview-character-name"></h3>
+          <span id="preview-character-variant" class="fighter-variant"></span>
+          <p id="preview-character-meta"></p>
+          <p class="preview-help">Select the 3D badge on any fighter card to inspect that model. The same character model is used in the arena and Dojo.</p>
+        </div>
+      </section>
       <section class="roster-grid">${cards}</section>
     </main>`;
+
+  const previewHost = document.querySelector<HTMLElement>('#character-preview-stage')!;
+  const previewName = document.querySelector<HTMLElement>('#preview-character-name')!;
+  const previewVariant = document.querySelector<HTMLElement>('#preview-character-variant')!;
+  const previewMeta = document.querySelector<HTMLElement>('#preview-character-meta')!;
+
+  const setPreview = (fighter: CharacterDef) => {
+    const identity = getCharacterIdentity(fighter);
+    previewName.textContent = identity.name;
+    previewVariant.textContent = identity.variant ?? 'BASE';
+    previewMeta.textContent = `${fighter.element} · ${fighter.style.toUpperCase()} · ${fighter.special.replace('-', ' ').toUpperCase()}`;
+    if (activeCharacterPreview) activeCharacterPreview.setCharacter(fighter);
+    else activeCharacterPreview = new CharacterPreview(previewHost, fighter);
+
+    document.querySelectorAll<HTMLElement>('[data-preview]').forEach((button) => {
+      button.classList.toggle('active-preview', button.dataset.preview === fighter.id);
+    });
+  };
+
+  setPreview(findCharacter(save.selected));
+
+  document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const fighter = findCharacter(button.dataset.preview!);
+      setPreview(fighter);
+      document.querySelector('.character-showcase')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
 
   document.querySelector('#back-btn')?.addEventListener('click', showHome);
   document.querySelector<HTMLInputElement>('#fighter-search')?.addEventListener('input', (event) => {
