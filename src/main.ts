@@ -289,6 +289,7 @@ function showDojo() {
   cleanupGame();
   const baseFighter = findCharacter(save.selected);
   const fighter = upgradedCharacter(baseFighter);
+  const specialLabel = baseFighter.special === 'spinjitzu' ? 'SPINJITZU' : baseFighter.special.replace('-', ' ').toUpperCase();
   app.innerHTML = `
     <main class="game-screen dojo-game-screen">
       <div id="dojo-host"></div>
@@ -300,7 +301,7 @@ function showDojo() {
         <div class="dojo-progress"><i id="dojo-progress"></i></div>
       </section>
       <div class="dojo-fighter-label"><b>${baseFighter.name}</b><span>LV ${fighterLevel(baseFighter.id)} · ${baseFighter.special.replace('-', ' ')}</span></div>
-      <div class="special-wrap"><button id="dojo-special" class="special-button">↻</button><div class="meter"><i id="dojo-meter"></i></div></div>
+      <div class="special-wrap"><button id="dojo-special" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="dojo-meter"></i></div></div>
       <div class="joystick" id="dojo-joystick"><div class="joystick-ring"><span id="dojo-stick"></span></div></div>
       <div class="action-cluster dojo-actions">
         <button class="action-button jump" data-dojo-action="jump" aria-label="Jump">↑</button>
@@ -372,6 +373,7 @@ function startGame() {
   cleanupGame();
   const baseFighter = findCharacter(save.selected);
   const fighter = upgradedCharacter(baseFighter);
+  const specialLabel = baseFighter.special === 'spinjitzu' ? 'SPINJITZU' : baseFighter.special.replace('-', ' ').toUpperCase();
   app.innerHTML = `
     <main class="game-screen">
       <div id="game-host"></div>
@@ -380,7 +382,7 @@ function startGame() {
       <div class="hud hud-right"><b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small></div>
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
       <div id="message" class="arena-message"></div>
-      <div class="special-wrap"><button id="special-btn" class="special-button">↻</button><div class="meter"><i id="special-meter"></i></div></div>
+      <div class="special-wrap"><button id="special-btn" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="special-meter"></i></div></div>
       <div class="joystick" id="joystick"><div class="joystick-ring"><span id="stick"></span></div></div>
       <div class="action-cluster">
         <button class="action-button jump" data-action="jump" aria-label="Jump">↑</button>
