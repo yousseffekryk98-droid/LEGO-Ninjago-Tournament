@@ -233,8 +233,8 @@ export class TournamentGame extends StableContentGame {
       prop.alive = false;
       state.scene.remove(prop.group);
       const payout = 120 * Math.max(1, state.getMultiplier());
-      state.studs += payout;
-      state.callbacks.onMessage(`Training bag smashed! +${payout.toLocaleString()} studs`);
+      this.spawnStudBurst(prop.group.position.clone(), payout, 6);
+      state.callbacks.onMessage(`Training bag smashed! ${payout.toLocaleString()} studs dropped`);
       this.spawnPropDebris(prop.group.position);
       state.emitHud();
     }
