@@ -191,7 +191,7 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
 
   addMesh(group, 'belt', new THREE.BoxGeometry(0.94, 0.16, 0.54), accent, [0, 0.89, 0]);
 
-  if (!serpentine) {
+  if (!serpentine || profile.serpentineTail === false) {
     addMesh(group, 'leftLeg', new THREE.BoxGeometry(0.32, 0.72, 0.42), primary, [-0.23, 0.45, 0]);
     addMesh(group, 'rightLeg', new THREE.BoxGeometry(0.32, 0.72, 0.42), primary, [0.23, 0.45, 0]);
     addMesh(group, 'hips', new THREE.BoxGeometry(0.76, 0.2, 0.44), accent, [0, 0.79, 0]);
@@ -227,6 +227,13 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
 
   if (profile.archetype === 'nindroid') {
     addMesh(group, 'facePlate', new THREE.BoxGeometry(0.56, 0.16, 0.05), accent, [0, 2.0, 0.33]);
+    if (profile.battleDamaged) {
+      const exposed = material(0x4f5961, true, 0.26);
+      const wire = material(0x78d7ff, true, 0.2);
+      addMesh(group, 'damagedChestPanel', new THREE.BoxGeometry(0.34, 0.26, 0.045), exposed, [0.18, 1.38, 0.275], [0, 0, -0.12]);
+      addMesh(group, 'damagedFacePanel', new THREE.BoxGeometry(0.2, 0.12, 0.045), exposed, [-0.18, 2.02, 0.355], [0, 0, 0.08]);
+      addMesh(group, 'exposedWire', new THREE.BoxGeometry(0.035, 0.22, 0.04), wire, [0.06, 1.36, 0.31], [0, 0, 0.25]);
+    }
   }
 
   addEyes(group, eye);
