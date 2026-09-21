@@ -21,34 +21,9 @@ export interface CharacterIdentity {
   variant: string | null;
 }
 
-export type CharacterArchetype =
-  | 'ninja'
-  | 'nindroid'
-  | 'master'
-  | 'samurai'
-  | 'elemental'
-  | 'serpentine'
-  | 'skeleton'
-  | 'villain';
+export type {
+  FighterArchetype as CharacterArchetype,
+  FighterWeapon as CharacterWeapon,
+  FighterModelProfile as CharacterModelProfile
+} from '../../shared/three/model-types';
 
-export type CharacterWeapon =
-  | 'katana'
-  | 'dual-katana'
-  | 'shuriken'
-  | 'scythe'
-  | 'nunchucks'
-  | 'staff'
-  | 'spear'
-  | 'claws'
-  | 'none';
-
-export interface CharacterModelProfile {
-  archetype: CharacterArchetype;
-  weapon: CharacterWeapon;
-  hood: boolean;
-  shoulderArmor: boolean;
-  extraArms: boolean;
-  metallic: boolean;
-  faceColor?: number;
-  eyeColor?: number;
-}
