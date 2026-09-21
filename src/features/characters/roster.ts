@@ -10,6 +10,7 @@ export const ROSTER: CharacterDef[] = [
   { id: 'kai-tournament', name: 'Kai (Tournament)', element: 'Fire', style: 'balanced', special: 'spinjitzu', color: 0xc62828, accent: 0xf5a623, speed: 5.8, damage: 21, maxHealth: 4, cost: 0, unlockedByDefault: true },
   { id: 'jay-tournament', name: 'Jay (Tournament)', element: 'Lightning', style: 'speed', special: 'spinjitzu', color: 0x1d5fbf, accent: 0xf4d03f, speed: 6.5, damage: 17, maxHealth: 4, cost: 0, unlockedByDefault: true },
   { id: 'cole-tournament', name: 'Cole (Tournament)', element: 'Earth', style: 'heavy', special: 'spinjitzu', color: 0x202124, accent: 0xd9822b, speed: 5.0, damage: 26, maxHealth: 5, cost: 0, unlockedByDefault: true },
+  { id: 'zane-techno', name: 'Zane (Techno)', element: 'Ice', style: 'ranged', special: 'overload', color: 0xe7ecef, accent: 0x7fd8ff, speed: 5.5, damage: 19, maxHealth: 4, cost: 4500, unlockedByDefault: true },
 
   { id: 'lloyd-techno', name: 'Lloyd (Techno)', element: 'Energy', style: 'balanced', special: 'overload', color: 0x339b55, accent: 0xb7c9d3, speed: 5.9, damage: 21, maxHealth: 4, cost: 5000 },
   { id: 'lloyd-jungle', name: 'Lloyd (Jungle)', element: 'Energy', style: 'speed', special: 'boost', color: 0x2f8d49, accent: 0x634126, speed: 6.2, damage: 19, maxHealth: 4, cost: 7000 },
@@ -23,7 +24,6 @@ export const ROSTER: CharacterDef[] = [
   { id: 'cole-zukin', name: 'Cole (Jungle)', element: 'Earth', style: 'heavy', special: 'charge', color: 0x242629, accent: 0x6d4a2e, speed: 5.2, damage: 28, maxHealth: 5, cost: 7000 },
   { id: 'jay-zx', name: 'Jay ZX', element: 'Lightning', style: 'speed', special: 'overload', color: 0x2761b8, accent: 0xd6c8ae, speed: 6.8, damage: 18, maxHealth: 4, cost: 9500 },
 
-  { id: 'zane-techno', name: 'Zane (Techno)', element: 'Ice', style: 'ranged', special: 'overload', color: 0xe7ecef, accent: 0x7fd8ff, speed: 5.5, damage: 19, maxHealth: 4, cost: 4500 },
   { id: 'zane-pink', name: 'Zane (Pink)', element: 'Ice', style: 'balanced', special: 'spinjitzu', color: 0xd995bd, accent: 0xf3f5f6, speed: 5.7, damage: 19, maxHealth: 4, cost: 5500 },
   { id: 'zane-zx', name: 'Zane ZX', element: 'Ice', style: 'ranged', special: 'airstrike', color: 0xe4e8ea, accent: 0xbecbd2, speed: 5.6, damage: 21, maxHealth: 4, cost: 10000 },
   { id: 'zane-teacher', name: 'Zane (Teacher)', element: 'Ice', style: 'balanced', special: 'shout', color: 0xe5e7e5, accent: 0xc9a871, speed: 5.3, damage: 18, maxHealth: 4, cost: 3000 },
