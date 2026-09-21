@@ -5,7 +5,7 @@ export default defineConfig({
   timeout: 45_000,
   expect: { timeout: 7_500 },
   fullyParallel: false,
-  retries: 1,
+  retries: 0,
   workers: 1,
   reporter: [['line'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
