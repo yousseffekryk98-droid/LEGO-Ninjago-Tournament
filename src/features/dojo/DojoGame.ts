@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import type { CharacterDef } from '../characters';
 import { createCharacterModel } from '../characters/model';
 import { createGenericFighterModel } from '../../shared/three/minifigure-model';
+import { formatKeyLabel, getKeyBindings, type KeyBindings } from '../controls';
 
-export type DojoAction = 'attack' | 'jump' | 'grab' | 'special';
+export type DojoAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special';
 export type DojoStep = 'move' | 'attack' | 'jump' | 'block' | 'grab' | 'dodge' | 'special' | 'complete';
 
 export interface DojoCallbacks {
@@ -17,11 +18,6 @@ const FIXED_STEP = 1 / 60;
 const MAX_CATCHUP_SECONDS = 0.25;
 const MAX_ACTION_RECONCILE_SECONDS = 1.25;
 const MAX_INPUT_RECONCILE_SECONDS = 2.5;
-const TIMED_KEYS = new Set([
-  'KeyA', 'ArrowLeft', 'KeyD', 'ArrowRight',
-  'KeyW', 'ArrowUp', 'KeyS', 'ArrowDown',
-  'ShiftLeft', 'ShiftRight'
-]);
 
 export class DojoGame {
   private scene = new THREE.Scene();
@@ -36,6 +32,7 @@ export class DojoGame {
   private simulationDebt = 0;
   private running = true;
   private keyboard = new Set<string>();
+  private keyBindings: KeyBindings = getKeyBindings();
   private heldStartedAt = new Map<string, number>();
   private heldIntegrated = new Map<string, number>();
   private input = { x: 0, y: 0, block: false };
@@ -52,6 +49,7 @@ export class DojoGame {
   private specialTick = 0;
   private actionCooldown = 0;
   private attackBufferTime = 0;
+  private bufferedAttackKind: 'attack' | 'punch' | 'kick' = 'attack';
   private attackAnimationTime = 0;
   private attackAnimationDuration = 0.28;
   private attackMove: 'jab' | 'cross' | 'kick' = 'jab';
@@ -90,6 +88,7 @@ export class DojoGame {
     window.addEventListener('resize', this.resize);
     window.addEventListener('keydown', this.keyDown);
     window.addEventListener('keyup', this.keyUp);
+    window.addEventListener('ninja-controls-updated', this.refreshControls);
     this.resize();
     this.announceStep();
 
@@ -115,7 +114,7 @@ export class DojoGame {
     // A WebGL render can monopolize the main thread on software/low-end GPUs.
     // Reconcile real elapsed simulation time before evaluating cooldown-gated actions.
     this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
-    if (action === 'attack') this.attack();
+    if (action === 'attack' || action === 'punch' || action === 'kick') this.attack(action);
     if (action === 'jump') this.jump();
     if (action === 'grab') this.grab();
     if (action === 'special') this.special();
@@ -140,6 +139,7 @@ export class DojoGame {
     window.removeEventListener('resize', this.resize);
     window.removeEventListener('keydown', this.keyDown);
     window.removeEventListener('keyup', this.keyUp);
+    window.removeEventListener('ninja-controls-updated', this.refreshControls);
     this.renderer.dispose();
     this.host.replaceChildren();
   }
@@ -148,23 +148,34 @@ export class DojoGame {
     return STEP_ORDER[this.stepIndex];
   }
 
+  private refreshControls = () => {
+    this.keyBindings = getKeyBindings();
+  };
+
+  private isTimedKey(code: string) {
+    return code === this.keyBindings.moveLeft
+      || code === this.keyBindings.moveRight
+      || code === this.keyBindings.moveUp
+      || code === this.keyBindings.moveDown
+      || code === this.keyBindings.block;
+  }
+
   private keyDown = (event: KeyboardEvent) => {
-    if (['Space','KeyJ','KeyK','KeyL','KeyE','KeyQ','ShiftLeft','ShiftRight','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code)) {
-      event.preventDefault();
-    }
+    if (Object.values(this.keyBindings).includes(event.code)) event.preventDefault();
     this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
     this.keyboard.add(event.code);
-    if (!event.repeat && TIMED_KEYS.has(event.code)) {
+    if (!event.repeat && this.isTimedKey(event.code)) {
       this.heldStartedAt.set(event.code, performance.now());
       this.heldIntegrated.set(event.code, 0);
     }
     if (event.repeat) return;
-    if (event.code === 'Space' || event.code === 'KeyJ') this.attack();
-    if (event.code === 'KeyK') this.jump();
-    if (event.code === 'KeyL') this.grab();
-    if (event.code === 'KeyE') this.special();
-    if (event.code === 'KeyQ') this.dodge(this.input.x, this.input.y);
-    if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') this.input.block = true;
+    if (event.code === this.keyBindings.punch) this.attack('punch');
+    if (event.code === this.keyBindings.kick) this.attack('kick');
+    if (event.code === this.keyBindings.jump) this.jump();
+    if (event.code === this.keyBindings.grab) this.grab();
+    if (event.code === this.keyBindings.special) this.special();
+    if (event.code === this.keyBindings.dodge) this.dodge(this.input.x, this.input.y);
+    if (event.code === this.keyBindings.block) this.input.block = true;
   };
 
   private keyUp = (event: KeyboardEvent) => {
@@ -173,7 +184,7 @@ export class DojoGame {
     this.keyboard.delete(event.code);
     this.heldStartedAt.delete(event.code);
     this.heldIntegrated.delete(event.code);
-    if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') this.input.block = false;
+    if (event.code === this.keyBindings.block) this.input.block = false;
   };
 
   private resize = () => {
@@ -215,7 +226,7 @@ export class DojoGame {
     this.attackAnimationTime = Math.max(0, this.attackAnimationTime - dt);
     if (this.attackBufferTime > 0 && this.actionCooldown <= 0 && this.specialTime <= 0) {
       this.attackBufferTime = 0;
-      this.attack();
+      this.attack(this.bufferedAttackKind);
     }
     this.dummyFlash = Math.max(0, this.dummyFlash - dt);
     this.markHeldIntegrated(dt);
@@ -227,10 +238,10 @@ export class DojoGame {
 
     let x = this.input.x;
     let y = this.input.y;
-    if (this.keyboard.has('KeyA') || this.keyboard.has('ArrowLeft')) x -= 1;
-    if (this.keyboard.has('KeyD') || this.keyboard.has('ArrowRight')) x += 1;
-    if (this.keyboard.has('KeyW') || this.keyboard.has('ArrowUp')) y -= 1;
-    if (this.keyboard.has('KeyS') || this.keyboard.has('ArrowDown')) y += 1;
+    if (this.keyboard.has(this.keyBindings.moveLeft)) x -= 1;
+    if (this.keyboard.has(this.keyBindings.moveRight)) x += 1;
+    if (this.keyboard.has(this.keyBindings.moveUp)) y -= 1;
+    if (this.keyboard.has(this.keyBindings.moveDown)) y += 1;
     const move = new THREE.Vector2(x, y);
     if (move.lengthSq() > 1) move.normalize();
 
@@ -294,16 +305,16 @@ export class DojoGame {
       return;
     }
 
-    if ((code === 'ShiftLeft' || code === 'ShiftRight') && this.currentStep() === 'block') {
+    if (code === this.keyBindings.block && this.currentStep() === 'block') {
       this.advanceBlock(missing);
     }
   }
 
   private keyDirection(code: string) {
-    if (code === 'KeyA' || code === 'ArrowLeft') return { x: -1, y: 0 };
-    if (code === 'KeyD' || code === 'ArrowRight') return { x: 1, y: 0 };
-    if (code === 'KeyW' || code === 'ArrowUp') return { x: 0, y: -1 };
-    if (code === 'KeyS' || code === 'ArrowDown') return { x: 0, y: 1 };
+    if (code === this.keyBindings.moveLeft) return { x: -1, y: 0 };
+    if (code === this.keyBindings.moveRight) return { x: 1, y: 0 };
+    if (code === this.keyBindings.moveUp) return { x: 0, y: -1 };
+    if (code === this.keyBindings.moveDown) return { x: 0, y: 1 };
     return null;
   }
 
@@ -321,7 +332,7 @@ export class DojoGame {
 
     if (this.currentStep() === 'move') {
       this.moveDistance += before.distanceTo(this.player.position);
-      this.callbacks.onStep('move', 'Movement', 'Use the joystick, controller stick, WASD, or arrow keys. Move around the dojo.', Math.min(1, this.moveDistance / 4.5));
+      this.callbacks.onStep('move', 'Movement', `Use the joystick/controller or ${formatKeyLabel(this.keyBindings.moveUp)}, ${formatKeyLabel(this.keyBindings.moveLeft)}, ${formatKeyLabel(this.keyBindings.moveDown)}, ${formatKeyLabel(this.keyBindings.moveRight)}.`, Math.min(1, this.moveDistance / 4.5));
       if (this.moveDistance >= 4.5) this.advance();
     }
   }
@@ -337,14 +348,15 @@ export class DojoGame {
   private advanceBlock(dt: number) {
     if (this.currentStep() !== 'block') return;
     this.blockTime += dt;
-    this.callbacks.onStep('block', 'Block', 'Hold the shield button, controller LB, or Shift until the guard meter fills.', Math.min(1, this.blockTime / 1.25));
+    this.callbacks.onStep('block', 'Block', `Hold the shield button, controller LB, or ${formatKeyLabel(this.keyBindings.block)} until the guard meter fills.`, Math.min(1, this.blockTime / 1.25));
     if (this.blockTime >= 1.25) this.advance();
   }
 
-  private attack() {
+  private attack(kind: 'attack' | 'punch' | 'kick' = 'attack') {
     if (this.specialTime > 0) return;
     if (this.actionCooldown > 0) {
       this.attackBufferTime = 0.45;
+      this.bufferedAttackKind = kind;
       return;
     }
 
@@ -353,8 +365,9 @@ export class DojoGame {
       { name: 'cross' as const, duration: 0.29 },
       { name: 'kick' as const, duration: 0.38 }
     ];
-    const move = moves[this.attackMoveIndex % moves.length];
-    this.attackMoveIndex = (this.attackMoveIndex + 1) % moves.length;
+    const sequence = kind === 'punch' ? moves.slice(0, 2) : kind === 'kick' ? moves.slice(2) : moves;
+    const move = sequence[this.attackMoveIndex % sequence.length];
+    this.attackMoveIndex = (this.attackMoveIndex + 1) % 3;
     this.attackMove = move.name;
     this.actionCooldown = move.duration;
     this.attackAnimationDuration = move.duration;
@@ -486,13 +499,13 @@ export class DojoGame {
   private announceStep() {
     const step = this.currentStep();
     const copy: Record<DojoStep, [string, string]> = {
-      move: ['Movement', 'Use the joystick, controller stick, WASD, or arrow keys. Move around the dojo.'],
-      attack: ['Attack', 'Move close to the training dummy and land three attacks. Controller: A.'],
-      jump: ['Jump', 'Press the jump button, controller RB, or K.'],
-      block: ['Block', 'Hold the shield button, controller LB, or Shift until the guard meter fills.'],
-      grab: ['Grab & Throw', 'Move close to the dummy and press grab / controller X / L.'],
-      dodge: ['Dodge', 'Swipe across the dojo, press controller B, or press Q to evade.'],
-      special: ['Special', 'Your meter is full. Activate special with the spiral button, controller Y, or E.'],
+      move: ['Movement', `Use the joystick/controller or ${formatKeyLabel(this.keyBindings.moveUp)}, ${formatKeyLabel(this.keyBindings.moveLeft)}, ${formatKeyLabel(this.keyBindings.moveDown)}, ${formatKeyLabel(this.keyBindings.moveRight)}.`],
+      attack: ['Punch & Kick', `Move close and land three strikes. Punch: ${formatKeyLabel(this.keyBindings.punch)} · Kick: ${formatKeyLabel(this.keyBindings.kick)}.`],
+      jump: ['Jump', `Press jump, controller RB, or ${formatKeyLabel(this.keyBindings.jump)}.`],
+      block: ['Block', `Hold shield, controller LB, or ${formatKeyLabel(this.keyBindings.block)}.`],
+      grab: ['Grab & Throw', `Move close and press grab / controller X / ${formatKeyLabel(this.keyBindings.grab)}.`],
+      dodge: ['Dodge', `Swipe, controller B, or ${formatKeyLabel(this.keyBindings.dodge)}.`],
+      special: ['Spinjitzu / Special', `Meter full: spiral button, controller Y, or ${formatKeyLabel(this.keyBindings.special)}.`],
       complete: ['Training Complete', 'You have learned the core tournament controls.']
     };
     this.callbacks.onStep(step, copy[step][0], copy[step][1], step === 'complete' ? 1 : 0);
