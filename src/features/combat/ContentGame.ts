@@ -4,7 +4,7 @@ import type { CharacterDef } from '../characters';
 
 export type { HudState, GameCallbacks } from './ContentGameBase';
 
-type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special';
+type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special' | 'ultimate';
 type EnemyFaction =
   | 'anacondrai'
   | 'anacondrai-serpentine'
