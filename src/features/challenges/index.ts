@@ -150,7 +150,7 @@ function handleChallengeHud(challenge: ChallengeDef, hud: HudState) {
   const health = overlay.querySelector('#challenge-health');
   if (wave) wave.textContent = hud.bossName ? `BOSS · ${hud.bossName}` : `WAVE ${hud.wave}`;
   if (studs) studs.textContent = `◉ ${Math.floor(hud.studs).toLocaleString()}`;
-  if (health) health.textContent = `♥ ${Math.ceil(hud.health)}/${hud.maxHealth}`;
+  if (health) health.textContent = `♥ ${hud.health}/${hud.maxHealth}`;
 
   if (challenge.id === 'first-gate' && hud.wave >= 2) finishChallenge(challenge, true);
   if (challenge.id === 'boss-hunt') {
