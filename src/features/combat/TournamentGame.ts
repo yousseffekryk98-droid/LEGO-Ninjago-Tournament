@@ -849,6 +849,7 @@ export class TournamentGame {
         enemy.mesh.rotation.z = Math.sin(this.elapsed * 18) * 0.035;
         continue;
       }
+      enemy.mesh.rotation.z *= Math.pow(0.02, dt);
 
       if (enemy.kind === 'boss' && enemy.specialCooldown <= 0) {
         this.performBossSpecial(enemy);
@@ -886,7 +887,7 @@ export class TournamentGame {
         enemy.mesh.position.z = planar.y;
       }
 
-      if (Math.abs(enemy.mesh.position.x) > 9.35 && Math.abs(enemy.mesh.position.z) < 1.75 && enemy.knock.length() > 1.5) {
+      if (Math.abs(enemy.mesh.position.x) > 13.15 && Math.abs(enemy.mesh.position.z) < 1.95 && enemy.knock.length() > 1.5) {
         this.defeatEnemy(enemy);
         this.callbacks.onMessage('GONG KO! Instant arena knockout.');
       }
