@@ -1,7 +1,19 @@
 # LEGO Ninjago Tournament — Fan Remake https://lego-ninjago-tournament.pages.dev/
 
+[![Play in Browser](https://img.shields.io/badge/Play-Browser_Build-6f42c1?style=for-the-badge)](https://lego-ninjago-tournament.pages.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-d6aa3f?style=for-the-badge)](LICENSE)
+[![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-2ea44f?style=for-the-badge)](CONTRIBUTING.md)
+
 A clean-room, fan-made recreation project inspired by the discontinued 2015 mobile arena brawler.
 
+
+## Quick links
+
+- **Play:** https://lego-ninjago-tournament.pages.dev/
+- **Roadmap:** [ROADMAP.md](ROADMAP.md)
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Community launch kit:** [COMMUNITY_LAUNCH.md](COMMUNITY_LAUNCH.md)
+- **Security:** [SECURITY.md](SECURITY.md)
 
 ## Open source & contributing
 
