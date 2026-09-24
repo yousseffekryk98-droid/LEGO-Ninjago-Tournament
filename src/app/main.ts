@@ -580,7 +580,7 @@ function startGame() {
         <div id="boss-health" class="boss-health hidden"><span><i id="boss-health-fill"></i></span><em id="boss-health-copy"></em></div>
       </div>
       <div class="hud hud-right">
-        <div id="boss-portrait" class="boss-portrait hidden"><div class="boss-face"><i></i></div><span id="boss-portrait-name">ELEMENTAL MASTER</span></div>
+        <div id="boss-portrait" class="boss-portrait hidden"><div class="boss-face"><img id="boss-face-render" alt="" aria-hidden="true" /><i></i></div><span id="boss-portrait-name">ELEMENTAL MASTER</span></div>
         <b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small>
       </div>
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
@@ -663,6 +663,7 @@ function updateHud(state: HudState) {
   const bossHealthCopy = document.querySelector<HTMLElement>('#boss-health-copy');
   const bossPortrait = document.querySelector<HTMLElement>('#boss-portrait');
   const bossPortraitName = document.querySelector<HTMLElement>('#boss-portrait-name');
+  const bossFaceRender = document.querySelector<HTMLImageElement>('#boss-face-render');
   const meter = document.querySelector<HTMLElement>('#special-meter');
   if (hearts) {
     hearts.innerHTML = Array.from({ length: state.maxHealth }, (_, index) => {
@@ -701,6 +702,29 @@ function updateHud(state: HudState) {
       if (bossPortraitName) bossPortraitName.textContent = state.bossElement
         ? `${state.bossName} · ${state.bossElement}`
         : state.bossName ?? 'ELEMENTAL MASTER';
+
+      if (bossFaceRender && state.bossId) {
+        const cachedPortrait = getCachedCharacterPortrait(state.bossId);
+        if (cachedPortrait) {
+          bossFaceRender.src = cachedPortrait;
+          bossFaceRender.classList.add('ready');
+          delete bossFaceRender.dataset.loadingBoss;
+        } else if (bossFaceRender.dataset.loadingBoss !== state.bossId) {
+          bossFaceRender.dataset.loadingBoss = state.bossId;
+          const bossCharacter = findCharacter(state.bossId);
+          void renderCharacterPortraits([bossCharacter]).then((cache) => {
+            const currentBossId = bossFaceRender.dataset.loadingBoss;
+            if (currentBossId !== state.bossId) return;
+            const portrait = cache.get(state.bossId!);
+            if (!portrait) return;
+            bossFaceRender.src = portrait;
+            bossFaceRender.classList.add('ready');
+            delete bossFaceRender.dataset.loadingBoss;
+          }).catch(() => {
+            delete bossFaceRender.dataset.loadingBoss;
+          });
+        }
+      }
     }
   }
   if (meter) meter.style.width = `${Math.round(state.special)}%`;
