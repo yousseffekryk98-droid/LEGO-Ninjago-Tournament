@@ -4,7 +4,7 @@ import type { CharacterDef } from '../characters';
 
 export type { HudState, GameCallbacks } from './TournamentGame';
 
-type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special';
+type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special' | 'ultimate';
 
 interface RuntimeEnemy {
   mesh: THREE.Group;
