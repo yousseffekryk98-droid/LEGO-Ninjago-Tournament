@@ -2,6 +2,7 @@ import { TournamentGame, type HudState } from '../combat';
 import { findCharacter } from '../characters';
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
+const SAVE_CACHE_KEY = `${STORAGE_KEY}:cache`;
 
 type ChallengeId = 'first-gate' | 'score-attack' | 'boss-hunt';
 
@@ -27,17 +28,26 @@ let seenBoss = false;
 let finishing = false;
 
 function readSave() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Record<string, unknown> & { selected?: string; bankStuds?: number };
-  } catch {
-    return {} as Record<string, unknown> & { selected?: string; bankStuds?: number };
+  for (const key of [STORAGE_KEY, SAVE_CACHE_KEY]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as Record<string, unknown> & { selected?: string; bankStuds?: number };
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {
+      // Fall through to the recovery cache.
+    }
   }
+  return {} as Record<string, unknown> & { selected?: string; bankStuds?: number };
 }
 
 function writeReward(reward: number) {
   const save = readSave();
   save.bankStuds = Math.max(0, Number(save.bankStuds ?? 0)) + reward;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+  const payload = JSON.stringify(save);
+  localStorage.setItem(STORAGE_KEY, payload);
+  localStorage.setItem(SAVE_CACHE_KEY, payload);
+  window.dispatchEvent(new CustomEvent('ninja-save-updated'));
 }
 
 function ensureHubButton() {
@@ -165,10 +175,7 @@ function finishChallenge(challenge: ChallengeDef, success: boolean) {
   result.innerHTML = `<section><small>${success ? 'CHALLENGE COMPLETE' : 'CHALLENGE ENDED'}</small><h2>${challenge.name}</h2><p>${success ? 'Objective cleared.' : 'The objective was not completed.'}</p><b>◉ ${earned.toLocaleString()} BONUS STUDS</b><div><button class="gold-button primary" id="challenge-retry">RETRY</button><button class="gold-button" id="challenge-return">CHALLENGE MENU</button><button class="gold-button" id="challenge-home">MAIN MENU</button></div></section>`;
   result.querySelector('#challenge-retry')?.addEventListener('click', () => startChallenge(challenge.id));
   result.querySelector('#challenge-return')?.addEventListener('click', showChallengeHub);
-  result.querySelector('#challenge-home')?.addEventListener('click', () => {
-    closeChallengeOverlay();
-    location.reload();
-  });
+  result.querySelector('#challenge-home')?.addEventListener('click', closeChallengeOverlay);
 }
 
 function wireChallengeControls(game: TournamentGame, root: HTMLElement) {
@@ -179,6 +186,7 @@ function wireChallengeControls(game: TournamentGame, root: HTMLElement) {
     button.addEventListener('pointerdown', (event) => { event.preventDefault(); button.setPointerCapture(event.pointerId); game.setMove(...vector); });
     button.addEventListener('pointerup', stop);
     button.addEventListener('pointercancel', stop);
+    button.addEventListener('lostpointercapture', stop);
   });
   root.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((button) => {
     button.addEventListener('pointerdown', (event) => { event.preventDefault(); game.action(button.dataset.action as 'attack' | 'jump' | 'grab' | 'special'); });
@@ -189,6 +197,7 @@ function wireChallengeControls(game: TournamentGame, root: HTMLElement) {
     block.addEventListener('pointerdown', (event) => { event.preventDefault(); block.setPointerCapture(event.pointerId); game.setBlock(true); });
     block.addEventListener('pointerup', stop);
     block.addEventListener('pointercancel', stop);
+    block.addEventListener('lostpointercapture', stop);
   }
 }
 
