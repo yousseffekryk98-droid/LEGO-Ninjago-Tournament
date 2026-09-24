@@ -37,7 +37,16 @@ function showGallery() {
           </article>`;
         }).join('')}
       </div>
-      <section class="gallery-codex"><small>ENEMY CODEX</small><h3>Faction Behaviors</h3><div><article><b>Anacondrai</b><p>Close-range flankers that circle and burst toward the player.</p></article><article><b>Nindroids</b><p>Ranged units that strafe, reposition and pressure from distance.</p></article><article><b>Bombers</b><p>Heavy enemies that telegraph explosive throws with arena warning rings.</p></article></div></section>
+      <section class="gallery-codex"><small>ENEMY CODEX</small><h3>Faction Behaviors</h3><div>
+        <article><b>Anacondrai Cultists</b><p>Close-range flankers that circle and burst toward the player.</p></article>
+        <article><b>Anacondrai Forms</b><p>Higher-health transformed cultists that cannot be grabbed or thrown.</p></article>
+        <article><b>Nindroids</b><p>Spawn cloaked, reveal, then strafe and pressure from range.</p></article>
+        <article><b>Serpentines</b><p>Slithering flankers with quick lunges and lateral movement.</p></article>
+        <article><b>Stone Warriors</b><p>Heavy armored fighters that resist knockback pressure.</p></article>
+        <article><b>Skulkins</b><p>Fast, erratic attackers that constantly change their angle.</p></article>
+        <article><b>Shade's Clones</b><p>Phase between visible and shadowed states while repositioning.</p></article>
+        <article><b>Bomb Fighters</b><p>Heavy enemies that telegraph explosive throws with arena warning rings.</p></article>
+      </div></section>
     </section>`;
   document.body.appendChild(overlay);
   overlay.querySelector('#gallery-close')?.addEventListener('click', () => overlay.remove());

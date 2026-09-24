@@ -454,7 +454,7 @@ export class TournamentGame {
   private performGrab() {
     if (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0 || !this.grounded) return;
     const candidates = this.enemies
-      .filter((enemy) => enemy.kind !== 'boss' && enemy.mesh.position.distanceTo(this.player.position) < 1.8)
+      .filter((enemy) => enemy.kind !== 'boss' && enemy.mesh.userData.noGrab !== true && enemy.mesh.position.distanceTo(this.player.position) < 1.8)
       .sort((a, b) => a.mesh.position.distanceTo(this.player.position) - b.mesh.position.distanceTo(this.player.position));
     const target = candidates[0];
     if (!target) return;

@@ -5,7 +5,15 @@ import type { CharacterDef } from '../characters';
 export type { HudState, GameCallbacks } from './ContentGameBase';
 
 type BaseAction = 'attack' | 'jump' | 'grab' | 'special';
-type EnemyFaction = 'anacondrai' | 'nindroid' | 'bomber';
+type EnemyFaction =
+  | 'anacondrai'
+  | 'anacondrai-serpentine'
+  | 'nindroid'
+  | 'serpentine'
+  | 'stone-warrior'
+  | 'skulkin'
+  | 'shade-clone'
+  | 'bomber';
 
 interface RuntimeEnemy {
   mesh: THREE.Group;
@@ -52,6 +60,7 @@ interface FactionBrain {
   cooldown: number;
   phase: number;
   revealTime: number;
+  phaseTime: number;
 }
 
 interface BombHazard {
@@ -367,21 +376,24 @@ export class TournamentGame extends StableContentGame {
       if (enemy.kind === 'boss' || enemy.bossName) continue;
       let brain = this.factionBrains.get(enemy.mesh);
       if (!brain) {
-        const faction: EnemyFaction = enemy.kind === 'ranged'
-          ? 'nindroid'
-          : enemy.kind === 'heavy' && (index + state.wave) % 3 === 0
-            ? 'bomber'
-            : 'anacondrai';
+        const faction = this.chooseFaction(enemy, index, state.wave);
         brain = {
           faction,
           cooldown: 1.2 + Math.random() * 2.4,
           phase: Math.random() < 0.5 ? -1 : 1,
-          revealTime: faction === 'nindroid' ? 1.1 + Math.random() * 0.8 : 0
+          revealTime: faction === 'nindroid' ? 1.1 + Math.random() * 0.8 : 0,
+          phaseTime: faction === 'shade-clone' ? 1.4 + Math.random() * 1.2 : 0
         };
         this.factionBrains.set(enemy.mesh, brain);
         enemy.mesh.userData.faction = faction;
+        this.applyFactionLook(enemy, faction);
         this.addFactionMarker(enemy, faction);
         if (faction === 'nindroid') this.setFactionOpacity(enemy.mesh, 0.08);
+        if (faction === 'anacondrai-serpentine') {
+          enemy.hp *= 1.28;
+          enemy.mesh.userData.noGrab = true;
+          enemy.mesh.scale.multiplyScalar(1.06);
+        }
       }
 
       brain.cooldown -= dt;
@@ -394,18 +406,22 @@ export class TournamentGame extends StableContentGame {
           continue;
         }
       }
+
       const toPlayer = state.player.position.clone().sub(enemy.mesh.position).setY(0);
       const distance = toPlayer.length();
       if (distance < 0.001) continue;
       const toward = toPlayer.normalize();
       const tangent = new THREE.Vector3(-toward.z, 0, toward.x).multiplyScalar(brain.phase);
 
-      if (brain.faction === 'anacondrai') {
-        if (distance > 2.1 && distance < 7.5) enemy.mesh.position.addScaledVector(tangent, dt * 1.15);
+      if (brain.faction === 'anacondrai' || brain.faction === 'anacondrai-serpentine') {
+        if (distance > 2.1 && distance < 7.5) {
+          const flank = brain.faction === 'anacondrai-serpentine' ? 0.95 : 1.15;
+          enemy.mesh.position.addScaledVector(tangent, dt * flank);
+        }
         if (brain.cooldown <= 0 && distance > 2.3 && distance < 8) {
-          enemy.knock.add(toward.multiplyScalar(5.8));
+          enemy.knock.add(toward.multiplyScalar(brain.faction === 'anacondrai-serpentine' ? 6.7 : 5.8));
           brain.cooldown = 3 + Math.random() * 1.8;
-          this.spawnRing(enemy.mesh.position, 0x9d5680, 1.1);
+          this.spawnRing(enemy.mesh.position, brain.faction === 'anacondrai-serpentine' ? 0x744590 : 0x9d5680, 1.1);
         }
       } else if (brain.faction === 'nindroid') {
         if (distance > 3 && distance < 9) enemy.mesh.position.addScaledVector(tangent, dt * 1.45);
@@ -415,12 +431,83 @@ export class TournamentGame extends StableContentGame {
           brain.cooldown = 3.4 + Math.random() * 2;
           this.spawnRing(enemy.mesh.position, 0x63cceb, 1.0);
         }
+      } else if (brain.faction === 'serpentine') {
+        enemy.mesh.position.addScaledVector(tangent, dt * (1.1 + Math.sin(state.elapsed * 5 + index) * 0.55));
+        if (brain.cooldown <= 0 && distance > 2 && distance < 7) {
+          enemy.mesh.position.addScaledVector(toward, 1.1);
+          brain.phase *= -1;
+          brain.cooldown = 2.5 + Math.random() * 1.4;
+          this.spawnRing(enemy.mesh.position, 0x78a743, 0.95);
+        }
+      } else if (brain.faction === 'stone-warrior') {
+        enemy.knock.multiplyScalar(Math.pow(0.18, dt));
+        if (brain.cooldown <= 0 && distance < 4.6) {
+          this.spawnRing(enemy.mesh.position, 0x9b9da2, 1.2);
+          brain.cooldown = 3.8 + Math.random() * 1.8;
+        }
+      } else if (brain.faction === 'skulkin') {
+        enemy.mesh.position.addScaledVector(tangent, dt * 2.35);
+        if (brain.cooldown <= 0 && distance > 1.8 && distance < 7.5) {
+          enemy.mesh.position.addScaledVector(toward, 1.45);
+          brain.phase *= -1;
+          brain.cooldown = 2.1 + Math.random() * 1.3;
+          this.spawnRing(enemy.mesh.position, 0xd9d2c4, 0.9);
+        }
+      } else if (brain.faction === 'shade-clone') {
+        brain.phaseTime -= dt;
+        if (brain.phaseTime <= 0) {
+          const hidden = enemy.mesh.userData.shadeHidden === true;
+          enemy.mesh.userData.shadeHidden = !hidden;
+          this.setFactionOpacity(enemy.mesh, hidden ? 0.82 : 0.14);
+          enemy.mesh.position.addScaledVector(tangent, hidden ? 0.7 : 1.3);
+          brain.phase *= -1;
+          brain.phaseTime = hidden ? 1.1 + Math.random() * 1.1 : 0.45 + Math.random() * 0.35;
+          this.spawnRing(enemy.mesh.position, 0x654a83, 0.82);
+        }
       } else if (brain.cooldown <= 0 && distance < 10) {
         this.spawnBomb(enemy.mesh.position.clone().setY(1.2), state.player.position.clone().setY(0));
         brain.cooldown = 4.4 + Math.random() * 2.4;
-        state.callbacks.onMessage('Bomber enemy: explosive incoming!');
+        state.callbacks.onMessage('Bomb enemy: explosive incoming!');
       }
     }
+  }
+
+  private chooseFaction(enemy: RuntimeEnemy, index: number, wave: number): EnemyFaction {
+    const seed = Math.abs(index + wave * 3);
+    if (enemy.kind === 'ranged') return seed % 3 === 0 ? 'shade-clone' : 'nindroid';
+    if (enemy.kind === 'heavy') return seed % 2 === 0 ? 'stone-warrior' : 'bomber';
+    const melee: EnemyFaction[] = ['anacondrai', 'anacondrai-serpentine', 'serpentine', 'skulkin', 'shade-clone'];
+    return melee[seed % melee.length];
+  }
+
+  private applyFactionLook(enemy: RuntimeEnemy, faction: EnemyFaction) {
+    const tint: Record<EnemyFaction, number> = {
+      anacondrai: 0x8f3f6d,
+      'anacondrai-serpentine': 0x604283,
+      nindroid: 0x345f82,
+      serpentine: 0x588d42,
+      'stone-warrior': 0x5d6165,
+      skulkin: 0xd9d1bd,
+      'shade-clone': 0x34283e,
+      bomber: 0x91472f
+    };
+    enemy.mesh.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const entry of materials) {
+        const material = entry as THREE.MeshStandardMaterial;
+        if (!material.color) continue;
+        material.color.lerp(new THREE.Color(tint[faction]), faction === 'stone-warrior' ? 0.48 : 0.34);
+        if (faction === 'stone-warrior') {
+          material.metalness = Math.max(material.metalness, 0.28);
+          material.roughness = Math.min(material.roughness, 0.58);
+        }
+        if (faction === 'shade-clone') {
+          material.transparent = true;
+          material.opacity = Math.min(material.opacity, 0.82);
+        }
+      }
+    });
   }
 
   private setFactionOpacity(group: THREE.Group, opacity: number) {
@@ -442,7 +529,17 @@ export class TournamentGame extends StableContentGame {
   }
 
   private addFactionMarker(enemy: RuntimeEnemy, faction: EnemyFaction) {
-    const color = faction === 'anacondrai' ? 0x9d5680 : faction === 'nindroid' ? 0x63cceb : 0xe78439;
+    const colors: Record<EnemyFaction, number> = {
+      anacondrai: 0x9d5680,
+      'anacondrai-serpentine': 0x7c5ba2,
+      nindroid: 0x63cceb,
+      serpentine: 0x80b84e,
+      'stone-warrior': 0xa6a8ab,
+      skulkin: 0xe4dccb,
+      'shade-clone': 0x7a5b99,
+      bomber: 0xe78439
+    };
+    const color = colors[faction];
     const marker = new THREE.Mesh(
       new THREE.TorusGeometry(0.24, 0.055, 8, 18),
       new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 })
