@@ -19,6 +19,7 @@ export interface HudState {
   bossColor?: number;
   bossAccent?: number;
   bossElement?: string;
+  bossId?: string;
 }
 
 export interface GameCallbacks {
@@ -2172,7 +2173,8 @@ export class TournamentGame {
       bossMaxHealth: boss?.maxHp,
       bossColor: boss?.bossCharacter?.color,
       bossAccent: boss?.bossCharacter?.accent,
-      bossElement: boss?.bossCharacter?.element
+      bossElement: boss?.bossCharacter?.element,
+      bossId: boss?.bossCharacter?.id
     });
   }
 }
