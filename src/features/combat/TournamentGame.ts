@@ -129,6 +129,8 @@ export class TournamentGame {
   private attackAnimationTime = 0;
   private attackAnimationDuration = 0.28;
   private unlimitedSpecial = false;
+  private creationUltimateEnabled = false;
+  private creationUltimateCooldown = 0;
 
   private health: number;
   private studs = 0;
@@ -222,6 +224,10 @@ export class TournamentGame {
       this.special = 100;
       this.emitHud();
     }
+  }
+
+  setCreationUltimateEnabled(enabled: boolean) {
+    this.creationUltimateEnabled = enabled;
   }
 
   toggleCameraView() {
@@ -366,6 +372,7 @@ export class TournamentGame {
     this.attackCooldown = Math.max(0, this.attackCooldown - dt);
     this.bufferedAttackTime = Math.max(0, this.bufferedAttackTime - dt);
     this.attackAnimationTime = Math.max(0, this.attackAnimationTime - dt);
+    this.creationUltimateCooldown = Math.max(0, this.creationUltimateCooldown - dt);
     if (this.unlimitedSpecial && this.spinTime <= 0) this.special = 100;
     this.invulnerable = Math.max(0, this.invulnerable - dt);
     this.frozenTime = Math.max(0, this.frozenTime - dt);
@@ -498,6 +505,7 @@ export class TournamentGame {
       if (this.queuedActions.has('jump')) this.performJump();
       if (this.queuedActions.has('grab')) this.performGrab();
       if (this.queuedActions.has('special')) this.performSpecial();
+      if (this.queuedActions.has('ultimate')) this.performCreationUltimate();
     }
     this.queuedActions.clear();
   }
@@ -662,6 +670,72 @@ export class TournamentGame {
     this.spinTick = 0;
     this.startSpinjitzuVfx();
     this.callbacks.onMessage(`${this.character.element} Spinjitzu!`);
+  }
+
+  private performCreationUltimate() {
+    if (!this.creationUltimateEnabled || this.creationUltimateCooldown > 0 || !this.grounded || this.frozenTime > 0) return;
+    this.creationUltimateCooldown = 8;
+    this.invulnerable = Math.max(this.invulnerable, 2.4);
+    this.callbacks.onMessage('TORNADO OF CREATION! The ninja combine their Spinjitzu.');
+
+    const aura = new THREE.Group();
+    aura.position.copy(this.player.position);
+    const colors = [0x2eae55, 0xd33a32, 0x3273d3, 0xdde9f0, 0x26272b];
+    for (let i = 0; i < colors.length; i++) {
+      const helixPoints: THREE.Vector3[] = [];
+      for (let step = 0; step <= 44; step++) {
+        const t = step / 44;
+        const radius = 1.15 + t * 3.2;
+        const angle = t * Math.PI * 7 + i * (Math.PI * 2 / colors.length);
+        helixPoints.push(new THREE.Vector3(Math.cos(angle) * radius, 0.15 + t * 5.2, Math.sin(angle) * radius));
+      }
+      const strand = new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(helixPoints), 70, 0.08, 8, false),
+        new THREE.MeshBasicMaterial({ color: colors[i], transparent: true, opacity: 0.8, depthWrite: false })
+      );
+      aura.add(strand);
+    }
+    const core = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.2, 4.8, 5.8, 48, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xe7c45a, transparent: true, opacity: 0.13, side: THREE.DoubleSide, depthWrite: false })
+    );
+    core.position.y = 2.6;
+    aura.add(core);
+    const glow = new THREE.PointLight(0xf2cf68, 6.2, 13, 2);
+    glow.position.y = 2.2;
+    aura.add(glow);
+    this.scene.add(aura);
+
+    for (const enemy of [...this.enemies]) {
+      const distance = enemy.mesh.position.distanceTo(this.player.position);
+      const damageScale = distance <= 8 ? 3.4 : distance <= 14 ? 2.2 : 1.25;
+      this.hitEnemy(enemy, this.character.damage * damageScale, 13, true);
+    }
+
+    const started = performance.now();
+    const animate = (now: number) => {
+      if (!this.running) { this.scene.remove(aura); return; }
+      const t = Math.min(1, (now - started) / 2200);
+      aura.position.copy(this.player.position);
+      aura.rotation.y += 0.19;
+      aura.scale.setScalar(0.75 + Math.sin(t * Math.PI) * 0.55);
+      aura.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          const material = object.material as THREE.MeshBasicMaterial;
+          if (material.transparent) material.opacity *= 0.992;
+        }
+      });
+      if (t >= 1) {
+        this.scene.remove(aura);
+        aura.traverse((object) => {
+          if (!(object instanceof THREE.Mesh)) return;
+          object.geometry.dispose();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach((material) => material.dispose());
+        });
+      } else requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
   }
 
   private startSpinjitzuVfx() {
