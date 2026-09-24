@@ -180,7 +180,8 @@ function mountGraphicsUi() {
   const refresh = () => {
     const profile = getGraphicsProfile();
     button.dataset.mode = profile.mode;
-    button.textContent = `◈ ${profile.label.toUpperCase()} GPU`;
+    const label = `◈ ${profile.label.toUpperCase()} GPU`;
+    if (button.textContent !== label) button.textContent = label;
     button.hidden = !document.querySelector('main.menu-screen, main.panel-screen');
     document.documentElement.dataset.graphics = profile.mode;
   };
@@ -224,7 +225,8 @@ function mountGraphicsUi() {
   };
 
   button.addEventListener('click', openSettings);
-  new MutationObserver(refresh).observe(document.documentElement, { childList: true, subtree: true });
+  const appRoot = document.querySelector('#app');
+  if (appRoot) new MutationObserver(refresh).observe(appRoot, { childList: true, subtree: true });
   refresh();
 }
 
