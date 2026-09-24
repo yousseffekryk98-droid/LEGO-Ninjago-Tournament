@@ -114,3 +114,15 @@ test('mobile arena exposes separate punch and kick controls', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Kick' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Grab' })).toBeVisible();
 });
+
+
+test('ported production shop presents tabs, rarity art and main-menu destination', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /SHOP & LOADOUT/i }).click();
+  await expect(page.locator('.shop-production-tabs')).toBeVisible();
+  await expect(page.locator('[data-powerup-card]')).toHaveCount(3);
+  await expect(page.locator('[data-powerup-card="iron-heart"]')).toHaveAttribute('data-rarity', 'UNCOMMON');
+  await expect(page.locator('[data-powerup-card="charged-scroll"]')).toHaveAttribute('data-rarity', 'RARE');
+  await expect(page.locator('[data-powerup-card="battle-focus"]')).toHaveAttribute('data-rarity', 'ELITE');
+  await expect(page.locator('.production-item-art')).toHaveCount(3);
+});
