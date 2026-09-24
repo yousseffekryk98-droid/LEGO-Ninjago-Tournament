@@ -126,3 +126,10 @@ A pixel-for-pixel copy using extracted commercial assets is intentionally outsid
 ## Legal / project scope
 
 This is an unofficial fan-development project and is not affiliated with or endorsed by The LEGO Group, TT Games, Hellbent Games, or the Ninjago rights holders. LEGO, NINJAGO and related names/characters are trademarks/copyrighted properties of their respective owners. Do not distribute proprietary assets from the original game through this repository.
+
+
+- Fighter-specific **Elemental Kick**: the Kick control and impact inherit the selected fighter's element (Fire, Ice, Lightning, Earth, Energy, Water, Poison, Metal, Shadow, etc.) with distinct VFX and combat behavior.
+- Defeated enemies can drop physical health pickups during normal combat: mostly **½-heart** drops with occasional full hearts; heavy enemies have a higher chance and bosses guarantee a healing drop.
+- The HUD now renders full, half, and empty hearts instead of rounding fractional health.
+- Every fighter can spend banked studs on permanent level upgrades. Existing earned XP reduces the remaining upgrade price; levels increase damage/speed and levels 3 and 5 each add **+1 maximum heart**.
+- Purchased fighter levels apply in Tournament, Dojo, and Challenge Arena through one shared progression rule set.
