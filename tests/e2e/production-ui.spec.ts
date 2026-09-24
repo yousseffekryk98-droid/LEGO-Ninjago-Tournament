@@ -111,7 +111,7 @@ test('mobile arena exposes separate punch and kick controls', async ({ page }) =
   await page.goto('/');
   await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
   await expect(page.getByRole('button', { name: 'Punch' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Kick' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /elemental kick/i })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Grab' })).toBeVisible();
 });
 
@@ -155,4 +155,52 @@ test('free play exposes rebindable Tornado of Creation ultimate', async ({ page 
   await expect(ultimate).toBeVisible();
   await ultimate.click();
   await expect(page.locator('#message')).toContainText('TORNADO OF CREATION');
+});
+
+
+test('fighter upgrades spend studs and unlock extra heart capacity', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(({ primary, cache }) => {
+    const current = JSON.parse(localStorage.getItem(primary) ?? '{}');
+    current.bankStuds = 10000;
+    current.selected = 'kai-tournament';
+    current.fighterXp = { ...(current.fighterXp ?? {}), 'kai-tournament': 0 };
+    const payload = JSON.stringify(current);
+    localStorage.setItem(primary, payload);
+    localStorage.setItem(cache, payload);
+  }, { primary: SAVE_KEY, cache: SAVE_CACHE_KEY });
+  await page.reload();
+
+  await page.getByRole('button', { name: /FIGHTERS/i }).click();
+  const kai = page.locator('[data-id="kai-tournament"]');
+  await expect(kai).toContainText('LV 1');
+  await expect(kai.getByRole('button', { name: /UPGRADE.*1,800/i })).toBeEnabled();
+  await kai.getByRole('button', { name: /UPGRADE.*1,800/i }).click();
+
+  await expect(kai).toContainText('LV 2');
+  await kai.getByRole('button', { name: /UPGRADE.*3,200/i }).click();
+  await expect(kai).toContainText('LV 3');
+  await expect(kai.locator('.stat-row')).toContainText('♥ 5');
+
+  const saved = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), SAVE_KEY);
+  expect(saved.bankStuds).toBe(5000);
+  expect(saved.fighterXp['kai-tournament']).toBe(2200);
+});
+
+test('selected fighter element appears on the kick action', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(({ primary, cache }) => {
+    const current = JSON.parse(localStorage.getItem(primary) ?? '{}');
+    current.selected = 'kai-tournament';
+    const payload = JSON.stringify(current);
+    localStorage.setItem(primary, payload);
+    localStorage.setItem(cache, payload);
+  }, { primary: SAVE_KEY, cache: SAVE_CACHE_KEY });
+  await page.reload();
+
+  await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
+  const kick = page.getByRole('button', { name: 'Fire elemental kick' });
+  await expect(kick).toBeVisible();
+  await expect(kick).toContainText('🔥');
+  await expect(kick).toContainText('Fire');
 });
