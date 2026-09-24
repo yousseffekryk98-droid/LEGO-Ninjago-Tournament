@@ -266,7 +266,7 @@ export class TournamentGame {
   };
 
   private keyDown = (event: KeyboardEvent) => {
-    if (Object.values(this.keyBindings).includes(event.code)) event.preventDefault();
+    if (Object.values(this.keyBindings).includes(event.code) || ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code)) event.preventDefault();
     this.keyboard.add(event.code);
     if (event.repeat) return;
     if (event.code === this.keyBindings.punch) this.action('punch');
@@ -368,10 +368,10 @@ export class TournamentGame {
   private updatePlayer(dt: number) {
     let x = this.input.x;
     let z = this.input.y;
-    if (this.keyboard.has(this.keyBindings.moveLeft)) x -= 1;
-    if (this.keyboard.has(this.keyBindings.moveRight)) x += 1;
-    if (this.keyboard.has(this.keyBindings.moveUp)) z -= 1;
-    if (this.keyboard.has(this.keyBindings.moveDown)) z += 1;
+    if (this.keyboard.has(this.keyBindings.moveLeft) || this.keyboard.has('ArrowLeft')) x -= 1;
+    if (this.keyboard.has(this.keyBindings.moveRight) || this.keyboard.has('ArrowRight')) x += 1;
+    if (this.keyboard.has(this.keyBindings.moveUp) || this.keyboard.has('ArrowUp')) z -= 1;
+    if (this.keyboard.has(this.keyBindings.moveDown) || this.keyboard.has('ArrowDown')) z += 1;
 
     const move = new THREE.Vector2(x, z);
     if (move.lengthSq() > 1) move.normalize();
