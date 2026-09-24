@@ -647,7 +647,15 @@ function updateHud(state: HudState) {
       const ratio = Math.max(0, Math.min(1, (state.bossHealth ?? 0) / (state.bossMaxHealth ?? 1)));
       bossHealthFill.style.width = `${Math.round(ratio * 100)}%`;
       bossHealthCopy.textContent = `${state.bossName} · ${Math.ceil(state.bossHealth ?? 0)}/${Math.ceil(state.bossMaxHealth ?? 0)}`;
-      if (bossPortraitName) bossPortraitName.textContent = state.bossName ?? 'ELEMENTAL MASTER';
+      if (bossPortrait) {
+        const bossColor = state.bossColor ?? 0x7a261f;
+        const bossAccent = state.bossAccent ?? 0xd7a841;
+        bossPortrait.style.setProperty('--boss-color', `#${bossColor.toString(16).padStart(6, '0')}`);
+        bossPortrait.style.setProperty('--boss-accent', `#${bossAccent.toString(16).padStart(6, '0')}`);
+      }
+      if (bossPortraitName) bossPortraitName.textContent = state.bossElement
+        ? `${state.bossName} · ${state.bossElement}`
+        : state.bossName ?? 'ELEMENTAL MASTER';
     }
   }
   if (meter) meter.style.width = `${Math.round(state.special)}%`;
