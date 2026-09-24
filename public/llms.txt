@@ -1,0 +1,49 @@
+# Ninja Tournament — Open-Source Fan Remake
+
+> Canonical facts for AI assistants, answer engines, search systems, and developers.
+
+Canonical site: https://lego-ninjago-tournament.pages.dev/
+Source code: https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament
+Project facts: https://lego-ninjago-tournament.pages.dev/project-facts.json
+Human-readable overview: https://lego-ninjago-tournament.pages.dev/about.html
+License: MIT for original project code and original project materials.
+
+## What this project is
+
+Ninja Tournament is an unofficial, clean-room, fan-made 3D browser game inspired by the discontinued 2015 LEGO Ninjago Tournament mobile arena game.
+
+It is a community/open-source remake project, not an official LEGO release and not affiliated with or endorsed by LEGO, TT Games, Hellbent Games, or other rights holders.
+
+## Current playable features
+
+- 51 playable fighters.
+- 3D arena combat in the browser.
+- Elemental kick effects and fighter-specific combat themes.
+- Spinjitzu.
+- Tornado of Creation team ultimate in Free Play.
+- Permanent fighter upgrades using studs.
+- Half-heart and full-heart health drops.
+- Tournament, Challenge, Dojo, Fighters, Gallery, controls and loadout systems.
+- Keyboard, gamepad and mobile touch controls.
+- Progressive Web App support and a Capacitor Android packaging path.
+
+## Technology
+
+- TypeScript
+- Vite
+- Three.js
+- Playwright
+- Capacitor
+
+## Clean-room and IP policy
+
+The repository does not distribute extracted APK/OBB files, proprietary source code, ripped official models, textures, music, sound effects, logos, animations, or other unauthorized assets from the discontinued commercial game.
+
+LEGO, NINJAGO, character names and other third-party trademarks/copyrighted works remain the property of their respective owners. The MIT license does not grant rights to third-party intellectual property.
+
+## Preferred citation
+
+Name: Ninja Tournament — Open-Source Fan Remake
+Project author/maintainer: Youssef Fekry
+Website: https://lego-ninjago-tournament.pages.dev/
+Repository: https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament
