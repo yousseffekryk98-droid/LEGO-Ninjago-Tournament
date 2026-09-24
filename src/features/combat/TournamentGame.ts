@@ -86,7 +86,7 @@ interface HealthPickup {
   age: number;
 }
 
-const ARENA_RADIUS = 25.5;
+const ARENA_RADIUS = 29.5;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export class TournamentGame {
@@ -318,7 +318,7 @@ export class TournamentGame {
   private updateCameraFeedback(dt: number) {
     // Follow the player across the expanded arena instead of locking the view to its centre.
     // The target is smoothed so combat remains readable while the player can explore the larger floor.
-    const desiredTarget = new THREE.Vector3(this.player.position.x * 0.72, 0.85, this.player.position.z * 0.72 - 0.35);
+    const desiredTarget = new THREE.Vector3(this.player.position.x * 0.82, 0.85, this.player.position.z * 0.82 - 0.35);
     this.cameraTarget.lerp(desiredTarget, 1 - Math.exp(-dt * 4.5));
     this.camera.position.copy(this.cameraBasePosition).add(new THREE.Vector3(this.cameraTarget.x, 0, this.cameraTarget.z + 0.35));
     if (this.cameraShakeTime > 0) {
@@ -1584,7 +1584,7 @@ export class TournamentGame {
     this.scene.add(rim);
 
     const floor = new THREE.Mesh(
-      new THREE.CylinderGeometry(27.2, 27.2, 0.55, 96),
+      new THREE.CylinderGeometry(31.5, 31.5, 0.55, 112),
       new THREE.MeshStandardMaterial({ color: 0x4d535b, roughness: 0.93, metalness: 0.02 })
     );
     floor.receiveShadow = true;
@@ -1592,7 +1592,7 @@ export class TournamentGame {
     this.scene.add(floor);
 
     const inner = new THREE.Mesh(
-      new THREE.CylinderGeometry(22.5, 22.5, 0.04, 96),
+      new THREE.CylinderGeometry(26.5, 26.5, 0.04, 112),
       new THREE.MeshStandardMaterial({ color: 0x3f464d, roughness: 0.88 })
     );
     inner.position.y = 0.01;
@@ -1600,7 +1600,7 @@ export class TournamentGame {
     this.scene.add(inner);
 
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(21.8, 22.4, 96),
+      new THREE.RingGeometry(25.7, 26.4, 112),
       new THREE.MeshBasicMaterial({ color: 0x242b31, transparent: true, opacity: 0.72, side: THREE.DoubleSide })
     );
     ring.rotation.x = -Math.PI / 2;
@@ -1610,7 +1610,7 @@ export class TournamentGame {
 
     for (let i = 0; i < 24; i++) {
       const angle = (i / 24) * Math.PI * 2;
-      const radius = i % 2 ? 23.1 : 24.5;
+      const radius = i % 2 ? 27.0 : 28.4;
       const tile = new THREE.Mesh(
         new THREE.BoxGeometry(2.2, 0.08, 1.25),
         new THREE.MeshStandardMaterial({ color: i % 3 === 0 ? 0x555c63 : 0x474e55, roughness: 0.95 })
@@ -1626,7 +1626,7 @@ export class TournamentGame {
       const angle = (i / 18) * Math.PI * 2;
       if (Math.abs(Math.cos(angle)) > 0.9 && Math.abs(Math.sin(angle)) < 0.32) continue;
       const wall = new THREE.Mesh(new THREE.BoxGeometry(4.6, 2.5 + Math.random() * 1.1, 0.65), wallMaterial);
-      wall.position.set(Math.cos(angle) * 28.1, 1.1, Math.sin(angle) * 28.1);
+      wall.position.set(Math.cos(angle) * 32.4, 1.1, Math.sin(angle) * 32.4);
       wall.rotation.y = -angle + Math.PI / 2;
       wall.castShadow = true;
       wall.receiveShadow = true;
@@ -1634,13 +1634,13 @@ export class TournamentGame {
     }
 
     this.buildArenaGate();
-    this.buildSerpentPillar(-23.0, -21.0, 0.28);
-    this.buildSerpentPillar(23.0, -21.0, -0.28);
-    this.buildSerpentPillar(-23.8, 19.8, 0.2);
-    this.buildSerpentPillar(23.8, 19.8, -0.2);
+    this.buildSerpentPillar(-27.0, -25.0, 0.28);
+    this.buildSerpentPillar(27.0, -25.0, -0.28);
+    this.buildSerpentPillar(-27.8, 23.8, 0.2);
+    this.buildSerpentPillar(27.8, 23.8, -0.2);
 
-    this.buildGong(-25.0, 0);
-    this.buildGong(25.0, 0);
+    this.buildGong(-29.0, 0);
+    this.buildGong(29.0, 0);
     this.buildSpikeTrap(-4.4, -4.2);
     this.buildSpikeTrap(4.6, 4.0);
 
