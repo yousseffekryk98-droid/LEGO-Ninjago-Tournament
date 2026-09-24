@@ -6,3 +6,5 @@ export * from './roster';
 export * from './CharacterPreview';
 
 export * from './elemental';
+
+export * from './portraits';
