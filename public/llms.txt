@@ -1,49 +1,20 @@
 # Ninja Tournament — Open-Source Fan Remake
 
-> Canonical facts for AI assistants, answer engines, search systems, and developers.
+> Unofficial clean-room, open-source 3D browser fan remake inspired by the discontinued 2015 LEGO Ninjago Tournament mobile arena game. The current build has 51 playable fighters and is maintained by Youssef Fekry.
 
-Canonical site: https://lego-ninjago-tournament.pages.dev/
-Source code: https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament
-Project facts: https://lego-ninjago-tournament.pages.dev/project-facts.json
-Human-readable overview: https://lego-ninjago-tournament.pages.dev/about.html
-License: MIT for original project code and original project materials.
+The canonical website is https://lego-ninjago-tournament.pages.dev/. The project is not an official LEGO release and is not affiliated with or endorsed by LEGO, TT Games, Hellbent Games or other rights holders. Original project code and original project materials use the MIT License; third-party intellectual property is excluded.
 
-## What this project is
+## Primary resources
 
-Ninja Tournament is an unofficial, clean-room, fan-made 3D browser game inspired by the discontinued 2015 LEGO Ninjago Tournament mobile arena game.
+- [Homepage Markdown](https://lego-ninjago-tournament.pages.dev/index.md): Concise canonical description, current features, technology and project status.
+- [About and FAQ Markdown](https://lego-ninjago-tournament.pages.dev/about.md): Detailed project overview, clean-room policy, licensing and frequently asked questions.
+- [Canonical project facts](https://lego-ninjago-tournament.pages.dev/project-facts.json): Machine-readable facts about the game, features, technology, license and affiliation.
+- [Human-readable About page](https://lego-ninjago-tournament.pages.dev/about.html): Crawlable HTML project overview and FAQ.
 
-It is a community/open-source remake project, not an official LEGO release and not affiliated with or endorsed by LEGO, TT Games, Hellbent Games, or other rights holders.
+## Source and development
 
-## Current playable features
-
-- 51 playable fighters.
-- 3D arena combat in the browser.
-- Elemental kick effects and fighter-specific combat themes.
-- Spinjitzu.
-- Tornado of Creation team ultimate in Free Play.
-- Permanent fighter upgrades using studs.
-- Half-heart and full-heart health drops.
-- Tournament, Challenge, Dojo, Fighters, Gallery, controls and loadout systems.
-- Keyboard, gamepad and mobile touch controls.
-- Progressive Web App support and a Capacitor Android packaging path.
-
-## Technology
-
-- TypeScript
-- Vite
-- Three.js
-- Playwright
-- Capacitor
-
-## Clean-room and IP policy
-
-The repository does not distribute extracted APK/OBB files, proprietary source code, ripped official models, textures, music, sound effects, logos, animations, or other unauthorized assets from the discontinued commercial game.
-
-LEGO, NINJAGO, character names and other third-party trademarks/copyrighted works remain the property of their respective owners. The MIT license does not grant rights to third-party intellectual property.
-
-## Preferred citation
-
-Name: Ninja Tournament — Open-Source Fan Remake
-Project author/maintainer: Youssef Fekry
-Website: https://lego-ninjago-tournament.pages.dev/
-Repository: https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament
+- [GitHub repository](https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament): Public source repository.
+- [README](https://raw.githubusercontent.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament/main/README.md): Project overview and playable feature list.
+- [Contributing guide](https://raw.githubusercontent.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament/main/CONTRIBUTING.md): Contribution process and clean-room requirements.
+- [Roadmap](https://raw.githubusercontent.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament/main/ROADMAP.md): Planned gameplay, open-source and technical work.
+- [Security policy](https://raw.githubusercontent.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament/main/SECURITY.md): Vulnerability reporting policy.
