@@ -4,7 +4,7 @@ import type { CharacterDef } from '../characters';
 
 export type { HudState, GameCallbacks } from './TournamentGame';
 
-type BaseAction = 'attack' | 'jump' | 'grab' | 'special';
+type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special';
 
 interface RuntimeEnemy {
   mesh: THREE.Group;
@@ -80,7 +80,7 @@ export class TournamentGame extends BaseTournamentGame {
       this.performCharacterSpecial();
     }
 
-    if (action === 'attack') this.hitSupplyCrates(2.7, 1);
+    if (action === 'attack' || action === 'punch' || action === 'kick') this.hitSupplyCrates(2.7, 1);
     if (action === 'special' && specialWasReady) this.hitSupplyCrates(4.4, 3);
   }
 
