@@ -1,6 +1,7 @@
 import './styles.css';
 import { TournamentGame, type HudState } from '../features/combat';
 import { DojoGame, type DojoAction, type DojoStep } from '../features/dojo/DojoGame';
+import { formatKeyLabel, getKeyBindings, showControlsPanel } from '../features/controls';
 import {
   ROSTER,
   CharacterPreview,
@@ -199,6 +200,7 @@ function showHome() {
           <button class="gold-button" id="fighters-btn">◉ FIGHTERS (${ROSTER.length})</button>
           <button class="gold-button" id="rewards-btn">✦ DAILY DRAW & CHALLENGES ${save.daily.draws > 0 ? `(${save.daily.draws})` : ''}</button>
           <button class="gold-button" id="dojo-btn">◇ PLAY DOJO TUTORIAL</button>
+          <button class="gold-button" id="controls-btn">⌨ KEYBOARD CONTROLS</button>
           <button class="gold-button freeplay-button" id="freeplay-btn">∞ FREE PLAY · UNLIMITED SPINJITZU</button>
         </div>
         <div class="save-stats">
@@ -215,6 +217,7 @@ function showHome() {
   document.querySelector('#fighters-btn')?.addEventListener('click', showRoster);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
   document.querySelector('#dojo-btn')?.addEventListener('click', showDojo);
+  document.querySelector('#controls-btn')?.addEventListener('click', showControlsPanel);
   document.querySelector('#freeplay-btn')?.addEventListener('click', startFreePlay);
 }
 
@@ -388,9 +391,11 @@ function showDojo() {
   cleanupGame();
   freePlayMode = false;
   const baseFighter = findCharacter(save.selected);
+  const keys = getKeyBindings();
   const fighter = upgradedCharacter(baseFighter);
   const identity = getCharacterIdentity(baseFighter);
   const specialLabel = baseFighter.special === 'spinjitzu' ? 'SPINJITZU' : baseFighter.special.replace('-', ' ').toUpperCase();
+  const keys = getKeyBindings();
   app.innerHTML = `
     <main class="game-screen dojo-game-screen">
       <div id="dojo-host"></div>
@@ -408,9 +413,11 @@ function showDojo() {
         <button class="action-button jump" data-dojo-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
         <button class="action-button block" id="dojo-block" aria-label="Block"><span class="legacy-icon">⬟</span></button>
         <button class="action-button grab" data-dojo-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
-        <button class="action-button attack" data-dojo-action="attack" aria-label="Attack"><span class="legacy-icon">⚔</span></button>
+        <button class="action-button punch" data-dojo-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
+        <button class="action-button kick" data-dojo-action="kick" aria-label="Kick"><span class="legacy-icon">➤</span></button>
       </div>
-      <div class="dodge-hint">SWIPE DOJO TO DODGE · Q ON DESKTOP</div>
+      <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · SPINJITZU ${formatKeyLabel(keys.special)}</div>
+      <div class="dodge-hint">SWIPE DOJO TO DODGE · ${formatKeyLabel(keys.dodge)} ON DESKTOP</div>
       <div id="dojo-complete" class="game-over hidden"></div>
     </main>`;
 
@@ -525,9 +532,11 @@ function startGame() {
         <button class="action-button jump" data-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
         <button class="action-button block" id="block-btn" aria-label="Block"><span class="legacy-icon">⬟</span></button>
         <button class="action-button grab" data-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
-        <button class="action-button attack" data-action="attack" aria-label="Attack"><span class="legacy-icon">⚔</span></button>
+        <button class="action-button punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
+        <button class="action-button kick" data-action="kick" aria-label="Kick"><span class="legacy-icon">➤</span></button>
       </div>
-      <div class="dodge-hint">SWIPE ARENA TO DODGE</div>
+      <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)}</div>
+      <div class="dodge-hint">SWIPE ARENA TO DODGE · ${formatKeyLabel(keys.dodge)}</div>
       <div id="game-over" class="game-over hidden"></div>
     </main>`;
 
@@ -549,7 +558,7 @@ function startGame() {
   document.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((button) => {
     button.addEventListener('pointerdown', (event) => {
       event.preventDefault();
-      game.action(button.dataset.action as 'attack' | 'jump' | 'grab');
+      game.action(button.dataset.action as 'punch' | 'kick' | 'jump' | 'grab');
     });
   });
   const special = document.querySelector<HTMLButtonElement>('#special-btn')!;
