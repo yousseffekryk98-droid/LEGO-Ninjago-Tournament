@@ -7,7 +7,8 @@
   <meta name="description" content="Learn about the unofficial open-source LEGO Ninjago Tournament fan remake: 51 fighters, elemental combat, Spinjitzu, upgrades, Three.js technology and clean-room development." />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
   <link rel="canonical" href="https://lego-ninjago-tournament.pages.dev/about.html" />
-  <link rel="alternate" type="text/plain" href="/llms.txt" title="AI-readable project context" />
+  <link rel="alternate" type="text/markdown" href="/about.md" title="Markdown version" />
+  <link rel="describedby" href="/llms.txt" />
   <meta property="og:type" content="article" />
   <meta property="og:title" content="About the LEGO Ninjago Tournament Fan Remake" />
   <meta property="og:description" content="Project facts, gameplay features, technology, clean-room policy and contribution information for the open-source browser fan remake." />
@@ -27,14 +28,16 @@
     "@context":"https://schema.org",
     "@graph":[
       {
-        "@type":"VideoGame",
+        "@type":["VideoGame","WebApplication"],
         "@id":"https://lego-ninjago-tournament.pages.dev/#game",
         "name":"Ninja Tournament — Open-Source Fan Remake",
         "alternateName":"LEGO Ninjago Tournament Fan Remake",
         "url":"https://lego-ninjago-tournament.pages.dev/",
         "description":"Unofficial clean-room, open-source 3D browser fan remake inspired by the discontinued 2015 LEGO Ninjago Tournament mobile arena game.",
         "gamePlatform":["Web browser","Progressive Web App"],
-        "applicationCategory":"Game",
+        "applicationCategory":"GameApplication",
+        "operatingSystem":"Any modern web browser",
+        "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
         "genre":["Action","Arena brawler","Fan game"],
         "playMode":"SinglePlayer",
         "isAccessibleForFree":true,
