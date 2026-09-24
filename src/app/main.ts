@@ -182,6 +182,7 @@ function showHome() {
     <main class="menu-screen">
       <div class="dragon-pattern"></div>
       <section class="title-card legacy-title-card">
+        <div class="production-menu-kicker" aria-hidden="true"><i></i><span>ISLAND TOURNAMENT</span><i></i></div>
         <div class="chen-seal" aria-hidden="true"><i></i><b>陳</b></div>
         <p class="eyebrow">MASTER CHEN PRESENTS</p>
         <h1 class="classic-logo"><span>NINJA</span><strong>TOURNAMENT</strong><em>OF ELEMENTS</em></h1>
@@ -516,6 +517,7 @@ function startGame() {
         </div>
       </div>
       <div class="hud hud-center legacy-score-plate">
+        <i class="production-hud-mark" aria-hidden="true"></i>
         <small>TOURNAMENT</small><b id="wave-label">WAVE 0</b><span id="enemy-label">GET READY</span>
         <div id="boss-health" class="boss-health hidden"><span><i id="boss-health-fill"></i></span><em id="boss-health-copy"></em></div>
       </div>
