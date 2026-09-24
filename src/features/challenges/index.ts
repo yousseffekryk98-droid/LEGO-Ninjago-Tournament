@@ -1,5 +1,6 @@
 import { TournamentGame, type HudState } from '../combat';
-import { findCharacter } from '../characters';
+import { findCharacter, getElementCombatTheme } from '../characters';
+import { applyFighterXp } from '../progression';
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
 const SAVE_CACHE_KEY = `${STORAGE_KEY}:cache`;
@@ -32,13 +33,13 @@ function readSave() {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
-      const parsed = JSON.parse(raw) as Record<string, unknown> & { selected?: string; bankStuds?: number };
+      const parsed = JSON.parse(raw) as Record<string, unknown> & { selected?: string; bankStuds?: number; fighterXp?: Record<string, number> };
       if (parsed && typeof parsed === 'object') return parsed;
     } catch {
       // Fall through to the recovery cache.
     }
   }
-  return {} as Record<string, unknown> & { selected?: string; bankStuds?: number };
+  return {} as Record<string, unknown> & { selected?: string; bankStuds?: number; fighterXp?: Record<string, number> };
 }
 
 function writeReward(reward: number) {
@@ -92,7 +93,12 @@ function startChallenge(id: ChallengeId) {
   const overlay = document.querySelector<HTMLElement>('#challenge-overlay');
   if (!overlay) return;
   const save = readSave();
-  const fighter = findCharacter(String(save.selected ?? ''));
+  const baseFighter = findCharacter(String(save.selected ?? ''));
+  const fighterXp = save.fighterXp && typeof save.fighterXp === 'object' ? Number(save.fighterXp[baseFighter.id] ?? 0) : 0;
+  const fighter = applyFighterXp(baseFighter, fighterXp);
+  const elementTheme = getElementCombatTheme(baseFighter.element);
+  const elementColor = `#${elementTheme.color.toString(16).padStart(6, '0')}`;
+  const elementAccent = `#${elementTheme.accent.toString(16).padStart(6, '0')}`;
   latestHud = null;
   seenBoss = false;
   finishing = false;
@@ -112,7 +118,7 @@ function startChallenge(id: ChallengeId) {
           <button data-move="up">▲</button><div><button data-move="left">◀</button><button data-move="down">▼</button><button data-move="right">▶</button></div>
         </div>
         <div class="challenge-actions">
-          <button data-action="jump">JUMP</button><button data-block>BLOCK</button><button data-action="grab">GRAB</button><button data-action="attack">ATTACK</button><button data-action="special">SPECIAL</button>
+          <button data-action="jump">JUMP</button><button data-block>BLOCK</button><button data-action="grab">GRAB</button><button data-action="punch">PUNCH</button><button class="challenge-element-kick" data-action="kick" style="--element-color:${elementColor};--element-accent:${elementAccent}">${elementTheme.icon} ${baseFighter.element.toUpperCase()}</button><button data-action="special">SPECIAL</button>
         </div>
       </div>
       <div class="challenge-result hidden" id="challenge-result"></div>
@@ -189,7 +195,7 @@ function wireChallengeControls(game: TournamentGame, root: HTMLElement) {
     button.addEventListener('lostpointercapture', stop);
   });
   root.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((button) => {
-    button.addEventListener('pointerdown', (event) => { event.preventDefault(); game.action(button.dataset.action as 'attack' | 'jump' | 'grab' | 'special'); });
+    button.addEventListener('pointerdown', (event) => { event.preventDefault(); game.action(button.dataset.action as 'punch' | 'kick' | 'jump' | 'grab' | 'special'); });
   });
   const block = root.querySelector<HTMLButtonElement>('[data-block]');
   if (block) {
