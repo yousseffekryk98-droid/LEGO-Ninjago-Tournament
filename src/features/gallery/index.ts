@@ -3,12 +3,8 @@ import { ROSTER, getCharacterIdentity } from '../characters';
 const SAVE_KEY = 'ninja-tournament-fan-remake-v1';
 
 function readUnlocked() {
-  try {
-    const save = JSON.parse(localStorage.getItem(SAVE_KEY) ?? '{}') as { unlocked?: string[] };
-    return new Set(Array.isArray(save.unlocked) ? save.unlocked : []);
-  } catch {
-    return new Set<string>();
-  }
+  // This build intentionally exposes the complete playable collection.
+  return new Set(ROSTER.map((fighter) => fighter.id));
 }
 
 function showGallery() {
@@ -19,15 +15,23 @@ function showGallery() {
   const overlay = document.createElement('div');
   overlay.id = 'temple-gallery-overlay';
   overlay.className = 'temple-gallery-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Temple Gallery');
   overlay.innerHTML = `
     <section class="temple-gallery-panel">
-      <header><div><small>COLLECTION ARCHIVE</small><h2>Temple Gallery</h2><p>${unlocked.size}/${ROSTER.length} fighters discovered · ${elements.length} elements · ${specials.length} special families</p></div><button id="gallery-close" aria-label="Close">×</button></header>
-      <nav class="gallery-filters"><button class="active" data-gallery-filter="all">ALL</button><button data-gallery-filter="unlocked">UNLOCKED</button><button data-gallery-filter="locked">LOCKED</button>${elements.slice(0,8).map((element) => `<button data-gallery-filter="${element}">${element.toUpperCase()}</button>`).join('')}</nav>
+      <header><div><small>COLLECTION ARCHIVE</small><h2>Temple Gallery</h2><p><span id="gallery-visible-count">${unlocked.size}</span>/${ROSTER.length} fighters shown · ${elements.length} elements · ${specials.length} special families</p></div><button id="gallery-close" aria-label="Close">×</button></header>
+      <div class="gallery-toolbar">
+        <label for="gallery-search">Find a fighter</label>
+        <input id="gallery-search" type="search" autocomplete="off" placeholder="Search fighter, element, style, or special..." />
+      </div>
+      <nav class="gallery-filters"><button class="active" data-gallery-filter="all">ALL</button><button data-gallery-filter="unlocked">UNLOCKED</button><button data-gallery-filter="locked">LOCKED</button>${elements.map((element) => `<button data-gallery-filter="${element}">${element.toUpperCase()}</button>`).join('')}</nav>
       <div class="gallery-grid">
         ${ROSTER.map((fighter) => {
           const open = unlocked.has(fighter.id) || fighter.unlockedByDefault;
           const identity = getCharacterIdentity(fighter);
-          return `<article class="gallery-card ${open ? 'unlocked' : 'locked'}" data-element="${fighter.element}" data-state="${open ? 'unlocked' : 'locked'}">
+          const searchText = [fighter.name, fighter.element, fighter.style, fighter.special, identity.name, identity.variant ?? ''].join(' ').toLowerCase();
+          return `<article class="gallery-card ${open ? 'unlocked' : 'locked'}" data-element="${fighter.element}" data-state="${open ? 'unlocked' : 'locked'}" data-search="${searchText}">
             <div class="gallery-figure" style="--fighter:#${fighter.color.toString(16).padStart(6,'0')};--accent:#${fighter.accent.toString(16).padStart(6,'0')}"><span></span><i></i><b></b></div>
             <small>${open ? fighter.element : 'UNDISCOVERED'}</small>
             <h3>${open ? identity.name : '???'}</h3>
@@ -49,17 +53,44 @@ function showGallery() {
       </div></section>
     </section>`;
   document.body.appendChild(overlay);
-  overlay.querySelector('#gallery-close')?.addEventListener('click', () => overlay.remove());
+
+  let activeFilter = 'all';
+  const search = overlay.querySelector<HTMLInputElement>('#gallery-search');
+  const count = overlay.querySelector<HTMLElement>('#gallery-visible-count');
+  const applyFilters = () => {
+    const query = search?.value.trim().toLowerCase() ?? '';
+    let visibleCount = 0;
+    overlay.querySelectorAll<HTMLElement>('.gallery-card').forEach((card) => {
+      const matchesFilter = activeFilter === 'all' || card.dataset.state === activeFilter || card.dataset.element === activeFilter;
+      const matchesSearch = !query || (card.dataset.search ?? '').includes(query);
+      card.hidden = !(matchesFilter && matchesSearch);
+      if (!card.hidden) visibleCount += 1;
+    });
+    if (count) count.textContent = String(visibleCount);
+  };
+
+  const close = () => {
+    window.removeEventListener('keydown', onKeyDown);
+    overlay.remove();
+  };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') close();
+  };
+
+  overlay.querySelector('#gallery-close')?.addEventListener('click', close);
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) close();
+  });
+  window.addEventListener('keydown', onKeyDown);
+  search?.addEventListener('input', applyFilters);
   overlay.querySelectorAll<HTMLButtonElement>('[data-gallery-filter]').forEach((button) => {
     button.addEventListener('click', () => {
-      const filter = button.dataset.galleryFilter!;
+      activeFilter = button.dataset.galleryFilter!;
       overlay.querySelectorAll('[data-gallery-filter]').forEach((node) => node.classList.toggle('active', node === button));
-      overlay.querySelectorAll<HTMLElement>('.gallery-card').forEach((card) => {
-        const visible = filter === 'all' || card.dataset.state === filter || card.dataset.element === filter;
-        card.hidden = !visible;
-      });
+      applyFilters();
     });
   });
+  window.setTimeout(() => search?.focus(), 0);
 }
 
 function ensureGalleryButton() {
