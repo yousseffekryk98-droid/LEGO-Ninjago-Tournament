@@ -455,6 +455,7 @@ function showDojo() {
   });
   block.addEventListener('pointerup', releaseBlock);
   block.addEventListener('pointercancel', releaseBlock);
+  block.addEventListener('lostpointercapture', releaseBlock);
   document.querySelector('#dojo-exit')?.addEventListener('click', showHome);
 }
 
@@ -564,6 +565,7 @@ function startGame() {
   });
   block.addEventListener('pointerup', releaseBlock);
   block.addEventListener('pointercancel', releaseBlock);
+  block.addEventListener('lostpointercapture', releaseBlock);
 
   document.querySelector('#exit-btn')?.addEventListener('click', () => {
     if (confirm('Leave this tournament run?')) window.addEventListener('ninja-save-updated', () => {
@@ -763,6 +765,7 @@ function wireJoystick(game: MoveController, zoneSelector = '#joystick', stickSel
   };
   zone.addEventListener('pointerup', release);
   zone.addEventListener('pointercancel', release);
+  zone.addEventListener('lostpointercapture', release);
 }
 
 function wireArenaSwipe(game: DodgeController, host: HTMLElement) {
