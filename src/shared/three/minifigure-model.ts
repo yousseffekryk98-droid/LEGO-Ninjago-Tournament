@@ -17,11 +17,11 @@ const DEFAULT_PROFILE: FighterModelProfile = {
   metallic: false
 };
 
-function material(color: number, metallic = false, roughness = 0.58) {
+function material(color: number, metallic = false, roughness = 0.42) {
   return new THREE.MeshStandardMaterial({
     color,
-    roughness: metallic ? 0.3 : roughness,
-    metalness: metallic ? 0.62 : 0.05
+    roughness: metallic ? 0.26 : roughness,
+    metalness: metallic ? 0.62 : 0.02
   });
 }
 
@@ -41,6 +41,52 @@ function addMesh(
   mesh.receiveShadow = true;
   group.add(mesh);
   return mesh;
+}
+
+function createTorsoGeometry(topWidth = 0.82, bottomWidth = 0.96, height = 0.9, depth = 0.52) {
+  const top = topWidth / 2;
+  const bottom = bottomWidth / 2;
+  const halfHeight = height / 2;
+  const halfDepth = depth / 2;
+  const vertices = new Float32Array([
+    -bottom, -halfHeight, halfDepth,  bottom, -halfHeight, halfDepth,  top, halfHeight, halfDepth, -top, halfHeight, halfDepth,
+    -bottom, -halfHeight, -halfDepth, bottom, -halfHeight, -halfDepth, top, halfHeight, -halfDepth, -top, halfHeight, -halfDepth
+  ]);
+  const indices = [
+    0, 1, 2, 0, 2, 3,
+    1, 5, 6, 1, 6, 2,
+    5, 4, 7, 5, 7, 6,
+    4, 0, 3, 4, 3, 7,
+    3, 2, 6, 3, 6, 7,
+    4, 5, 1, 4, 1, 0
+  ];
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function addCHand(group: THREE.Group, name: string, hand: THREE.Material, side: -1 | 1) {
+  const x = side * 0.7;
+  addMesh(group, `${name}Wrist`, new THREE.CylinderGeometry(0.075, 0.075, 0.18, 12), hand, [x, 1.0, 0.01], [0, 0, side * 0.2]);
+  const hook = addMesh(
+    group,
+    name,
+    new THREE.TorusGeometry(0.105, 0.045, 8, 20, Math.PI * 1.55),
+    hand,
+    [side * 0.72, 0.92, 0.03],
+    [0, 0, side > 0 ? 0.68 : -2.46]
+  );
+  hook.scale.y = 1.08;
+}
+
+function addTorsoPrint(group: THREE.Group, accent: THREE.Material, dark: THREE.Material) {
+  addMesh(group, 'torsoSash', new THREE.BoxGeometry(0.12, 0.72, 0.022), accent, [0.02, 1.34, 0.272], [0, 0, -0.55]);
+  addMesh(group, 'torsoTrim', new THREE.BoxGeometry(0.58, 0.065, 0.024), dark, [0, 1.49, 0.274], [0, 0, 0.04]);
+  const badge = addMesh(group, 'elementBadge', new THREE.CylinderGeometry(0.095, 0.095, 0.028, 14), accent, [0.23, 1.54, 0.292], [Math.PI / 2, 0, 0]);
+  badge.scale.x = 0.92;
+  addMesh(group, 'beltKnot', new THREE.BoxGeometry(0.17, 0.11, 0.04), dark, [0, 0.91, 0.3]);
 }
 
 function addKatana(group: THREE.Group, accent: THREE.Material, side: 1 | -1, index = 0) {
@@ -147,17 +193,26 @@ function addExtraArms(group: THREE.Group, primary: THREE.Material, hand: THREE.M
 
 function addHeadgear(group: THREE.Group, profile: FighterModelProfile, primary: THREE.Material, accent: THREE.Material) {
   if (profile.hood) {
-    addMesh(group, 'hoodTop', new THREE.CylinderGeometry(0.42, 0.38, 0.32, 18), primary, [0, 2.28, 0]);
-    addMesh(group, 'hoodBack', new THREE.BoxGeometry(0.7, 0.45, 0.16), primary, [0, 2.1, -0.25]);
+    addMesh(group, 'hoodTop', new THREE.CylinderGeometry(0.43, 0.39, 0.34, 20), primary, [0, 2.3, -0.005]);
+    addMesh(group, 'hoodBack', new THREE.BoxGeometry(0.72, 0.46, 0.18), primary, [0, 2.1, -0.25]);
+    addMesh(group, 'hoodBrow', new THREE.BoxGeometry(0.68, 0.11, 0.12), primary, [0, 2.18, 0.3]);
+    addMesh(group, 'hoodTieLeft', new THREE.BoxGeometry(0.12, 0.38, 0.09), primary, [-0.12, 1.93, -0.36], [0.18, 0, -0.22]);
+    addMesh(group, 'hoodTieRight', new THREE.BoxGeometry(0.12, 0.32, 0.09), primary, [0.12, 1.96, -0.36], [-0.18, 0, 0.22]);
   }
 
   if (profile.archetype === 'samurai') {
-    addMesh(group, 'samuraiHelmet', new THREE.CylinderGeometry(0.43, 0.48, 0.24, 18), primary, [0, 2.31, 0]);
+    addMesh(group, 'samuraiHelmet', new THREE.CylinderGeometry(0.43, 0.49, 0.24, 20), primary, [0, 2.31, 0]);
+    addMesh(group, 'helmetBrim', new THREE.CylinderGeometry(0.53, 0.53, 0.08, 20), accent, [0, 2.19, 0]);
     addMesh(group, 'helmetCrest', new THREE.BoxGeometry(0.1, 0.5, 0.13), accent, [0, 2.62, 0], [0, 0, 0.25]);
   }
 
   if (profile.shoulderArmor) {
-    addMesh(group, 'shoulderArmor', new THREE.BoxGeometry(1.34, 0.16, 0.62), accent, [0, 1.72, -0.02]);
+    addMesh(group, 'armorCollar', new THREE.TorusGeometry(0.37, 0.075, 8, 24), accent, [0, 1.74, 0], [Math.PI / 2, 0, 0]);
+    for (const side of [-1, 1] as const) {
+      addMesh(group, `shoulderPad${side}`, new THREE.BoxGeometry(0.42, 0.14, 0.58), accent, [side * 0.57, 1.69, -0.02], [0, 0, side * -0.08]);
+      addMesh(group, `shoulderSpike${side}`, new THREE.ConeGeometry(0.095, 0.28, 8), accent, [side * 0.7, 1.82, -0.03], [0, 0, side * -0.34]);
+    }
+    addMesh(group, 'backArmorPlate', new THREE.BoxGeometry(0.9, 0.13, 0.52), accent, [0, 1.68, -0.18]);
   }
 }
 
@@ -186,14 +241,17 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
   const skeleton = profile.archetype === 'skeleton';
   const serpentine = profile.archetype === 'serpentine';
 
-  const torso = addMesh(group, 'torso', new THREE.BoxGeometry(0.88, 0.9, 0.5), skeleton ? dark : primary, [0, 1.3, 0]);
+  const torso = addMesh(group, 'torso', createTorsoGeometry(0.8, 0.96, 0.9, 0.52), skeleton ? dark : primary, [0, 1.3, 0]);
   torso.scale.x = profile.archetype === 'master' ? 1.04 : 1;
 
-  addMesh(group, 'belt', new THREE.BoxGeometry(0.94, 0.16, 0.54), accent, [0, 0.89, 0]);
+  addMesh(group, 'belt', new THREE.BoxGeometry(0.96, 0.16, 0.54), accent, [0, 0.89, 0]);
+  if (!skeleton) addTorsoPrint(group, accent, dark);
 
   if (!serpentine || profile.serpentineTail === false) {
     addMesh(group, 'leftLeg', new THREE.BoxGeometry(0.32, 0.72, 0.42), primary, [-0.23, 0.45, 0]);
     addMesh(group, 'rightLeg', new THREE.BoxGeometry(0.32, 0.72, 0.42), primary, [0.23, 0.45, 0]);
+    addMesh(group, 'leftFoot', new THREE.BoxGeometry(0.34, 0.18, 0.52), primary, [-0.23, 0.12, 0.05]);
+    addMesh(group, 'rightFoot', new THREE.BoxGeometry(0.34, 0.18, 0.52), primary, [0.23, 0.12, 0.05]);
     addMesh(group, 'hips', new THREE.BoxGeometry(0.76, 0.2, 0.44), accent, [0, 0.79, 0]);
   } else {
     addSerpentineTail(group, primary, accent);
@@ -203,9 +261,11 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
   const rightArm = addMesh(group, 'rightArm', new THREE.BoxGeometry(0.22, 0.72, 0.24), primary, [0.58, 1.3, 0], [0, 0, 0.22]);
   leftArm.userData.animationPart = 'leftArm';
   rightArm.userData.animationPart = 'rightArm';
+  addMesh(group, 'leftShoulderStud', new THREE.CylinderGeometry(0.15, 0.15, 0.18, 12), primary, [-0.5, 1.58, 0], [0, 0, Math.PI / 2]);
+  addMesh(group, 'rightShoulderStud', new THREE.CylinderGeometry(0.15, 0.15, 0.18, 12), primary, [0.5, 1.58, 0], [0, 0, Math.PI / 2]);
 
-  addMesh(group, 'leftHand', new THREE.SphereGeometry(0.13, 12, 8), skin, [-0.68, 0.96, 0.02]);
-  addMesh(group, 'rightHand', new THREE.SphereGeometry(0.13, 12, 8), skin, [0.68, 0.96, 0.02]);
+  addCHand(group, 'leftHand', skin, -1);
+  addCHand(group, 'rightHand', skin, 1);
 
   if (skeleton) {
     addSkeletonRibs(group, skin, dark);
@@ -219,10 +279,13 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
     [0, 2.02, 0]
   );
   if (serpentine) head.scale.z = 1.18;
+  addMesh(group, 'neckStud', new THREE.CylinderGeometry(0.16, 0.16, 0.12, 16), skin, [0, 1.76, 0]);
+  addMesh(group, 'headStud', new THREE.CylinderGeometry(0.18, 0.18, 0.12, 16), skin, [0, 2.32, 0]);
 
   if (profile.hood) {
-    addMesh(group, 'mask', new THREE.BoxGeometry(0.72, 0.24, 0.52), primary, [0, 2.01, 0.02]);
-    addMesh(group, 'eyeBand', new THREE.BoxGeometry(0.73, 0.12, 0.53), dark, [0, 2.1, 0.01]);
+    addMesh(group, 'mask', new THREE.BoxGeometry(0.72, 0.24, 0.53), primary, [0, 2.0, 0.01]);
+    addMesh(group, 'maskFold', new THREE.BoxGeometry(0.54, 0.055, 0.04), accent, [0, 1.96, 0.295], [0, 0, -0.05]);
+    addMesh(group, 'eyeBand', new THREE.BoxGeometry(0.73, 0.12, 0.54), dark, [0, 2.1, 0.01]);
   }
 
   if (profile.archetype === 'nindroid') {
