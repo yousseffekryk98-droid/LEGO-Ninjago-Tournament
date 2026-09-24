@@ -67,19 +67,15 @@ function showGallery() {
     if (count) count.textContent = String(visibleCount);
   };
 
-  const close = () => {
-    window.removeEventListener('keydown', onKeyDown);
-    overlay.remove();
-  };
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') close();
-  };
+  const close = () => overlay.remove();
 
   overlay.querySelector('#gallery-close')?.addEventListener('click', close);
   overlay.addEventListener('click', (event) => {
     if (event.target === overlay) close();
   });
-  window.addEventListener('keydown', onKeyDown);
+  overlay.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') close();
+  });
   search?.addEventListener('input', applyFilters);
   overlay.querySelectorAll<HTMLButtonElement>('[data-gallery-filter]').forEach((button) => {
     button.addEventListener('click', () => {
