@@ -344,7 +344,7 @@ export class DojoGame {
   private attack() {
     if (this.specialTime > 0) return;
     if (this.actionCooldown > 0) {
-      this.attackBufferTime = 0.22;
+      this.attackBufferTime = 0.45;
       return;
     }
 
