@@ -131,6 +131,7 @@ let lastHudEnemies = 0;
 let stageBannerTimer = 0;
 let freePlayMode = false;
 let gauntletMode = false;
+let gauntletAllFighters = false;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function persist() {
@@ -180,6 +181,7 @@ function showHome() {
   cleanupGame();
   freePlayMode = false;
   gauntletMode = false;
+  gauntletAllFighters = false;
   const selected = findCharacter(save.selected);
   const selectedIdentity = getCharacterIdentity(selected);
   const level = fighterLevel(selected.id);
@@ -346,15 +348,18 @@ function showRoster() {
 }
 
 function gauntletOpponents() {
-  return GAUNTLET_IDS
-    .map((id) => findCharacter(id))
-    .filter((fighter) => fighter.id !== save.selected);
+  const pool = gauntletAllFighters
+    ? ROSTER
+    : GAUNTLET_IDS.map((id) => findCharacter(id));
+  return pool.filter((fighter) => fighter.id !== save.selected);
 }
 
 function showGauntletPath() {
   cleanupGame();
+  gauntletAllFighters = false;
   const selected = findCharacter(save.selected);
   const opponents = gauntletOpponents();
+  const marathonCount = ROSTER.filter((fighter) => fighter.id !== save.selected).length;
   app.innerHTML = `
     <main class="panel-screen gauntlet-screen">
       <header class="top-bar legacy-selection-bar"><button class="back-button" id="back-btn">‹</button><div><small>MASTER CHEN'S CHALLENGE ROUTE</small><h2>Elemental Gauntlet</h2></div><strong>${opponents.length} DUELS</strong></header>
@@ -372,11 +377,16 @@ function showGauntletPath() {
           </article>`;
         }).join('')}
       </section>
-      <div class="gauntlet-start-wrap"><button class="gold-button primary" id="start-gauntlet-btn">⚔ START ELEMENTAL GAUNTLET</button><small>Defeat all ${opponents.length} challengers · classic/overhead view available during combat</small></div>
+      <div class="gauntlet-start-wrap">
+        <button class="gold-button primary" id="start-gauntlet-btn">⚔ START ELEMENTAL GAUNTLET</button>
+        <button class="gold-button marathon-button" id="start-marathon-btn">∞ ALL FIGHTERS MARATHON · ${marathonCount} DUELS</button>
+        <small>Elemental route: ${opponents.length} challengers · Marathon: every playable fighter except your selected fighter · classic/overhead view available</small>
+      </div>
     </main>`;
 
   document.querySelector('#back-btn')?.addEventListener('click', showHome);
   document.querySelector('#start-gauntlet-btn')?.addEventListener('click', startGauntlet);
+  document.querySelector('#start-marathon-btn')?.addEventListener('click', startAllFightersGauntlet);
 }
 
 function showRewards() {
@@ -552,7 +562,20 @@ function startFreePlay() {
 function startGauntlet() {
   freePlayMode = false;
   gauntletMode = true;
+  gauntletAllFighters = false;
   startGame();
+}
+
+function startAllFightersGauntlet() {
+  freePlayMode = false;
+  gauntletMode = true;
+  gauntletAllFighters = true;
+  startGame();
+}
+
+function restartGauntlet() {
+  if (gauntletAllFighters) startAllFightersGauntlet();
+  else startGauntlet();
 }
 
 function startGame() {
@@ -815,7 +838,7 @@ function finalizeRun(runStuds: number, wave: number, fighterId: string) {
       <p class="xp-award">+${formatStuds(xpEarned)} FIGHTER XP · LEVEL ${afterLevel}${afterLevel > beforeLevel ? ' · TRUE POTENTIAL RISING!' : ''}</p>
       <div class="menu-actions"><button class="gold-button primary" id="retry-btn">RETRY</button><button class="gold-button" id="rewards-btn">DAILY REWARDS</button><button class="gold-button" id="menu-btn">MAIN MENU</button></div>
     </section>`;
-  document.querySelector('#retry-btn')?.addEventListener('click', gauntletMode ? startGauntlet : freePlayMode ? startFreePlay : startTournament);
+  document.querySelector('#retry-btn')?.addEventListener('click', gauntletMode ? restartGauntlet : freePlayMode ? startFreePlay : startTournament);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
   document.querySelector('#menu-btn')?.addEventListener('click', showHome);
 }
@@ -841,8 +864,8 @@ function finalizeGauntletVictory(runStuds: number, fights: number, fighterId: st
   overlay.classList.remove('hidden');
   overlay.innerHTML = `
     <section class="legacy-result-card gauntlet-victory-card">
-      <small>CHALLENGE PATH COMPLETE</small>
-      <h2>GAUNTLET CLEARED</h2>
+      <small>${gauntletAllFighters ? 'ALL FIGHTERS MARATHON COMPLETE' : 'CHALLENGE PATH COMPLETE'}</small>
+      <h2>${gauntletAllFighters ? 'MARATHON CLEARED' : 'GAUNTLET CLEARED'}</h2>
       <div class="result-score-grid">
         <span><small>DUELS WON</small><b>${fights}</b></span>
         <span><small>VICTORY BONUS</small><b>◉ ${formatStuds(victoryBonus)}</b></span>
@@ -850,7 +873,7 @@ function finalizeGauntletVictory(runStuds: number, fights: number, fighterId: st
       <p class="xp-award">◉ ${formatStuds(earnedStuds)} TOTAL · +${formatStuds(xpEarned)} FIGHTER XP · LEVEL ${afterLevel}${afterLevel > beforeLevel ? ' · TRUE POTENTIAL RISING!' : ''}</p>
       <div class="menu-actions"><button class="gold-button primary" id="retry-btn">RUN GAUNTLET AGAIN</button><button class="gold-button" id="fighters-btn">FIGHTERS</button><button class="gold-button" id="menu-btn">MAIN MENU</button></div>
     </section>`;
-  document.querySelector('#retry-btn')?.addEventListener('click', startGauntlet);
+  document.querySelector('#retry-btn')?.addEventListener('click', restartGauntlet);
   document.querySelector('#fighters-btn')?.addEventListener('click', showRoster);
   document.querySelector('#menu-btn')?.addEventListener('click', showHome);
 }
