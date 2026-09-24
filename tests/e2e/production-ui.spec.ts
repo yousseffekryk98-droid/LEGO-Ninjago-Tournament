@@ -126,3 +126,33 @@ test('ported production shop presents tabs, rarity art and main-menu destination
   await expect(page.locator('[data-powerup-card="battle-focus"]')).toHaveAttribute('data-rarity', 'ELITE');
   await expect(page.locator('.production-item-art')).toHaveCount(3);
 });
+
+
+test('fighter select owns laptop viewport scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /FIGHTERS/i }).click();
+  const panel = page.locator('main.panel-screen');
+  await expect(panel).toBeVisible();
+  const before = await panel.evaluate((node) => ({
+    clientHeight: node.clientHeight,
+    scrollHeight: node.scrollHeight,
+    scrollTop: node.scrollTop
+  }));
+  expect(before.scrollHeight).toBeGreaterThan(before.clientHeight);
+  await panel.evaluate((node) => node.scrollTo({ top: node.scrollHeight, behavior: 'instant' }));
+  await expect.poll(() => panel.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+});
+
+test('free play exposes rebindable Tornado of Creation ultimate', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /KEYBOARD CONTROLS/i }).click();
+  await expect(page.locator('[data-control-action="ultimate"]')).toHaveText('R');
+  await page.getByRole('button', { name: 'DONE' }).click();
+
+  await page.getByRole('button', { name: /FREE PLAY.*UNLIMITED SPINJITZU/i }).click();
+  const ultimate = page.getByRole('button', { name: /Tornado of Creation ultimate/i });
+  await expect(ultimate).toBeVisible();
+  await ultimate.click();
+  await expect(page.locator('#message')).toContainText('TORNADO OF CREATION');
+});
