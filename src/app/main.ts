@@ -568,20 +568,7 @@ function startGame() {
   block.addEventListener('lostpointercapture', releaseBlock);
 
   document.querySelector('#exit-btn')?.addEventListener('click', () => {
-    if (confirm('Leave this tournament run?')) window.addEventListener('ninja-save-updated', () => {
-  refreshSaveFromStorage();
-  if (document.querySelector('main.menu-screen')) showHome();
-});
-window.addEventListener('storage', (event) => {
-  if (event.key === STORAGE_KEY || event.key === SAVE_CACHE_KEY) refreshSaveFromStorage();
-});
-window.addEventListener('pagehide', persist);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') persist();
-});
-
-persist();
-showHome();
+    if (confirm('Leave this tournament run?')) showHome();
   });
 }
 
@@ -784,4 +771,17 @@ function wireArenaSwipe(game: DodgeController, host: HTMLElement) {
   host.addEventListener('pointercancel', () => { start = null; });
 }
 
+window.addEventListener('ninja-save-updated', () => {
+  refreshSaveFromStorage();
+  if (document.querySelector('main.menu-screen')) showHome();
+});
+window.addEventListener('storage', (event) => {
+  if (event.key === STORAGE_KEY || event.key === SAVE_CACHE_KEY) refreshSaveFromStorage();
+});
+window.addEventListener('pagehide', persist);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') persist();
+});
+
+persist();
 showHome();
