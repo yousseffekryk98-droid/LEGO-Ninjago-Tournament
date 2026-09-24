@@ -638,11 +638,21 @@ function startGame() {
     </main>`;
 
   const host = document.querySelector<HTMLElement>('#game-host')!;
+  const syncCameraButton = (mode: 'classic' | 'overhead') => {
+    const cameraButton = document.querySelector<HTMLButtonElement>('#camera-view-btn');
+    if (!cameraButton) return;
+    cameraButton.setAttribute('aria-pressed', String(mode === 'overhead'));
+    cameraButton.setAttribute('aria-label', mode === 'overhead' ? 'Switch to classic camera' : 'Switch to overhead camera');
+    const label = cameraButton.querySelector('span');
+    if (label) label.textContent = mode === 'overhead' ? 'OVERHEAD' : 'CLASSIC';
+    cameraButton.classList.toggle('overhead', mode === 'overhead');
+  };
   const game = new TournamentGame(host, fighter, {
     onHud: updateHud,
     onMessage: showArenaMessage,
     onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id),
-    onVictory: (runStuds, fights) => finalizeGauntletVictory(runStuds, fights, baseFighter.id)
+    onVictory: (runStuds, fights) => finalizeGauntletVictory(runStuds, fights, baseFighter.id),
+    onCameraModeChange: syncCameraButton
   }, gauntletMode ? { mode: 'duels', duelOpponents: gauntletOpponents() } : { mode: 'waves' });
   activeGame = game;
   game.setUnlimitedSpecial(freePlayMode);
@@ -667,14 +677,7 @@ function startGame() {
     game.action('ultimate');
   });
   const cameraButton = document.querySelector<HTMLButtonElement>('#camera-view-btn');
-  cameraButton?.addEventListener('click', () => {
-    const mode = game.toggleCameraView();
-    cameraButton.setAttribute('aria-pressed', String(mode === 'overhead'));
-    cameraButton.setAttribute('aria-label', mode === 'overhead' ? 'Switch to classic camera' : 'Switch to overhead camera');
-    const label = cameraButton.querySelector('span');
-    if (label) label.textContent = mode === 'overhead' ? 'OVERHEAD' : 'CLASSIC';
-    cameraButton.classList.toggle('overhead', mode === 'overhead');
-  });
+  cameraButton?.addEventListener('click', () => { game.toggleCameraView(); });
 
   const block = document.querySelector<HTMLButtonElement>('#block-btn')!;
   const releaseBlock = () => { block.classList.remove('held'); game.setBlock(false); };
