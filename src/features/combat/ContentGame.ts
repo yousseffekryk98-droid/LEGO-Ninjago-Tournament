@@ -4,7 +4,7 @@ import type { CharacterDef } from '../characters';
 
 export type { HudState, GameCallbacks } from './ContentGameBase';
 
-type BaseAction = 'attack' | 'jump' | 'grab' | 'special';
+type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special';
 type EnemyFaction =
   | 'anacondrai'
   | 'anacondrai-serpentine'
@@ -128,7 +128,7 @@ export class TournamentGame extends StableContentGame {
     const state = this.productionRuntime();
     const specialWasReady = state.special >= 100;
     super.action(action);
-    if (action === 'attack') this.hitTrainingProps(2.55, 1);
+    if (action === 'attack' || action === 'punch' || action === 'kick') this.hitTrainingProps(2.55, 1);
     if (action === 'special' && specialWasReady) this.hitTrainingProps(4.3, 3);
   }
 
