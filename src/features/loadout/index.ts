@@ -213,7 +213,7 @@ function ensurePowerupButton() {
   button.id = 'powerup-menu-btn';
   const state = readPowerups();
   const active = POWERUPS.find((item) => item.id === state.active);
-  button.textContent = active ? `⚡ POWER-UPS · ${active.name.toUpperCase()}` : '⚡ POWER-UPS';
+  button.textContent = active ? `⚡ SHOP & LOADOUT · ${active.name.toUpperCase()}` : '⚡ SHOP & LOADOUT · POWER-UPS';
   button.addEventListener('click', showPowerups);
   menu.appendChild(button);
 }
