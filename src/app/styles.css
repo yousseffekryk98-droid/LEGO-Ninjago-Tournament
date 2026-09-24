@@ -1155,6 +1155,35 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   font-size:7px;
 }
 
+.fighter-avatar-render {
+  position:absolute;
+  inset:1px;
+  z-index:2;
+  width:calc(100% - 2px);
+  height:calc(100% - 2px);
+  object-fit:cover;
+  object-position:center 42%;
+  border-radius:50%;
+  filter:saturate(1.08) contrast(1.04) drop-shadow(0 2px 2px #0008);
+  background:
+    radial-gradient(circle at 50% 35%,rgba(255,221,109,.16),transparent 44%),
+    linear-gradient(145deg,#4d315e,#211727);
+}
+.fighter-avatar.has-render .fighter-avatar-fallback,
+.fighter-avatar.has-render .fighter-avatar-body {
+  opacity:0;
+}
+.fighter-avatar-fallback,
+.fighter-avatar-body {
+  transition:opacity .18s ease;
+}
+.fighter-avatar.has-render {
+  box-shadow:
+    inset 0 0 0 2px #3a2445,
+    inset 0 0 0 5px rgba(227,181,67,.24),
+    0 3px 8px #0008;
+}
+
 @media (max-width:700px) {
   .game-screen .portrait-ring { width:54px; height:54px; }
   .game-screen .action-button { width:60px; height:60px; border-width:4px; }
