@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { CharacterDef } from '../characters';
+import { getElementCombatTheme, type CharacterDef } from '../characters';
 import { createCharacterModel } from '../characters/model';
 import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 import { getKeyBindings, type KeyBindings } from '../controls';
@@ -507,8 +507,65 @@ export class TournamentGame {
         connected ||= enemy.hp < before || !this.enemies.includes(enemy);
       }
     }
+    if (preferred === 'kick') this.performElementalKick(forward);
     if (!connected) this.combo = Math.max(0, this.combo - 1);
     return true;
+  }
+
+  private performElementalKick(forward: THREE.Vector3) {
+    const theme = getElementCombatTheme(this.character.element);
+    const origin = this.player.position.clone().addScaledVector(forward, 1.45).setY(0.05);
+    const ring = this.makeRing(theme.color, 0.82);
+    ring.position.copy(origin);
+    ring.scale.setScalar(0.18);
+    this.scene.add(ring);
+    this.spawnHitSpark(origin.clone().setY(0.85), theme.accent, 0.9);
+
+    const started = performance.now();
+    const animate = () => {
+      if (!this.running) { this.scene.remove(ring); return; }
+      const t = Math.min(1, (performance.now() - started) / 300);
+      ring.scale.setScalar(0.18 + t * 2.7);
+      (ring.material as THREE.MeshBasicMaterial).opacity = 0.82 * (1 - t);
+      ring.rotation.z += 0.08;
+      if (t >= 1) this.scene.remove(ring);
+      else requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+
+    const targets = [...this.enemies]
+      .filter((enemy) => {
+        const offset = enemy.mesh.position.clone().sub(this.player.position).setY(0);
+        const distance = offset.length();
+        if (distance > 3.7 || distance < 0.001) return false;
+        return forward.dot(offset.normalize()) > -0.2;
+      })
+      .sort((a, b) => a.mesh.position.distanceTo(this.player.position) - b.mesh.position.distanceTo(this.player.position));
+
+    const bonusHit = (enemy: Enemy, multiplier: number, knockback: number) => {
+      if (!this.enemies.includes(enemy)) return;
+      enemy.hp -= Math.max(1, this.character.damage * multiplier);
+      enemy.hitFlash = Math.max(enemy.hitFlash, 0.12);
+      this.spawnHitSpark(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.05, 0)), theme.color, 0.72);
+      if (knockback > 0) {
+        const direction = enemy.mesh.position.clone().sub(this.player.position).setY(0).normalize();
+        enemy.knock.add(direction.multiplyScalar(knockback));
+      }
+      if (enemy.hp <= 0) this.defeatEnemy(enemy);
+    };
+
+    if (theme.effect === 'fire') targets.slice(0, 2).forEach((enemy) => bonusHit(enemy, 0.2, 2.2));
+    else if (theme.effect === 'ice') targets.slice(0, 2).forEach((enemy) => {
+      enemy.mesh.userData.elementFreeze = Math.max(Number(enemy.mesh.userData.elementFreeze ?? 0), 0.9);
+      bonusHit(enemy, 0.08, 1.2);
+    });
+    else if (theme.effect === 'lightning') targets.slice(0, 3).forEach((enemy) => bonusHit(enemy, 0.16, 2.8));
+    else if (theme.effect === 'earth' || theme.effect === 'metal') targets.slice(0, 2).forEach((enemy) => bonusHit(enemy, 0.11, 8.5));
+    else if (theme.effect === 'water' || theme.effect === 'wind') targets.slice(0, 2).forEach((enemy) => bonusHit(enemy, 0.08, 9.5));
+    else if (theme.effect === 'poison') targets.slice(0, 2).forEach((enemy) => bonusHit(enemy, 0.22, 1.5));
+    else if (theme.effect === 'energy' || theme.effect === 'light') targets.slice(0, 3).forEach((enemy) => bonusHit(enemy, 0.14, 4.8));
+    else if (theme.effect === 'mind' || theme.effect === 'shadow') targets.slice(0, 2).forEach((enemy) => bonusHit(enemy, 0.13, 3.4));
+    else targets.slice(0, 2).forEach((enemy) => bonusHit(enemy, 0.1, 4.2));
   }
 
   private performJump() {
@@ -769,6 +826,13 @@ export class TournamentGame {
         if (!material.emissive) return;
         material.emissive.setHex(enemy.hitFlash > 0 ? 0x67241d : 0x000000);
       });
+
+      const elementalFreeze = Number(enemy.mesh.userData.elementFreeze ?? 0);
+      if (elementalFreeze > 0) {
+        enemy.mesh.userData.elementFreeze = Math.max(0, elementalFreeze - dt);
+        enemy.mesh.rotation.z = Math.sin(this.elapsed * 18) * 0.035;
+        continue;
+      }
 
       if (enemy.kind === 'boss' && enemy.specialCooldown <= 0) {
         this.performBossSpecial(enemy);
@@ -1802,7 +1866,7 @@ export class TournamentGame {
   private emitHud() {
     const boss = this.enemies.find((enemy) => enemy.kind === 'boss');
     this.callbacks.onHud({
-      health: Math.ceil(this.health),
+      health: Math.round(this.health * 2) / 2,
       maxHealth: this.character.maxHealth,
       studs: this.studs,
       combo: this.combo,
