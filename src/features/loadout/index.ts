@@ -136,10 +136,18 @@ function showPowerups() {
     </section>`;
   document.body.appendChild(overlay);
 
-  overlay.querySelector('#powerup-close')?.addEventListener('click', () => overlay.remove());
+  const close = () => {
+    window.removeEventListener('keydown', onKeyDown);
+    overlay.remove();
+  };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') close();
+  };
+  overlay.querySelector('#powerup-close')?.addEventListener('click', close);
   overlay.addEventListener('click', (event) => {
-    if (event.target === overlay) overlay.remove();
+    if (event.target === overlay) close();
   });
+  window.addEventListener('keydown', onKeyDown);
   overlay.querySelectorAll<HTMLButtonElement>('[data-buy-powerup]').forEach((button) => {
     button.addEventListener('click', () => {
       const id = button.dataset.buyPowerup as PowerupId;
