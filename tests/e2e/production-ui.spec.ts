@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 const POWERUP_KEY = 'ninja-tournament-powerups-v1';
+const SAVE_KEY = 'ninja-tournament-fan-remake-v1';
+const SAVE_CACHE_KEY = `${SAVE_KEY}:cache`;
 
 test('Temple Gallery exposes the full clean-room collection archive', async ({ page }) => {
   await page.goto('/');
@@ -48,4 +50,36 @@ test('tournament HUD exposes collectible stud economy and stage presentation', a
   await expect(page.locator('.stud-copy')).toContainText('BANK');
   await expect(page.locator('#stage-banner')).toBeAttached();
   await expect(page.locator('#boss-health')).toBeAttached();
+});
+
+
+test('all fighters are open and free play starts with unlimited Spinjitzu', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /FIGHTERS/i }).click();
+  await expect(page.locator('.fighter-card')).toHaveCount(51);
+  await expect(page.locator('.fighter-card.locked')).toHaveCount(0);
+  await expect(page.locator('[data-unlock]')).toHaveCount(0);
+
+  await page.getByRole('button', { name: '‹' }).click();
+  await page.getByRole('button', { name: /FREE PLAY.*UNLIMITED SPINJITZU/i }).click();
+  await expect(page.locator('#game-host canvas')).toBeVisible();
+  await expect(page.locator('#special-btn')).toHaveAttribute('aria-label', 'SPINJITZU ∞');
+  await expect(page.locator('#special-btn')).toHaveClass(/ready/);
+  await expect(page.locator('#special-meter')).toHaveCSS('width', '100%');
+});
+
+test('banked money is mirrored into the recovery save cache', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /DAILY DRAW/i }).click();
+  await page.getByRole('button', { name: /DRAW A PRIZE/i }).click();
+  await expect(page.locator('#draw-result')).toContainText('STUD PRIZE');
+
+  const snapshots = await page.evaluate(({ primary, cache }) => ({
+    primary: JSON.parse(localStorage.getItem(primary) ?? '{}'),
+    cache: JSON.parse(localStorage.getItem(cache) ?? '{}')
+  }), { primary: SAVE_KEY, cache: SAVE_CACHE_KEY });
+
+  expect(snapshots.primary.bankStuds).toBeGreaterThan(0);
+  expect(snapshots.cache.bankStuds).toBe(snapshots.primary.bankStuds);
+  expect(snapshots.cache.unlocked).toHaveLength(51);
 });
