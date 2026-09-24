@@ -188,7 +188,7 @@ export class TournamentGame {
 
   action(action: Action) {
     if (action === 'attack' && (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0 || this.frozenTime > 0)) {
-      this.bufferedAttackTime = 0.24;
+      this.bufferedAttackTime = 0.55;
       return;
     }
     this.queuedActions.add(action);
