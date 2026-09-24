@@ -10,6 +10,7 @@ A clean-room, fan-made recreation project inspired by the discontinued 2015 mobi
 ## Quick links
 
 - **Play:** https://lego-ninjago-tournament.pages.dev/
+- **Project overview / FAQ:** https://lego-ninjago-tournament.pages.dev/about.html
 - **Roadmap:** [ROADMAP.md](ROADMAP.md)
 - **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Community launch kit:** [COMMUNITY_LAUNCH.md](COMMUNITY_LAUNCH.md)
