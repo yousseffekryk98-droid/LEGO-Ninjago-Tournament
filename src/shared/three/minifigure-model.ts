@@ -274,6 +274,39 @@ function addHeadgear(group: THREE.Group, profile: FighterModelProfile, primary: 
     addMesh(group, 'hoodTieRight', new THREE.BoxGeometry(0.12, 0.32, 0.09), primary, [0.12, 1.96, -0.36], [-0.18, 0, 0.22]);
   }
 
+  if (profile.archetype === 'serpentine') {
+    // Broader cobra/anacondrai silhouette for arena enemies and serpent fighters.
+    const hood = addMesh(group, 'serpentHood', new THREE.SphereGeometry(0.58, 18, 12), primary, [0, 2.14, -0.07]);
+    hood.scale.set(1.28, 0.74, 0.5);
+    const hoodInset = addMesh(group, 'serpentHoodInset', new THREE.SphereGeometry(0.46, 16, 10), accent, [0, 2.14, -0.1]);
+    hoodInset.scale.set(1.15, 0.56, 0.34);
+
+    addMesh(group, 'serpentSnout', new THREE.BoxGeometry(0.46, 0.24, 0.38), primary, [0, 1.98, 0.34]);
+    addMesh(group, 'serpentNoseRidge', new THREE.BoxGeometry(0.19, 0.08, 0.09), accent, [0, 2.08, 0.55]);
+
+    for (const side of [-1, 1] as const) {
+      addMesh(
+        group,
+        side < 0 ? 'serpentFangLeft' : 'serpentFangRight',
+        new THREE.ConeGeometry(0.055, 0.26, 8),
+        accent,
+        [side * 0.17, 1.86, 0.52],
+        [Math.PI, 0, side * 0.08]
+      );
+      addMesh(
+        group,
+        side < 0 ? 'serpentHoodSpikeLeft' : 'serpentHoodSpikeRight',
+        new THREE.ConeGeometry(0.08, 0.38, 8),
+        accent,
+        [side * 0.47, 2.36, -0.07],
+        [0, 0, side * 0.48]
+      );
+    }
+
+    const crest = addMesh(group, 'serpentCrest', new THREE.ConeGeometry(0.1, 0.52, 8), accent, [0, 2.65, -0.08]);
+    crest.rotation.z = 0.08;
+  }
+
   if (profile.archetype === 'samurai') {
     addMesh(group, 'samuraiHelmet', new THREE.CylinderGeometry(0.43, 0.49, 0.24, 20), primary, [0, 2.31, 0]);
     addMesh(group, 'helmetBrim', new THREE.CylinderGeometry(0.53, 0.53, 0.08, 20), accent, [0, 2.19, 0]);
@@ -465,7 +498,9 @@ export function createGenericFighterModel(
       hood: archetype === 'ninja',
       shoulderArmor: archetype === 'villain',
       extraArms: false,
-      metallic: archetype === 'nindroid'
+      metallic: archetype === 'nindroid',
+      eyeColor: archetype === 'serpentine' ? 0xffe04b : undefined,
+      serpentineTail: archetype === 'serpentine'
     }
   });
 }
