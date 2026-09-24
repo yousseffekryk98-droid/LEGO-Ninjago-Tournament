@@ -27,6 +27,10 @@ export interface GameCallbacks {
   onGameOver: (score: number, wave: number) => void;
 }
 
+export interface TournamentGameOptions {
+  bossRush?: boolean;
+}
+
 type AttackAction = 'attack' | 'punch' | 'kick';
 type Action = AttackAction | 'jump' | 'grab' | 'special' | 'ultimate';
 type EnemyKind = 'melee' | 'heavy' | 'ranged' | 'boss';
@@ -117,6 +121,7 @@ export class TournamentGame {
   private spikePositions: THREE.Vector3[] = [];
   private callbacks: GameCallbacks;
   private character: CharacterDef;
+  private bossRush: boolean;
   private animationFrame = 0;
   private running = true;
   private paused = false;
@@ -156,9 +161,10 @@ export class TournamentGame {
   private elapsed = 0;
   private lastDamageAt = -999;
 
-  constructor(private host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks) {
+  constructor(private host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks, options: TournamentGameOptions = {}) {
     this.character = character;
     this.callbacks = callbacks;
+    this.bossRush = Boolean(options.bossRush);
     this.health = character.maxHealth;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -194,7 +200,7 @@ export class TournamentGame {
     window.addEventListener('keyup', this.keyUp);
     window.addEventListener('ninja-controls-updated', this.refreshControls);
     this.resize();
-    this.callbacks.onMessage('Tournament begins! Survive the waves.');
+    this.callbacks.onMessage(this.bossRush ? 'Elemental Master Gauntlet! Defeat every challenger.' : 'Tournament begins! Survive the waves.');
     this.emitHud();
     this.loop();
   }
@@ -1095,14 +1101,18 @@ export class TournamentGame {
 
   private spawnWave() {
     this.wave += 1;
-    const isBossWave = this.wave % 5 === 0;
+    const isBossWave = this.bossRush || this.wave % 5 === 0;
     if (isBossWave) {
       // The legacy tournament repeatedly pits the player against named Elemental Masters.
-      // Cycle through the full playable roster so every fighter can eventually become a boss.
+      // Boss Rush turns every round into the next roster fighter, while normal Tournament
+      // keeps regular enemy waves between challengers.
       const bossPool = ROSTER.filter((fighter) => fighter.id !== this.character.id);
-      const bossCharacter = bossPool[Math.floor((this.wave / 5 - 1) % bossPool.length)];
+      const bossRound = this.bossRush ? this.wave - 1 : Math.floor(this.wave / 5) - 1;
+      const bossCharacter = bossPool[((bossRound % bossPool.length) + bossPool.length) % bossPool.length];
       this.enemies.push(this.createEnemy('boss', 0, -13.5, bossCharacter.name, bossCharacter));
-      this.callbacks.onMessage(`ELEMENTAL MASTER: ${bossCharacter.name}`);
+      this.callbacks.onMessage(this.bossRush
+        ? `CHALLENGER ${((bossRound % bossPool.length) + bossPool.length) % bossPool.length + 1}/${bossPool.length}: ${bossCharacter.name}`
+        : `ELEMENTAL MASTER: ${bossCharacter.name}`);
     } else {
       const count = Math.min(14, 2 + this.wave);
       for (let i = 0; i < count; i++) {
