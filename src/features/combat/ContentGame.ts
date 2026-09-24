@@ -96,6 +96,15 @@ interface JetMissile {
   life: number;
 }
 
+interface CombatFx {
+  mesh: THREE.Mesh;
+  life: number;
+  total: number;
+  startScale: number;
+  endScale: number;
+  spin: number;
+}
+
 /**
  * Production gameplay layer. It deliberately builds on the already-tested
  * clean-room tournament rather than replacing it, so each fidelity feature is
@@ -113,6 +122,7 @@ export class TournamentGame extends StableContentGame {
   private missiles: JetMissile[] = [];
   private nextMissileRunAt = 23 + Math.random() * 8;
   private playerAura: THREE.Mesh | null = null;
+  private combatFx: CombatFx[] = [];
   private lastPlayerPosition = new THREE.Vector3();
   private visualMoveAmount = 0;
 
@@ -128,8 +138,14 @@ export class TournamentGame extends StableContentGame {
     const state = this.productionRuntime();
     const specialWasReady = state.special >= 100;
     super.action(action);
-    if (action === 'attack' || action === 'punch' || action === 'kick') this.hitTrainingProps(2.55, 1);
-    if (action === 'special' && specialWasReady) this.hitTrainingProps(4.3, 3);
+    if (action === 'attack' || action === 'punch' || action === 'kick') {
+      this.hitTrainingProps(2.55, 1);
+      this.spawnCombatSlash(action);
+    }
+    if (action === 'special' && specialWasReady) {
+      this.hitTrainingProps(4.3, 3);
+      this.spawnSpecialBurst();
+    }
   }
 
   override destroy() {
@@ -141,12 +157,14 @@ export class TournamentGame extends StableContentGame {
     for (const bomb of this.bombs) state.scene.remove(bomb.mesh, bomb.marker);
     for (const jet of this.missileJets) state.scene.remove(jet.group);
     for (const missile of this.missiles) state.scene.remove(missile.group, missile.marker);
+    for (const effect of this.combatFx) state.scene.remove(effect.mesh);
     if (this.playerAura) state.scene.remove(this.playerAura);
     this.props = [];
     this.heartPickups = [];
     this.bombs = [];
     this.missileJets = [];
     this.missiles = [];
+    this.combatFx = [];
     super.destroy();
   }
 
@@ -172,6 +190,7 @@ export class TournamentGame extends StableContentGame {
     this.updateHeartPickups(dt);
     this.updateMissileJets(dt);
     this.updateMissiles(dt);
+    this.updateCombatFx(dt);
     this.updatePresentation();
 
     if (state.wave >= 3 && state.elapsed >= this.nextMissileRunAt && this.missileJets.length === 0) {
@@ -179,6 +198,95 @@ export class TournamentGame extends StableContentGame {
       this.nextMissileRunAt = state.elapsed + 29 + Math.random() * 13;
     }
   };
+
+  private lowFxMode() {
+    return (document.documentElement.dataset.graphics ?? 'safe') === 'safe';
+  }
+
+  private addCombatFx(mesh: THREE.Mesh, life: number, startScale: number, endScale: number, spin = 0) {
+    const state = this.productionRuntime();
+    state.scene.add(mesh);
+    this.combatFx.push({ mesh, life, total: life, startScale, endScale, spin });
+  }
+
+  private spawnCombatSlash(action: 'attack' | 'punch' | 'kick') {
+    const state = this.productionRuntime();
+    const player = state.player;
+    const kick = action === 'kick';
+    const color = new THREE.Color(state.character.accent).lerp(new THREE.Color(0xf1c95b), 0.28);
+    const slash = new THREE.Mesh(
+      new THREE.TorusGeometry(
+        kick ? 1.22 : 0.98,
+        kick ? 0.07 : 0.055,
+        this.lowFxMode() ? 5 : 7,
+        this.lowFxMode() ? 22 : 38,
+        Math.PI * (kick ? 1.42 : 1.16)
+      ),
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: kick ? 0.78 : 0.7,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      })
+    );
+    const facing = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y));
+    slash.position.copy(player.position).addScaledVector(facing, kick ? 0.95 : 0.72);
+    slash.position.y += kick ? 0.72 : 1.18;
+    slash.rotation.set(Math.PI / 2, player.rotation.y, kick ? -1.02 : -0.5);
+    this.addCombatFx(slash, kick ? 0.3 : 0.22, 0.46, kick ? 1.65 : 1.35, kick ? 5 : 3.5);
+
+    if (!this.lowFxMode()) {
+      const echo = slash.clone();
+      echo.material = (slash.material as THREE.MeshBasicMaterial).clone();
+      (echo.material as THREE.MeshBasicMaterial).opacity *= 0.42;
+      echo.position.y += kick ? 0.1 : 0.16;
+      echo.rotation.z -= 0.2;
+      this.addCombatFx(echo, kick ? 0.36 : 0.29, 0.35, kick ? 1.9 : 1.58, kick ? -4 : -2.8);
+    }
+  }
+
+  private spawnSpecialBurst() {
+    const state = this.productionRuntime();
+    const color = new THREE.Color(state.character.accent).lerp(new THREE.Color(0xffffff), 0.18);
+    const ringCount = this.lowFxMode() ? 2 : 4;
+    for (let index = 0; index < ringCount; index++) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.78 + index * 0.15, 0.86 + index * 0.15, this.lowFxMode() ? 26 : 48),
+        new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: Math.max(0.2, 0.58 - index * 0.08),
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.copy(state.player.position).setY(0.08 + index * 0.025);
+      this.addCombatFx(ring, 0.7 + index * 0.07, 0.22 + index * 0.08, 4.3 + index * 0.68, index % 2 === 0 ? 2.8 : -2.8);
+    }
+  }
+
+  private updateCombatFx(dt: number) {
+    const state = this.productionRuntime();
+    for (const effect of [...this.combatFx]) {
+      effect.life -= dt;
+      const progress = 1 - Math.max(0, effect.life / effect.total);
+      const scale = THREE.MathUtils.lerp(effect.startScale, effect.endScale, progress);
+      effect.mesh.scale.setScalar(scale);
+      effect.mesh.rotation.z += dt * effect.spin;
+      const material = effect.mesh.material;
+      if (!Array.isArray(material) && material instanceof THREE.MeshBasicMaterial) {
+        material.opacity = Math.max(0, material.opacity * Math.pow(0.018, dt));
+      }
+      if (effect.life <= 0) {
+        state.scene.remove(effect.mesh);
+        const index = this.combatFx.indexOf(effect);
+        if (index >= 0) this.combatFx.splice(index, 1);
+      }
+    }
+  }
 
   private createPlayerAura() {
     const state = this.productionRuntime();
