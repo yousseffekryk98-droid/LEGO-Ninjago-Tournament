@@ -151,6 +151,25 @@ function xpProgress(id: string) {
   return { xp, level, current, target: target - floor, percent: Math.max(0, Math.min(100, current / (target - floor) * 100)) };
 }
 
+function fighterUpgradeCost(id: string) {
+  const level = fighterLevel(id);
+  if (level >= 5) return 0;
+  const xp = Math.max(0, save.fighterXp[id] ?? 0);
+  const floor = LEVEL_THRESHOLDS[level - 1];
+  const target = LEVEL_THRESHOLDS[level];
+  const remainingRatio = Math.max(0.05, Math.min(1, (target - xp) / Math.max(1, target - floor)));
+  const fullLevelCosts = [1800, 3200, 5200, 8000];
+  return Math.max(500, Math.ceil((fullLevelCosts[level - 1] * remainingRatio) / 100) * 100);
+}
+
+function nextUpgradeCopy(id: string) {
+  const level = fighterLevel(id);
+  if (level >= 5) return 'MAX POTENTIAL · +2 MAX HEARTS';
+  const next = level + 1;
+  const heart = next === 3 || next === 5 ? ' · +1 MAX ♥' : '';
+  return 'NEXT LV ' + next + ': +7% DMG · +0.12 SPD' + heart;
+}
+
 function upgradedCharacter(base: CharacterDef): CharacterDef {
   const level = fighterLevel(base.id);
   const bonus = level - 1;
