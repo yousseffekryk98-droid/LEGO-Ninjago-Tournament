@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { TournamentGame as BaseTournamentGame, type HudState, type GameCallbacks } from './TournamentGame';
+import { TournamentGame as BaseTournamentGame, type HudState, type GameCallbacks, type TournamentGameOptions } from './TournamentGame';
 import type { CharacterDef } from '../characters';
 
-export type { HudState, GameCallbacks } from './TournamentGame';
+export type { HudState, GameCallbacks, TournamentGameOptions } from './TournamentGame';
 
 type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special' | 'ultimate';
 
@@ -28,6 +28,7 @@ interface RuntimeInternals {
   attackCooldown: number;
   wave: number;
   elapsed: number;
+  gameMode: 'waves' | 'duels';
   getMultiplier: () => number;
   emitHud: () => void;
   hitEnemy: (enemy: RuntimeEnemy, damage: number, knockback: number, force?: boolean) => void;
@@ -65,8 +66,8 @@ export class TournamentGame extends BaseTournamentGame {
   private toxicTick = 0;
   private contentDestroyed = false;
 
-  constructor(host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks) {
-    super(host, character, callbacks);
+  constructor(host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks, options: TournamentGameOptions = {}) {
+    super(host, character, callbacks, options);
     this.contentLoop();
   }
 
@@ -109,7 +110,7 @@ export class TournamentGame extends BaseTournamentGame {
     this.updateJets(dt);
     this.updateCrates(dt);
     this.updatePowerups(dt);
-    if (state.wave >= 2 && state.elapsed >= this.nextSupplyAt && this.jets.length === 0) {
+    if (state.gameMode === 'waves' && state.wave >= 2 && state.elapsed >= this.nextSupplyAt && this.jets.length === 0) {
       this.spawnRotoJetPass();
       this.nextSupplyAt = state.elapsed + 22 + Math.random() * 12;
     }
