@@ -47,7 +47,7 @@ function showGallery() {
         <article><b>Stone Warriors</b><p>Heavy armored fighters that resist knockback pressure.</p></article>
         <article><b>Skulkins</b><p>Fast, erratic attackers that constantly change their angle.</p></article>
         <article><b>Shade's Clones</b><p>Phase between visible and shadowed states while repositioning.</p></article>
-        <article><b>Bomb Fighters</b><p>Heavy enemies that telegraph explosive throws with arena warning rings.</p></article>
+        <article><b>Bombers</b><p>Heavy enemies that telegraph explosive throws with arena warning rings.</p></article>
       </div></section>
     </section>`;
   document.body.appendChild(overlay);
