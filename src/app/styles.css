@@ -834,3 +834,12 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   background-clip:text;
   color:transparent;
 }
+
+
+/* Elemental kick in compact Challenge Arena controls */
+.challenge-element-kick{
+  border-color:var(--element-accent,#e0b84c)!important;
+  background:linear-gradient(145deg,var(--element-color,#5b3d72),#211724)!important;
+  color:#fff4c6!important;
+  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--element-accent,#e0b84c) 28%,transparent),0 0 12px color-mix(in srgb,var(--element-color,#5b3d72) 42%,transparent)!important;
+}
