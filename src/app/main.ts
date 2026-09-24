@@ -249,6 +249,8 @@ function showRoster() {
     const canBuy = save.bankStuds >= fighter.cost;
     const progress = xpProgress(fighter.id);
     const upgraded = upgradedCharacter(fighter);
+    const upgradeCost = fighterUpgradeCost(fighter.id);
+    const canUpgrade = progress.level < 5 && save.bankStuds >= upgradeCost;
     const identity = getCharacterIdentity(fighter);
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
@@ -258,10 +260,10 @@ function showRoster() {
           ${identity.variant ? `<span class="fighter-variant">${identity.variant}</span>` : ''}
           <p>${fighter.element} · ${fighter.style} · ${fighter.special.replace('-', ' ')}</p>
           <div class="stat-row"><span>SPD ${upgraded.speed.toFixed(1)}</span><span>DMG ${upgraded.damage}</span><span>♥ ${upgraded.maxHealth}</span></div>
-          ${unlocked ? `<div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'MAX POTENTIAL' : `${progress.current}/${progress.target} XP`}</em>` : ''}
+          ${unlocked ? `<div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'MAX POTENTIAL' : `${progress.current}/${progress.target} XP`}</em><small class="upgrade-copy">${nextUpgradeCopy(fighter.id)}</small>` : ''}
         </div>
         ${unlocked
-          ? `<button class="mini-button select-btn" data-select="${fighter.id}">${selected ? 'SELECTED' : 'SELECT'}</button>`
+          ? `<div class="fighter-card-actions"><button class="mini-button select-btn" data-select="${fighter.id}">${selected ? 'SELECTED' : 'SELECT'}</button><button class="mini-button upgrade-btn" data-upgrade="${fighter.id}" ${progress.level >= 5 || !canUpgrade ? 'disabled' : ''}>${progress.level >= 5 ? 'MAX LEVEL' : `UPGRADE ◉ ${formatStuds(upgradeCost)}`}</button></div>`
           : `<button class="mini-button unlock-btn" data-unlock="${fighter.id}" ${canBuy ? '' : 'disabled'}>◉ ${formatStuds(fighter.cost)}</button>`}
       </article>`;
   }).join('');
@@ -325,6 +327,19 @@ function showRoster() {
   document.querySelectorAll<HTMLButtonElement>('[data-select]').forEach((button) => {
     button.addEventListener('click', () => {
       save.selected = button.dataset.select!;
+      persist();
+      showRoster();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const id = button.dataset.upgrade!;
+      const level = fighterLevel(id);
+      if (level >= 5) return;
+      const cost = fighterUpgradeCost(id);
+      if (save.bankStuds < cost) return;
+      save.bankStuds -= cost;
+      save.fighterXp[id] = Math.max(save.fighterXp[id] ?? 0, LEVEL_THRESHOLDS[level]);
       persist();
       showRoster();
     });
