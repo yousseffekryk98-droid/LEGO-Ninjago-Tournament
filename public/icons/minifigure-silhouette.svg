@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 160" role="img" aria-labelledby="title desc">
+  <title id="title">Clean-room minifigure silhouette</title>
+  <desc id="desc">Original block-toy fighter silhouette created for the open-source fan remake.</desc>
+  <g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="43" y="14" width="42" height="38" rx="10"/>
+    <path d="M49 52 34 66l8 46h44l8-46-15-14"/>
+    <path d="M42 69 21 91m65-22 21 22"/>
+    <path d="M53 112 47 148m28-36 6 36"/>
+    <path d="M24 88c-7 2-10 10-6 16 4 6 12 6 17 2m69-18c7 2 10 10 6 16-4 6-12 6-17 2"/>
+    <path d="M51 32h9m8 0h9"/>
+    <path d="M47 78h34"/>
+  </g>
+</svg>
