@@ -536,6 +536,9 @@ function startGame() {
   const fighter = upgradedCharacter(baseFighter);
   if (freePlayMode) fighter.special = 'spinjitzu';
   const identity = getCharacterIdentity(baseFighter);
+  const elementTheme = getElementCombatTheme(baseFighter.element);
+  const elementColor = `#${elementTheme.color.toString(16).padStart(6, '0')}`;
+  const elementAccent = `#${elementTheme.accent.toString(16).padStart(6, '0')}`;
   const specialLabel = freePlayMode
     ? 'SPINJITZU ∞'
     : baseFighter.special === 'spinjitzu'
