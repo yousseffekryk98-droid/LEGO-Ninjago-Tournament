@@ -140,7 +140,7 @@ test('fighter select owns laptop viewport scrolling', async ({ page }) => {
     scrollTop: node.scrollTop
   }));
   expect(before.scrollHeight).toBeGreaterThan(before.clientHeight);
-  await panel.evaluate((node) => node.scrollTo({ top: node.scrollHeight, behavior: 'instant' }));
+  await panel.evaluate((node) => { node.scrollTop = node.scrollHeight; });
   await expect.poll(() => panel.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
 });
 
