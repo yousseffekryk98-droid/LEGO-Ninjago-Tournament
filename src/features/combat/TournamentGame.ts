@@ -1236,8 +1236,9 @@ export class TournamentGame {
 
   private triggerArenaEvent() {
     const roll = Math.random();
-    if (roll < 0.48) this.spawnBoulderEvent();
-    else if (roll < 0.78) this.spawnTitaniumDragonEvent();
+    if (roll < 0.34) this.spawnBoulderEvent();
+    else if (roll < 0.58) this.spawnTitaniumDragonEvent();
+    else if (roll < 0.8) this.spawnRotoJetEvent();
     else this.spawnCondraiCrusherEvent();
   }
 
@@ -1337,6 +1338,149 @@ export class TournamentGame {
       else requestAnimationFrame(animate);
     };
     animate();
+  }
+
+  private spawnRotoJetEvent() {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const jet = new THREE.Group();
+    jet.name = 'rotoJetEvent';
+
+    const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0x9b2029, roughness: 0.34, metalness: 0.36, clearcoat: 0.42 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x25272c, roughness: 0.6, metalness: 0.32 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xc59a38, roughness: 0.32, metalness: 0.58 });
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.52, 2.5, 5, 12), bodyMat);
+    body.rotation.z = Math.PI / 2;
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.52, 1.2, 10), goldMat);
+    nose.rotation.z = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+    nose.position.x = side > 0 ? -1.95 : 1.95;
+    const wingA = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 3.8), darkMat);
+    wingA.position.y = -0.06;
+    const rotor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 5.6), goldMat);
+    rotor.position.y = 0.78;
+    const rotorHub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.22, 12), darkMat);
+    rotorHub.position.y = 0.72;
+    jet.add(body, nose, wingA, rotor, rotorHub);
+    jet.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
+
+    const startX = side * (ARENA_FLOOR_RADIUS + 4);
+    const endX = -side * (ARENA_FLOOR_RADIUS + 4);
+    const laneZ = clamp(this.player.position.z + (Math.random() - 0.5) * 8, -ARENA_RADIUS + 4, ARENA_RADIUS - 4);
+    jet.position.set(startX, 7.3, laneZ);
+    jet.rotation.y = side > 0 ? Math.PI : 0;
+    this.scene.add(jet);
+    this.callbacks.onMessage('ROTO JET! Watch the target markers — supply boxes may drop studs or hearts.');
+
+    const dropPayload = (target: THREE.Vector3, delay: number, reward: boolean) => {
+      const markerMesh = new THREE.Mesh(
+        new THREE.RingGeometry(0.78, 1.28, 36),
+        new THREE.MeshBasicMaterial({ color: reward ? 0xe0b642 : 0xe44339, transparent: true, opacity: 0.84, side: THREE.DoubleSide, depthWrite: false })
+      );
+      markerMesh.rotation.x = -Math.PI / 2;
+      markerMesh.position.copy(target).setY(0.035);
+      this.scene.add(markerMesh);
+
+      const payload = new THREE.Mesh(
+        reward ? new THREE.BoxGeometry(0.82, 0.82, 0.82) : new THREE.CylinderGeometry(0.18, 0.28, 1.15, 10),
+        new THREE.MeshStandardMaterial({
+          color: reward ? 0xb9862f : 0x7a272b,
+          emissive: reward ? 0x3d2908 : 0x3d0b0e,
+          emissiveIntensity: 0.35,
+          roughness: 0.46,
+          metalness: 0.24
+        })
+      );
+      payload.position.copy(target).setY(8.6);
+      payload.castShadow = true;
+      this.scene.add(payload);
+
+      const started = this.elapsed + delay;
+      const animatePayload = () => {
+        if (!this.running) {
+          this.scene.remove(markerMesh, payload);
+          return;
+        }
+        const local = this.elapsed - started;
+        if (local < 0) {
+          requestAnimationFrame(animatePayload);
+          return;
+        }
+        const t = clamp(local / 0.82, 0, 1);
+        payload.position.y = THREE.MathUtils.lerp(8.6, reward ? 0.58 : 0.34, t * t);
+        payload.rotation.x += 0.13;
+        payload.rotation.z += reward ? 0.09 : 0.21;
+        const markerMaterial = markerMesh.material as THREE.MeshBasicMaterial;
+        markerMaterial.opacity = 0.5 + Math.sin(this.elapsed * 15) * 0.24;
+
+        if (t >= 1) {
+          this.scene.remove(markerMesh, payload);
+          markerMesh.geometry.dispose();
+          markerMaterial.dispose();
+          payload.geometry.dispose();
+          (payload.material as THREE.Material).dispose();
+
+          if (reward) {
+            this.spawnBrickBurst(target.clone().setY(0.4), 8);
+            this.spawnStudBurst(target, 260 + this.wave * 18, 8);
+            if (Math.random() < 0.42) this.spawnHealthPickup(target, Math.random() < 0.28 ? 1 : 0.5);
+            this.callbacks.onMessage('Roto Jet supply box smashed — collect the drop!');
+          } else {
+            this.spawnShockwave(target, 8.8, 0.8);
+            this.spawnHitSpark(target.clone().setY(0.35), 0xff5a47, 1.2);
+          }
+          return;
+        }
+        requestAnimationFrame(animatePayload);
+      };
+      requestAnimationFrame(animatePayload);
+    };
+
+    const started = this.elapsed;
+    let firstDrop = false;
+    let secondDrop = false;
+    let rewardDrop = false;
+    const animate = () => {
+      if (!this.running) {
+        this.scene.remove(jet);
+        return;
+      }
+      const t = clamp((this.elapsed - started) / 3.0, 0, 1);
+      jet.position.x = THREE.MathUtils.lerp(startX, endX, t);
+      jet.position.y = 7.3 + Math.sin(t * Math.PI) * 0.65;
+      rotor.rotation.y += 0.7;
+
+      if (!firstDrop && t >= 0.28) {
+        firstDrop = true;
+        const target = this.player.position.clone().setY(0);
+        target.x = clamp(target.x + (Math.random() - 0.5) * 3.4, -ARENA_RADIUS + 2, ARENA_RADIUS - 2);
+        target.z = clamp(target.z + (Math.random() - 0.5) * 3.4, -ARENA_RADIUS + 2, ARENA_RADIUS - 2);
+        dropPayload(target, 0, false);
+      }
+      if (!rewardDrop && t >= 0.48) {
+        rewardDrop = true;
+        const target = this.player.position.clone().setY(0);
+        target.x = clamp(target.x + (Math.random() - 0.5) * 5, -ARENA_RADIUS + 2, ARENA_RADIUS - 2);
+        target.z = clamp(target.z + (Math.random() - 0.5) * 5, -ARENA_RADIUS + 2, ARENA_RADIUS - 2);
+        dropPayload(target, 0.1, true);
+      }
+      if (!secondDrop && t >= 0.68) {
+        secondDrop = true;
+        const target = this.player.position.clone().setY(0);
+        target.x = clamp(target.x + (Math.random() - 0.5) * 3.4, -ARENA_RADIUS + 2, ARENA_RADIUS - 2);
+        target.z = clamp(target.z + (Math.random() - 0.5) * 3.4, -ARENA_RADIUS + 2, ARENA_RADIUS - 2);
+        dropPayload(target, 0, false);
+      }
+
+      if (t >= 1) {
+        this.scene.remove(jet);
+        jet.traverse((object) => {
+          if (!(object instanceof THREE.Mesh)) return;
+          object.geometry.dispose();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach((material) => material.dispose());
+        });
+      } else requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
   }
 
   private spawnCondraiCrusherEvent() {
