@@ -308,8 +308,8 @@ function showRewards() {
     <main class="panel-screen rewards-screen">
       <header class="top-bar"><button class="back-button" id="back-btn">‹</button><div><small>MASTER CHEN'S PRIZE TABLE</small><h2>Daily Draw</h2></div><strong>◉ ${formatStuds(save.bankStuds)}</strong></header>
       <section class="rewards-layout">
-        <article class="draw-card">
-          <div class="draw-orb">${save.daily.draws}</div>
+        <article class="draw-card legacy-draw-card">
+          <div class="draw-wheel-shell"><i></i><div class="draw-orb">${save.daily.draws}</div><b>PRIZE</b></div>
           <h3>${save.daily.draws > 0 ? 'Draw available' : 'No draws left'}</h3>
           <p>You receive one free draw each day. Complete all three daily challenges to earn up to three additional draws.</p>
           <button class="gold-button primary" id="draw-btn" ${save.daily.draws > 0 ? '' : 'disabled'}>DRAW A PRIZE</button>
@@ -339,6 +339,9 @@ function showRewards() {
     persist();
     const result = document.querySelector<HTMLElement>('#draw-result');
     if (result) result.innerHTML = `<strong>◉ ${formatStuds(prize)}</strong><span>STUD PRIZE</span>`;
+    const wheel = document.querySelector<HTMLElement>('.draw-wheel-shell');
+    wheel?.classList.remove('spinning');
+    if (wheel) { void wheel.offsetWidth; wheel.classList.add('spinning'); }
     const button = document.querySelector<HTMLButtonElement>('#draw-btn');
     if (button && save.daily.draws <= 0) button.disabled = true;
     const orb = document.querySelector<HTMLElement>('.draw-orb');
@@ -632,10 +635,15 @@ function showDefeatScreen(game: TournamentGame, runStuds: number, wave: number, 
 
 function finalizeRun(runStuds: number, wave: number, fighterId: string) {
   const beforeLevel = fighterLevel(fighterId);
+  const previousBestRun = save.bestRun;
+  const previousBestWave = save.bestWave;
+  const roundedRun = Math.floor(runStuds);
+  const newStudRecord = roundedRun > previousBestRun;
+  const newWaveRecord = wave > previousBestWave;
   const xpEarned = Math.floor(250 + wave * 120 + Math.min(2000, runStuds * 0.03));
-  save.bankStuds += Math.floor(runStuds);
+  save.bankStuds += roundedRun;
   save.bestWave = Math.max(save.bestWave, wave);
-  save.bestRun = Math.max(save.bestRun, Math.floor(runStuds));
+  save.bestRun = Math.max(save.bestRun, roundedRun);
   save.totalRuns += 1;
   save.fighterXp[fighterId] = (save.fighterXp[fighterId] ?? 0) + xpEarned;
   save.daily.runs += 1;
@@ -648,11 +656,15 @@ function finalizeRun(runStuds: number, wave: number, fighterId: string) {
   if (!overlay) return;
   overlay.classList.remove('hidden');
   overlay.innerHTML = `
-    <section>
-      <small>TOURNAMENT RUN COMPLETE</small>
-      <h2>Wave ${wave}</h2>
-      <p>◉ ${formatStuds(runStuds)} studs banked</p>
-      <p class="xp-award">+${formatStuds(xpEarned)} fighter XP · Level ${afterLevel}${afterLevel > beforeLevel ? ' — POTENTIAL UP!' : ''}</p>
+    <section class="legacy-result-card">
+      <small>${newStudRecord || newWaveRecord ? 'NEW RECORD!' : 'CURRENT SCORE'}</small>
+      <h2>${formatStuds(runStuds)}</h2>
+      <div class="result-stud-line"><span class="stud-icon"></span><b>STUDS</b></div>
+      <div class="result-score-grid">
+        <span><small>WAVE</small><b>${wave}</b>${newWaveRecord ? '<em>NEW</em>' : ''}</span>
+        <span><small>BEST SCORE</small><b>${formatStuds(save.bestRun)}</b>${newStudRecord ? '<em>NEW</em>' : ''}</span>
+      </div>
+      <p class="xp-award">+${formatStuds(xpEarned)} FIGHTER XP · LEVEL ${afterLevel}${afterLevel > beforeLevel ? ' · TRUE POTENTIAL RISING!' : ''}</p>
       <div class="menu-actions"><button class="gold-button primary" id="retry-btn">RETRY</button><button class="gold-button" id="rewards-btn">DAILY REWARDS</button><button class="gold-button" id="menu-btn">MAIN MENU</button></div>
     </section>`;
   document.querySelector('#retry-btn')?.addEventListener('click', startGame);

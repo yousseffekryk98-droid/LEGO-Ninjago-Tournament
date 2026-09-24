@@ -593,3 +593,37 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 }
 .dojo-fighter-label b{display:block;color:#f0ce6b;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
 .dojo-fighter-label span{color:#d0c2d2;font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+
+/* Daily Draw + result fidelity */
+.rewards-screen{background:radial-gradient(circle at 50% 7%,rgba(103,59,126,.5),transparent 36%),linear-gradient(145deg,#24172f,#0f0c14 58%,#351923)}
+.rewards-screen .top-bar{border-bottom:3px solid #a77a29;background:linear-gradient(#5c396d,#32213f)}
+.rewards-layout{width:min(980px,92vw);margin:24px auto;display:grid;grid-template-columns:minmax(280px,.8fr) minmax(360px,1.2fr);gap:18px}
+.draw-card,.challenge-card{border:3px solid #805d27;border-radius:5px;background:linear-gradient(145deg,#563467,#291b35);box-shadow:inset 0 0 0 2px #1c1223,0 8px 18px #0007}
+.draw-card{padding:24px;text-align:center}
+.draw-card h3{color:#f1d274;text-transform:uppercase;font:900 29px 'Barlow Condensed',sans-serif}
+.draw-card p{color:#d4c6d7}
+.draw-wheel-shell{position:relative;width:150px;height:150px;margin:0 auto 16px;border:7px solid #c99a34;border-radius:50%;outline:3px solid #34203e;background:repeating-conic-gradient(#5a386d 0 15deg,#382348 15deg 30deg);box-shadow:inset 0 0 0 5px #20142a,0 8px 20px #0008}
+.draw-wheel-shell::after{content:'';position:absolute;inset:24px;border-radius:50%;border:3px solid #b58a31;background:radial-gradient(circle,#6c457f,#2b1c37)}
+.draw-wheel-shell i{position:absolute;z-index:3;left:50%;top:-16px;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:24px solid #f0c95b;filter:drop-shadow(0 2px #5b3812)}
+.draw-wheel-shell b{position:absolute;z-index:4;left:50%;bottom:18px;transform:translateX(-50%);color:#f0cf6c;font:900 9px 'Barlow Condensed',sans-serif;letter-spacing:.12em}
+.draw-orb{position:absolute!important;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);display:grid!important;place-items:center;width:58px!important;height:58px!important;border-radius:50%!important;background:radial-gradient(circle,#f0d574,#9c6921)!important;color:#321d12!important;font:900 25px 'Barlow Condensed',sans-serif!important;box-shadow:0 0 0 4px #35213f!important}
+.draw-wheel-shell.spinning{animation:legacy-wheel-spin .72s cubic-bezier(.2,.78,.18,1)}
+@keyframes legacy-wheel-spin{to{transform:rotate(720deg)}}
+.challenge-list{display:grid;gap:10px}
+.challenge-card{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.challenge-card.done{border-color:#c7a13d;background:linear-gradient(145deg,#654074,#34233f)}
+.challenge-card h3{margin:3px 0;color:#f0d17a;text-transform:uppercase}
+.challenge-card small{color:#c7aa53}
+.challenge-card p{color:#d0c3d1}
+.draw-result strong{display:block;color:#f6d977;font:900 34px 'Barlow Condensed',sans-serif;text-shadow:0 2px #4c2b0e}
+.draw-result span{color:#dbc57f;font-size:10px;font-weight:900;letter-spacing:.14em}
+.legacy-result-card{min-width:min(560px,92vw)}
+.legacy-result-card>small{color:#f2c85e!important;font-size:15px!important;letter-spacing:.18em}
+.legacy-result-card>h2{font-size:68px!important;line-height:.9;color:#f3d06a!important;text-shadow:0 4px #5b3510,0 8px 20px #000!important}
+.result-stud-line{display:flex;justify-content:center;align-items:center;gap:8px;margin:8px 0 18px;color:#e2c67d}
+.result-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 auto 16px;max-width:380px}
+.result-score-grid>span{position:relative;padding:9px;border:2px solid #9c732a;background:#2e1e39}
+.result-score-grid small{display:block;color:#c8ac59;font-size:8px;letter-spacing:.12em}
+.result-score-grid b{display:block;color:#f0dd9a;font-size:21px}
+.result-score-grid em{position:absolute;right:5px;top:5px;padding:2px 4px;border-radius:2px;background:#a87924;color:#29180b;font-size:7px;font-style:normal;font-weight:900}
+@media(max-width:720px){.rewards-layout{grid-template-columns:1fr}.draw-wheel-shell{width:126px;height:126px}.legacy-result-card>h2{font-size:52px!important}}

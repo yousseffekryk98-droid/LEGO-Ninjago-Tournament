@@ -56,10 +56,10 @@ Characters demonstrably shown being controlled in legacy gameplay showcase video
 | True Potential | Highest level has stronger identity | Implemented stats + clean-room visual aura |
 | Obsidian weapon treatment | Documented high-potential DX/ZX/Zukin variants use dark weapons | Implemented for supported variants |
 | Power-up selection | Select/equip a power-up before a run | Implemented |
-| Daily prize draw | Prize draw / rewards loop | Implemented |
+| Daily prize draw | Legacy-styled spinning prize wheel, free draw and challenge-earned draws | Implemented |
 | Challenges | Challenge preview and objectives | Implemented |
 | Red low-energy screen | Screen turns red at low health | Implemented |
-| Current score feedback | Stud/score and multiplier remain visible | Implemented |
+| Current score feedback | Stud/score and multiplier remain visible; run result shows current/best score and New Record state | Implemented |
 | Combat impact fidelity | Per-hit micro hit-stop, internal camera impulse, sparks, block flashes and physical LEGO-like breakup pieces | Implemented |
 | Temple Gallery | Collection / fighter archive | Implemented |
 | Dojo training | Movement, attack, jump, block, grab, dodge, special tutorial in a fully staged wooden dojo | Implemented |
