@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Explicitly allow major search/answer crawlers that honor robots.txt.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+Sitemap: https://lego-ninjago-tournament.pages.dev/sitemap.xml
