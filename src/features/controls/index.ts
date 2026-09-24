@@ -9,7 +9,8 @@ export type ControlAction =
   | 'jump'
   | 'block'
   | 'dodge'
-  | 'special';
+  | 'special'
+  | 'ultimate';
 
 export type KeyBindings = Record<ControlAction, string>;
 
@@ -26,7 +27,8 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
   jump: 'KeyK',
   block: 'ShiftLeft',
   dodge: 'KeyQ',
-  special: 'KeyE'
+  special: 'KeyE',
+  ultimate: 'KeyR'
 };
 
 export const CONTROL_GROUPS: Array<{
@@ -51,7 +53,8 @@ export const CONTROL_GROUPS: Array<{
       { action: 'jump', label: 'Jump', help: 'Jump; attack while airborne for a slam.' },
       { action: 'block', label: 'Block', help: 'Hold to reduce incoming damage.' },
       { action: 'dodge', label: 'Dodge', help: 'Quick evade in your facing or movement direction.' },
-      { action: 'special', label: 'Spinjitzu / Special', help: 'Use Spinjitzu or the fighter special when charged.' }
+      { action: 'special', label: 'Spinjitzu / Special', help: 'Use Spinjitzu or the fighter special when charged.' },
+      { action: 'ultimate', label: 'Tornado of Creation', help: 'Free Play team ultimate: call the ninja together into one giant creation tornado.' }
     ]
   }
 ];
@@ -167,7 +170,7 @@ export function showControlsPanel() {
         </div>
         <section class="controller-map">
           <small>GAMEPAD DEFAULT</small>
-          <p>Left stick / D-pad: move · A: punch · RT: kick · X: grab · RB: jump · LB: block · B: dodge · Y: Spinjitzu / special.</p>
+          <p>Left stick / D-pad: move · A: punch · RT: kick · X: grab · RB: jump · LB: block · B: dodge · Y: Spinjitzu / special. The team ultimate uses your keyboard binding.</p>
         </section>
         <div class="controls-actions">
           <button class="gold-button" id="controls-reset" type="button">RESET DEFAULTS</button>
