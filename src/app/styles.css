@@ -906,3 +906,7 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 .gauntlet-mode .legacy-score-plate{border-color:#d4aa43}
 @media(max-width:850px){.gauntlet-path{grid-template-columns:repeat(2,minmax(0,1fr))}.gauntlet-intro{grid-template-columns:1fr}.gauntlet-selected{width:100%}}
 @media(max-width:480px){.gauntlet-path{grid-template-columns:1fr;padding-inline:10px}.gauntlet-path::before{left:50%;right:auto;top:2%;bottom:2%;width:2px;height:auto}.gauntlet-intro{margin-top:12px;padding:14px}.gauntlet-intro h3{font-size:25px}.gauntlet-node{min-height:80px}}
+
+.fighters-menu-button{display:flex;align-items:center;justify-content:center;gap:8px}
+.menu-vector-icon{width:18px;height:23px;display:block;object-fit:contain;filter:drop-shadow(0 2px 2px #0008)}
+.marathon-button{border-color:#9a78bc;background:linear-gradient(90deg,#2a2035,#4e365f,#211a2b);color:#eadbff}
