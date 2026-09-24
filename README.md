@@ -2,6 +2,15 @@
 
 A clean-room, fan-made recreation project inspired by the discontinued 2015 mobile arena brawler.
 
+
+## Open source & contributing
+
+The original code and original project materials in this repository are licensed under the **MIT License**. LEGO, NINJAGO, and other third-party names, characters, trademarks, and copyrighted works remain the property of their respective owners and are not granted by this repository's license.
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md), and the [ROADMAP.md](ROADMAP.md) before contributing.
+
+Good contribution areas include clean-room 3D art, combat/VFX polish, controls and accessibility, responsive UI, performance, tests, documentation, and translations. **Do not submit ripped or extracted proprietary game assets or source code.**
+
 > This repository does **not** contain extracted/ripped LEGO, TT Games, Hellbent Games, APK, OBB, audio, models, textures, logos, animations, or other proprietary game assets. Use only assets you own or have permission to use.
 
 ## Current release-candidate build
