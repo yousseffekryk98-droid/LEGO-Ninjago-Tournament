@@ -60,6 +60,7 @@ Characters demonstrably shown being controlled in legacy gameplay showcase video
 | Challenges | Challenge preview and objectives | Implemented |
 | Red low-energy screen | Screen turns red at low health | Implemented |
 | Current score feedback | Stud/score and multiplier remain visible | Implemented |
+| Combat impact fidelity | Per-hit micro hit-stop, internal camera impulse, sparks, block flashes and physical LEGO-like breakup pieces | Implemented |
 | Temple Gallery | Collection / fighter archive | Implemented |
 | Dojo training | Movement, attack, jump, block, grab, dodge, special tutorial in a fully staged wooden dojo | Implemented |
 | Roto Jet | Flyover, physical breakable supply boxes, studs/hearts and missile attack runs | Implemented |

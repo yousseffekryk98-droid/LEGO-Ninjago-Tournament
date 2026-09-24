@@ -82,6 +82,10 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 export class TournamentGame {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+  private cameraBasePosition = new THREE.Vector3(13.4, 12.4, 15.2);
+  private cameraShakeTime = 0;
+  private cameraShakeStrength = 0;
+  private hitStopTime = 0;
   private renderer: THREE.WebGLRenderer;
   private clock = new THREE.Clock();
   private player: THREE.Group;
@@ -155,7 +159,7 @@ export class TournamentGame {
 
     // The original mobile game used a readable diagonal arena view rather than
     // a near top-down camera. Keep the full ring visible while lowering the eye.
-    this.camera.position.set(13.4, 12.4, 15.2);
+    this.camera.position.copy(this.cameraBasePosition);
     this.camera.lookAt(0, 0.85, -0.35);
 
     window.addEventListener('resize', this.resize);
@@ -259,9 +263,34 @@ export class TournamentGame {
     if (!this.running) return;
     this.animationFrame = requestAnimationFrame(this.loop);
     const dt = Math.min(this.clock.getDelta(), 0.04);
-    if (!this.paused) this.update(dt);
+    if (!this.paused) {
+      if (this.hitStopTime > 0) this.hitStopTime = Math.max(0, this.hitStopTime - dt);
+      else this.update(dt);
+    }
+    this.updateCameraFeedback(dt);
     this.renderer.render(this.scene, this.camera);
   };
+
+  private updateCameraFeedback(dt: number) {
+    this.camera.position.copy(this.cameraBasePosition);
+    if (this.cameraShakeTime > 0) {
+      this.cameraShakeTime = Math.max(0, this.cameraShakeTime - dt);
+      const fade = Math.min(1, this.cameraShakeTime / 0.1);
+      const strength = this.cameraShakeStrength * fade;
+      this.camera.position.x += (Math.random() - 0.5) * strength;
+      this.camera.position.y += (Math.random() - 0.5) * strength * 0.55;
+      this.camera.position.z += (Math.random() - 0.5) * strength;
+    } else {
+      this.cameraShakeStrength = 0;
+    }
+    this.camera.lookAt(0, 0.85, -0.35);
+  }
+
+  private addImpactFeedback(strength: number, freezeSeconds: number) {
+    this.cameraShakeTime = Math.max(this.cameraShakeTime, 0.075 + strength * 0.025);
+    this.cameraShakeStrength = Math.max(this.cameraShakeStrength, 0.12 + strength * 0.12);
+    this.hitStopTime = Math.max(this.hitStopTime, freezeSeconds);
+  }
 
   private update(dt: number) {
     this.elapsed += dt;
@@ -613,6 +642,9 @@ export class TournamentGame {
     if (enemy.bossName === 'Mr. Pale' && enemy.hiddenTime > 0 && !force) return;
     enemy.hp -= damage;
     enemy.hitFlash = 0.09;
+    const impactStrength = enemy.kind === 'boss' ? 1.25 : enemy.kind === 'heavy' ? 1.0 : 0.72;
+    this.addImpactFeedback(impactStrength, force ? 0.055 : enemy.kind === 'heavy' ? 0.045 : 0.032);
+    this.spawnHitSpark(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.25, 0)), enemy.kind === 'boss' ? 0xf2c55c : 0xffe0a0, impactStrength);
     this.combo += 1;
     this.special = clamp(this.special + 7.5, 0, 100);
     if (knockback > 0) {
@@ -641,6 +673,8 @@ export class TournamentGame {
     if (this.invulnerable > 0 || this.spinTime > 0 || this.dodgeTime > 0) return;
     const blocked = this.input.block;
     const actual = blocked ? amount * 0.28 : amount;
+    this.addImpactFeedback(blocked ? 0.45 : 1.05, blocked ? 0.018 : 0.052);
+    this.spawnHitSpark(this.player.position.clone().add(new THREE.Vector3(0, 1.1, 0)), blocked ? 0x9fd5ff : 0xff684f, blocked ? 0.55 : 1.0);
     this.health = Math.max(0, this.health - actual);
     this.invulnerable = blocked ? 0.25 : 0.7;
     this.combo = 0;
@@ -1200,27 +1234,108 @@ export class TournamentGame {
     });
   }
 
-  private spawnBrickBurst(origin: THREE.Vector3, amount: number) {
+  private spawnHitSpark(origin: THREE.Vector3, color: number, strength: number) {
+    const pieces: Array<{ mesh: THREE.Mesh; velocity: THREE.Vector3 }> = [];
+    const amount = Math.max(4, Math.round(5 + strength * 4));
+    const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false });
+
     for (let i = 0; i < amount; i++) {
-      const piece = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18 + Math.random() * 0.18, 0.18, 0.18 + Math.random() * 0.25),
-        new THREE.MeshStandardMaterial({ color: i % 2 ? 0xd7aa3b : 0x6e7178, metalness: 0.05, roughness: 0.75 })
+      const mesh = new THREE.Mesh(
+        i % 3 === 0 ? new THREE.SphereGeometry(0.055, 6, 5) : new THREE.BoxGeometry(0.045, 0.045, 0.24 + Math.random() * 0.18),
+        material.clone()
       );
-      piece.position.copy(origin).add(new THREE.Vector3((Math.random() - 0.5) * 1.2, 0.2 + Math.random(), (Math.random() - 0.5) * 1.2));
-      piece.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-      this.scene.add(piece);
-      const start = this.elapsed;
-      const cleanup = () => {
-        if (!this.running || this.elapsed - start > 0.75) {
-          this.scene.remove(piece);
-          return;
-        }
-        piece.position.y += 0.015;
-        piece.rotation.x += 0.08;
-        requestAnimationFrame(cleanup);
-      };
-      cleanup();
+      mesh.position.copy(origin).add(new THREE.Vector3((Math.random() - 0.5) * 0.45, (Math.random() - 0.5) * 0.35, (Math.random() - 0.5) * 0.45));
+      mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      this.scene.add(mesh);
+      pieces.push({
+        mesh,
+        velocity: new THREE.Vector3((Math.random() - 0.5) * 6, 1.5 + Math.random() * 4, (Math.random() - 0.5) * 6)
+      });
     }
+
+    const started = performance.now();
+    let last = started;
+    const animate = (now: number) => {
+      const dt = Math.min(0.035, Math.max(0.001, (now - last) / 1000));
+      last = now;
+      const t = Math.min(1, (now - started) / 280);
+      for (const piece of pieces) {
+        piece.velocity.y -= 12 * dt;
+        piece.mesh.position.addScaledVector(piece.velocity, dt);
+        piece.mesh.rotation.x += dt * 12;
+        piece.mesh.rotation.z += dt * 9;
+        (piece.mesh.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - t);
+      }
+      if (!this.running || t >= 1) {
+        for (const piece of pieces) {
+          this.scene.remove(piece.mesh);
+          piece.mesh.geometry.dispose();
+          (piece.mesh.material as THREE.Material).dispose();
+        }
+        return;
+      }
+      requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }
+
+  private spawnBrickBurst(origin: THREE.Vector3, amount: number) {
+    const pieces: Array<{ mesh: THREE.Mesh; velocity: THREE.Vector3 }> = [];
+    for (let i = 0; i < amount; i++) {
+      const geometry: THREE.BufferGeometry = i % 5 === 0
+        ? new THREE.CylinderGeometry(0.18, 0.18, 0.28, 10)
+        : i % 5 === 1
+          ? new THREE.BoxGeometry(0.28, 0.48, 0.24)
+          : new THREE.BoxGeometry(0.18 + Math.random() * 0.18, 0.18, 0.18 + Math.random() * 0.25);
+      const piece = new THREE.Mesh(
+        geometry,
+        new THREE.MeshPhysicalMaterial({
+          color: i % 3 === 0 ? 0xd7aa3b : i % 3 === 1 ? 0x6e7178 : 0x7b2631,
+          metalness: 0.04,
+          roughness: 0.42,
+          clearcoat: 0.42,
+          clearcoatRoughness: 0.3
+        })
+      );
+      piece.position.copy(origin).add(new THREE.Vector3((Math.random() - 0.5) * 1.2, 0.5 + Math.random(), (Math.random() - 0.5) * 1.2));
+      piece.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      piece.castShadow = true;
+      this.scene.add(piece);
+      pieces.push({
+        mesh: piece,
+        velocity: new THREE.Vector3((Math.random() - 0.5) * 5.5, 2.5 + Math.random() * 4.5, (Math.random() - 0.5) * 5.5)
+      });
+    }
+
+    const started = performance.now();
+    let last = started;
+    const animate = (now: number) => {
+      const dt = Math.min(0.035, Math.max(0.001, (now - last) / 1000));
+      last = now;
+      const elapsed = (now - started) / 1000;
+      for (const piece of pieces) {
+        piece.velocity.y -= 12.5 * dt;
+        piece.mesh.position.addScaledVector(piece.velocity, dt);
+        if (piece.mesh.position.y < 0.16) {
+          piece.mesh.position.y = 0.16;
+          piece.velocity.y = Math.abs(piece.velocity.y) * 0.36;
+          piece.velocity.x *= 0.72;
+          piece.velocity.z *= 0.72;
+        }
+        piece.mesh.rotation.x += dt * 8;
+        piece.mesh.rotation.z += dt * 10;
+      }
+      if (!this.running || elapsed >= 1.15) {
+        for (const piece of pieces) {
+          this.scene.remove(piece.mesh);
+          piece.mesh.geometry.dispose();
+          (piece.mesh.material as THREE.Material).dispose();
+        }
+        return;
+      }
+      requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
   }
 
   private buildArena() {
