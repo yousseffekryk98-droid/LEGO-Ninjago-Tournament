@@ -207,7 +207,7 @@ function showHome() {
           <span>Best run ${formatStuds(save.bestRun)}</span>
           <span>${save.totalRuns} runs</span>
         </div>
-        <p class="legal-note">Fan project only. No extracted APK/OBB assets, official logos, audio, models, textures, animations, or source code are included.</p>
+        <p class="legal-note">Fan project only. No extracted APK/OBB assets, official logos, audio, models, textures, animations, or source code are included. · <a href="/about.html">About / Open Source</a></p>
       </section>
     </main>`;
 
