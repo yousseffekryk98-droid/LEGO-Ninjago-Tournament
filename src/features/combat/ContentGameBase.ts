@@ -40,6 +40,7 @@ interface SupplyCrate {
   landed: boolean;
   life: number;
   spin: number;
+  hp: number;
 }
 
 interface JetPass {
@@ -70,11 +71,17 @@ export class TournamentGame extends BaseTournamentGame {
   }
 
   override action(action: BaseAction) {
-    if (action !== 'special' || this.runtime().character.special === 'spinjitzu') {
+    const state = this.runtime();
+    const specialWasReady = state.special >= 100;
+
+    if (action !== 'special' || state.character.special === 'spinjitzu') {
       super.action(action);
-      return;
+    } else {
+      this.performCharacterSpecial();
     }
-    this.performCharacterSpecial();
+
+    if (action === 'attack') this.hitSupplyCrates(2.7, 1);
+    if (action === 'special' && specialWasReady) this.hitSupplyCrates(4.4, 3);
   }
 
   override destroy() {
@@ -225,7 +232,8 @@ export class TournamentGame extends BaseTournamentGame {
     group.add(box, bandA, bandB); group.position.copy(position); group.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.72, 20), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }));
     shadow.rotation.x = -Math.PI / 2; shadow.position.set(position.x, 0.03, position.z);
-    state.scene.add(group, shadow); this.crates.push({ group, shadow, velocity: 0, landed: false, life: 15, spin: Math.random() * 3 });
+    state.scene.add(group, shadow);
+    this.crates.push({ group, shadow, velocity: 0, landed: false, life: 18, spin: Math.random() * 3, hp: 3 });
   }
 
   private updateCrates(dt: number) {
@@ -234,21 +242,41 @@ export class TournamentGame extends BaseTournamentGame {
       crate.life -= dt; crate.spin += dt; crate.group.rotation.y += dt * (crate.landed ? 0.35 : 1.8);
       if (!crate.landed) {
         crate.velocity += 18 * dt; crate.group.position.y -= crate.velocity * dt;
-        if (crate.group.position.y <= 0.62) { crate.group.position.y = 0.62; crate.landed = true; crate.velocity = 0; this.spawnPulse(crate.group.position, 0xd6ae47, 1.6); }
+        if (crate.group.position.y <= 0.62) {
+          crate.group.position.y = 0.62;
+          crate.landed = true;
+          crate.velocity = 0;
+          this.spawnPulse(crate.group.position, 0xd6ae47, 1.6);
+          state.callbacks.onMessage('Roto Jet box landed — smash it open!');
+        }
       } else {
         crate.group.position.y = 0.62 + Math.sin(crate.spin * 2) * 0.06;
-        if (crate.group.position.distanceTo(state.player.position) < 1.45) { this.collectCrate(crate); continue; }
       }
       if (crate.life <= 0) this.removeCrate(crate);
     }
   }
 
+  private hitSupplyCrates(radius: number, damage: number) {
+    const state = this.runtime();
+    for (const crate of [...this.crates]) {
+      if (!crate.landed || crate.group.position.distanceTo(state.player.position) > radius) continue;
+      crate.hp -= damage;
+      crate.group.rotation.z += (Math.random() - 0.5) * 0.28;
+      crate.group.rotation.x += (Math.random() - 0.5) * 0.18;
+      this.spawnPulse(crate.group.position, crate.hp > 0 ? 0xd6ae47 : 0xffd65a, crate.hp > 0 ? 0.85 : 1.65);
+      if (crate.hp <= 0) {
+        state.callbacks.onMessage('Roto Jet box broken!');
+        this.collectCrate(crate);
+      }
+    }
+  }
+
   private collectCrate(crate: SupplyCrate) {
     const state = this.runtime(); const roll = Math.random();
-    if (roll < 0.28) { state.health = Math.min(state.character.maxHealth, state.health + 1); state.callbacks.onMessage('Roto Jet crate: HEART +1'); this.spawnPulse(crate.group.position, 0xe84b57, 2.1); }
-    else if (roll < 0.57) { const reward = 300 * Math.max(1, state.getMultiplier()); this.spawnStudBurst(crate.group.position.clone(), reward, 8); state.callbacks.onMessage(`Roto Jet crate: ${reward.toLocaleString()} STUDS DROPPED`); this.spawnPulse(crate.group.position, 0xe5c04f, 2.1); }
-    else if (roll < 0.8) { state.special = Math.min(100, state.special + 55); state.callbacks.onMessage('Roto Jet crate: SPECIAL CHARGE +55'); this.spawnPulse(crate.group.position, 0x9267d2, 2.1); }
-    else { this.startBoost(8, 1.28, 1.22); state.callbacks.onMessage('Roto Jet crate: COMBAT BOOST 8s'); this.spawnPulse(crate.group.position, 0x6fd5ff, 2.1); }
+    if (roll < 0.38) { state.health = Math.min(state.character.maxHealth, state.health + 1); state.callbacks.onMessage('Roto Jet box: HEART +1'); this.spawnPulse(crate.group.position, 0xe84b57, 2.1); }
+    else if (roll < 0.82) { const reward = 300 * Math.max(1, state.getMultiplier()); this.spawnStudBurst(crate.group.position.clone(), reward, 8); state.callbacks.onMessage(`Roto Jet box: ${reward.toLocaleString()} STUDS DROPPED`); this.spawnPulse(crate.group.position, 0xe5c04f, 2.1); }
+    else if (roll < 0.93) { state.special = Math.min(100, state.special + 55); state.callbacks.onMessage('Roto Jet box: SPECIAL CHARGE +55'); this.spawnPulse(crate.group.position, 0x9267d2, 2.1); }
+    else { this.startBoost(8, 1.28, 1.22); state.callbacks.onMessage('Roto Jet box: COMBAT BOOST 8s'); this.spawnPulse(crate.group.position, 0x6fd5ff, 2.1); }
     state.emitHud(); this.removeCrate(crate);
   }
 

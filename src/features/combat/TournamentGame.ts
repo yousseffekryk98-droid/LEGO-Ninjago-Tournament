@@ -909,21 +909,146 @@ export class TournamentGame {
   }
 
   private spawnTitaniumDragonEvent() {
-    const angle = Math.random() * Math.PI * 2;
-    const start = new THREE.Vector3(Math.cos(angle) * 13.5, 1.0, Math.sin(angle) * 13.5);
-    const aim = this.player.position.clone().setY(0.75).sub(start).normalize();
-    this.spawnEnemyProjectile(start, aim.multiplyScalar(8.5), 0.35, 0x84dbff, 'freeze');
-    this.callbacks.onMessage('Titanium Dragon! Dodge the freezing ice ball.');
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const dragon = new THREE.Group();
+    dragon.name = 'titaniumDragonEvent';
+
+    const bodyMat = new THREE.MeshPhysicalMaterial({
+      color: 0xdcecf0,
+      roughness: 0.32,
+      metalness: 0.18,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.24
+    });
+    const iceMat = new THREE.MeshPhysicalMaterial({
+      color: 0x7dd9ff,
+      emissive: 0x194f68,
+      emissiveIntensity: 0.55,
+      roughness: 0.2,
+      metalness: 0.12,
+      clearcoat: 0.55
+    });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x42515b, roughness: 0.58, metalness: 0.22 });
+
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.48, 2.2, 5, 12), bodyMat);
+    body.rotation.z = Math.PI / 2;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.58, 0.72), bodyMat);
+    head.position.x = 1.65;
+    const muzzle = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.62, 8), iceMat);
+    muzzle.rotation.z = -Math.PI / 2;
+    muzzle.position.x = 2.28;
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.38, 2.0, 8), darkMat);
+    tail.rotation.z = Math.PI / 2;
+    tail.position.x = -2.05;
+    const leftWing = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.1, 2.5), iceMat);
+    leftWing.position.set(-0.15, 0.28, 1.35);
+    leftWing.rotation.x = 0.34;
+    const rightWing = leftWing.clone();
+    rightWing.position.z = -1.35;
+    rightWing.rotation.x = -0.34;
+    const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), iceMat);
+    leftEye.position.set(2.03, 0.13, 0.3);
+    const rightEye = leftEye.clone();
+    rightEye.position.z = -0.3;
+    dragon.add(body, head, muzzle, tail, leftWing, rightWing, leftEye, rightEye);
+    dragon.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
+
+    const startX = side * 17;
+    const endX = -side * 17;
+    dragon.position.set(startX, 5.4, -5.5 + Math.random() * 11);
+    dragon.rotation.y = side > 0 ? Math.PI : 0;
+    this.scene.add(dragon);
+    this.callbacks.onMessage('Titanium Dragon incoming — watch for the freezing ice ball!');
+
+    const started = this.elapsed;
+    let fired = false;
+    const animate = () => {
+      if (!this.running) { this.scene.remove(dragon); return; }
+      const t = clamp((this.elapsed - started) / 2.55, 0, 1);
+      dragon.position.x = THREE.MathUtils.lerp(startX, endX, t);
+      dragon.position.y = 5.4 + Math.sin(t * Math.PI) * 1.1;
+      leftWing.rotation.x = 0.34 + Math.sin(this.elapsed * 12) * 0.26;
+      rightWing.rotation.x = -0.34 - Math.sin(this.elapsed * 12) * 0.26;
+
+      if (!fired && t >= 0.36) {
+        fired = true;
+        const origin = dragon.position.clone().add(new THREE.Vector3(side > 0 ? -1.6 : 1.6, -0.35, 0));
+        const aim = this.player.position.clone().setY(0.75).sub(origin).normalize();
+        this.spawnEnemyProjectile(origin, aim.multiplyScalar(8.8), 0.35, 0x84dbff, 'freeze');
+      }
+
+      if (t >= 1) this.scene.remove(dragon);
+      else requestAnimationFrame(animate);
+    };
+    animate();
   }
 
   private spawnCondraiCrusherEvent() {
     if (this.enemies.length >= 13) return;
-    const count = Math.min(3, 13 - this.enemies.length);
-    for (let i = 0; i < count; i++) {
-      const side = i % 2 ? 1 : -1;
-      this.enemies.push(this.createEnemy(i === 2 ? 'heavy' : 'melee', side * 9.4, (i - 1) * 2.6));
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const crusher = new THREE.Group();
+    crusher.name = 'condraiCrusherEvent';
+
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x742c43, roughness: 0.66, metalness: 0.12 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x2d2d31, roughness: 0.72, metalness: 0.2 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xb68a32, roughness: 0.42, metalness: 0.48 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.25, 2.45), bodyMat);
+    body.position.y = 0.95;
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.25, 2.0), darkMat);
+    cab.position.set(side > 0 ? -1.25 : 1.25, 1.65, 0);
+    const ram = new THREE.Mesh(new THREE.ConeGeometry(0.64, 1.8, 8), goldMat);
+    ram.rotation.z = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+    ram.position.set(side > 0 ? -3.0 : 3.0, 0.95, 0);
+    crusher.add(body, cab, ram);
+
+    const wheels: THREE.Mesh[] = [];
+    for (const x of [-1.55, 1.55]) {
+      for (const z of [-1.15, 1.15]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 0.42, 14), darkMat);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(x, 0.55, z);
+        wheels.push(wheel);
+        crusher.add(wheel);
+      }
     }
-    this.callbacks.onMessage('Condrai Crusher incoming — reinforcements deployed!');
+    crusher.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
+
+    const startX = side * 17;
+    const stopX = side * 9.2;
+    crusher.position.set(startX, 0, -1.8 + Math.random() * 3.6);
+    crusher.rotation.y = side > 0 ? 0 : Math.PI;
+    this.scene.add(crusher);
+    this.callbacks.onMessage('Condrai Crusher incoming — reinforcements on board!');
+
+    const started = this.elapsed;
+    let deployed = false;
+    const animate = () => {
+      if (!this.running) { this.scene.remove(crusher); return; }
+      const elapsed = this.elapsed - started;
+      const approach = clamp(elapsed / 1.15, 0, 1);
+      const retreat = clamp((elapsed - 2.15) / 1.15, 0, 1);
+      crusher.position.x = elapsed < 2.15
+        ? THREE.MathUtils.lerp(startX, stopX, approach)
+        : THREE.MathUtils.lerp(stopX, startX, retreat);
+      for (const wheel of wheels) wheel.rotation.z += 0.22;
+
+      if (!deployed && elapsed >= 1.25) {
+        deployed = true;
+        const count = Math.min(3, 13 - this.enemies.length);
+        for (let i = 0; i < count; i++) {
+          const spawnX = side * 8.5;
+          const spawnZ = crusher.position.z + (i - 1) * 1.5;
+          const enemy = this.createEnemy(i === 2 ? 'heavy' : 'melee', spawnX, spawnZ);
+          enemy.mesh.userData.faction = 'anacondrai';
+          this.enemies.push(enemy);
+        }
+        this.callbacks.onMessage('Condrai Crusher deployed Anacondrai reinforcements!');
+      }
+
+      if (elapsed >= 3.3) this.scene.remove(crusher);
+      else requestAnimationFrame(animate);
+    };
+    animate();
   }
 
   private updateBoulders(dt: number) {

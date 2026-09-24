@@ -62,9 +62,9 @@ Characters demonstrably shown being controlled in legacy gameplay showcase video
 | Current score feedback | Stud/score and multiplier remain visible | Implemented |
 | Temple Gallery | Collection / fighter archive | Implemented |
 | Dojo training | Movement, attack, jump, block, grab, dodge, special tutorial | Implemented |
-| Roto Jet | Supply boxes and missile attack runs | Implemented |
-| Titanium Dragon | Freezing ice attack/event | Implemented |
-| Condrai Crusher | Reinforcement delivery/event | Implemented |
+| Roto Jet | Flyover, physical breakable supply boxes, studs/hearts and missile attack runs | Implemented |
+| Titanium Dragon | Visible dragon flyover followed by freezing ice projectile/event | Implemented |
+| Condrai Crusher | Visible vehicle arrival, stop, Anacondrai deployment and retreat | Implemented |
 | Boulder Basher | Telegraph then falling boulders | Implemented |
 | Training props | Breakable practice props can reward studs or hearts | Implemented with physical stud drops + magnetic heart pickups |
 | Spike hazards | Arena spikes damage the player | Implemented |
