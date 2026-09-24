@@ -709,3 +709,11 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   .panel-screen:has(.legacy-selection-bar) .roster-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px}
   .action-cluster{transform:scale(.72);transform-origin:bottom right;right:6px;bottom:5px}
 }
+
+
+/* Production polish preserved from retired QA branches */
+.production-menu-kicker{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 8px;color:#d8b34e;font:900 9px 'Barlow Condensed',system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase}
+.production-menu-kicker i{display:block;width:42px;height:1px;background:linear-gradient(90deg,transparent,#bd8d32)}
+.production-menu-kicker i:last-child{background:linear-gradient(90deg,#bd8d32,transparent)}
+.production-hud-mark{display:block;width:22px;height:3px;margin:0 auto 3px;background:linear-gradient(90deg,transparent,#d8ad43,transparent);box-shadow:0 0 9px rgba(221,177,68,.28)}
+@media(max-width:520px){.production-menu-kicker{font-size:8px}.production-menu-kicker i{width:28px}}
