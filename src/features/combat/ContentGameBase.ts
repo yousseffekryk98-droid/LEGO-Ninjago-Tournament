@@ -207,10 +207,12 @@ export class TournamentGame extends BaseTournamentGame {
     const rotor = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 3.8), darkMat); rotor.position.y = 0.48;
     const tail = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.2, 0.25), darkMat); tail.position.x = -1.65;
     group.add(body, nose, rotor, tail);
-    group.position.set(-18, 8.5, -7.5 + Math.random() * 15); group.rotation.y = Math.PI / 2;
+    const laneZ = THREE.MathUtils.clamp(state.player.position.z + (Math.random() - 0.5) * 10, -25, 25);
+    const dropAt = THREE.MathUtils.clamp(state.player.position.x + (Math.random() - 0.5) * 4, -25, 25);
+    group.position.set(-34, 8.5, laneZ); group.rotation.y = Math.PI / 2;
     group.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
     state.scene.add(group);
-    this.jets.push({ group, velocity: new THREE.Vector3(12.5, 0, 0), life: 3.2, dropped: false, dropAt: -1 + Math.random() * 2 });
+    this.jets.push({ group, velocity: new THREE.Vector3(18, 0, 0), life: 4.5, dropped: false, dropAt });
     state.callbacks.onMessage('Roto Jet incoming — supply drop!');
   }
 
@@ -220,7 +222,7 @@ export class TournamentGame extends BaseTournamentGame {
       jet.life -= dt; jet.group.position.addScaledVector(jet.velocity, dt);
       const rotor = jet.group.children[2]; if (rotor) rotor.rotation.y += dt * 20;
       if (!jet.dropped && jet.group.position.x >= jet.dropAt) { jet.dropped = true; this.spawnSupplyCrate(new THREE.Vector3(jet.group.position.x, 7.3, jet.group.position.z)); }
-      if (jet.life <= 0 || jet.group.position.x > 20) { state.scene.remove(jet.group); this.jets.splice(this.jets.indexOf(jet), 1); }
+      if (jet.life <= 0 || jet.group.position.x > 34) { state.scene.remove(jet.group); this.jets.splice(this.jets.indexOf(jet), 1); }
     }
   }
 
