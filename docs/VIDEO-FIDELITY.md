@@ -29,6 +29,8 @@ Characters demonstrably shown being controlled in legacy gameplay showcase video
 | Stage introduction | Stage/wave presentation before combat | Implemented with stage banner |
 | Stage completed | Completion presentation between waves | Implemented |
 | Melee / ranged / heavy foes | Different pressure patterns | Implemented |
+| Nindroid cloak spawn | Nindroids begin invisible before revealing | Implemented with timed cloak/reveal |
+| Speed attack presentation | Fast special/boost movement leaves a strong motion impression | Implemented with fighter after-images |
 | Elemental Master bosses | Bosses have unique abilities | Implemented |
 | Boss health feedback | Boss durability is visible during fights | Implemented HUD health bar |
 | Attack | Dedicated attack input | Implemented |

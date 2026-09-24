@@ -57,6 +57,7 @@ export class TournamentGame extends BaseTournamentGame {
   private nextSupplyAt = 17 + Math.random() * 7;
   private previousElapsed = 0;
   private boostTime = 0;
+  private boostEchoCooldown = 0;
   private boostBaseSpeed = 0;
   private boostBaseDamage = 0;
   private toxicTime = 0;
@@ -153,6 +154,11 @@ export class TournamentGame extends BaseTournamentGame {
     const state = this.runtime();
     if (this.boostTime > 0) {
       this.boostTime -= dt;
+      this.boostEchoCooldown -= dt;
+      if (this.boostEchoCooldown <= 0) {
+        this.spawnSpeedEcho();
+        this.boostEchoCooldown = 0.11;
+      }
       if (this.boostTime <= 0) { this.restoreBoost(); state.callbacks.onMessage('Boost expired.'); }
     }
     if (this.toxicTime > 0) {
@@ -171,6 +177,8 @@ export class TournamentGame extends BaseTournamentGame {
     state.character.speed = this.boostBaseSpeed * speedMultiplier;
     state.character.damage = Math.round(this.boostBaseDamage * damageMultiplier);
     this.boostTime = Math.max(this.boostTime, seconds);
+    this.boostEchoCooldown = 0;
+    this.spawnPulse(state.player.position, state.character.accent, 1.7);
   }
 
   private restoreBoost() {
@@ -178,7 +186,7 @@ export class TournamentGame extends BaseTournamentGame {
     const state = this.runtime();
     if (this.boostBaseSpeed > 0) state.character.speed = this.boostBaseSpeed;
     if (this.boostBaseDamage > 0) state.character.damage = this.boostBaseDamage;
-    this.boostTime = 0; this.boostBaseSpeed = 0; this.boostBaseDamage = 0;
+    this.boostTime = 0; this.boostEchoCooldown = 0; this.boostBaseSpeed = 0; this.boostBaseDamage = 0;
   }
 
   private spawnRotoJetPass() {
@@ -245,6 +253,49 @@ export class TournamentGame extends BaseTournamentGame {
   }
 
   private removeCrate(crate: SupplyCrate) { const state = this.runtime(); state.scene.remove(crate.group, crate.shadow); const index = this.crates.indexOf(crate); if (index >= 0) this.crates.splice(index, 1); }
+
+  private spawnSpeedEcho() {
+    const state = this.runtime();
+    const echo = state.player.clone(true);
+    const clonedMaterials: THREE.Material[] = [];
+    echo.traverse((object) => {
+      if (object instanceof THREE.Light) object.visible = false;
+      if (!(object instanceof THREE.Mesh)) return;
+      const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
+      const echoMaterials = sourceMaterials.map((source) => {
+        const copy = source.clone();
+        copy.transparent = true;
+        copy.opacity = 0.18;
+        copy.depthWrite = false;
+        clonedMaterials.push(copy);
+        return copy;
+      });
+      object.material = Array.isArray(object.material) ? echoMaterials : echoMaterials[0];
+      object.castShadow = false;
+      object.receiveShadow = false;
+    });
+    const backward = new THREE.Vector3(Math.sin(state.player.rotation.y), 0, Math.cos(state.player.rotation.y)).multiplyScalar(-0.38);
+    echo.position.copy(state.player.position).add(backward);
+    echo.rotation.copy(state.player.rotation);
+    state.scene.add(echo);
+    const start = performance.now();
+    const animate = () => {
+      if (this.contentDestroyed) {
+        state.scene.remove(echo);
+        clonedMaterials.forEach((entry) => entry.dispose());
+        return;
+      }
+      const t = Math.min(1, (performance.now() - start) / 260);
+      echo.position.addScaledVector(backward, 0.045);
+      echo.scale.setScalar(1 + t * 0.055);
+      clonedMaterials.forEach((entry) => { entry.opacity = 0.18 * (1 - t); });
+      if (t >= 1) {
+        state.scene.remove(echo);
+        clonedMaterials.forEach((entry) => entry.dispose());
+      } else requestAnimationFrame(animate);
+    };
+    animate();
+  }
 
   private spawnPulse(origin: THREE.Vector3, color: number, maxRadius: number) {
     const state = this.runtime();

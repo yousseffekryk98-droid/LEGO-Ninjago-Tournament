@@ -44,6 +44,7 @@ interface FactionBrain {
   faction: EnemyFaction;
   cooldown: number;
   phase: number;
+  revealTime: number;
 }
 
 interface BombHazard {
@@ -286,13 +287,28 @@ export class TournamentGame extends StableContentGame {
           : enemy.kind === 'heavy' && (index + state.wave) % 3 === 0
             ? 'bomber'
             : 'anacondrai';
-        brain = { faction, cooldown: 1.2 + Math.random() * 2.4, phase: Math.random() < 0.5 ? -1 : 1 };
+        brain = {
+          faction,
+          cooldown: 1.2 + Math.random() * 2.4,
+          phase: Math.random() < 0.5 ? -1 : 1,
+          revealTime: faction === 'nindroid' ? 1.1 + Math.random() * 0.8 : 0
+        };
         this.factionBrains.set(enemy.mesh, brain);
         enemy.mesh.userData.faction = faction;
         this.addFactionMarker(enemy, faction);
+        if (faction === 'nindroid') this.setFactionOpacity(enemy.mesh, 0.08);
       }
 
       brain.cooldown -= dt;
+      if (brain.revealTime > 0) {
+        brain.revealTime -= dt;
+        if (brain.revealTime <= 0) {
+          this.setFactionOpacity(enemy.mesh, 1);
+          this.spawnRing(enemy.mesh.position, 0x63cceb, 1.35);
+        } else {
+          continue;
+        }
+      }
       const toPlayer = state.player.position.clone().sub(enemy.mesh.position).setY(0);
       const distance = toPlayer.length();
       if (distance < 0.001) continue;
@@ -320,6 +336,24 @@ export class TournamentGame extends StableContentGame {
         state.callbacks.onMessage('Bomber enemy: explosive incoming!');
       }
     }
+  }
+
+  private setFactionOpacity(group: THREE.Group, opacity: number) {
+    group.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        if (material.userData.factionOriginalOpacity === undefined) {
+          material.userData.factionOriginalOpacity = material.opacity;
+          material.userData.factionOriginalTransparent = material.transparent;
+        }
+        const originalOpacity = Number(material.userData.factionOriginalOpacity ?? 1);
+        const originalTransparent = Boolean(material.userData.factionOriginalTransparent);
+        material.opacity = opacity < 1 ? Math.min(originalOpacity, opacity) : originalOpacity;
+        material.transparent = opacity < 1 || originalTransparent;
+        material.needsUpdate = true;
+      }
+    });
   }
 
   private addFactionMarker(enemy: RuntimeEnemy, faction: EnemyFaction) {
