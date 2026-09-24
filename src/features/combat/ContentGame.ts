@@ -996,11 +996,13 @@ export class TournamentGame extends StableContentGame {
     const rotor = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 3.7), dark);
     rotor.position.y = 0.45;
     group.add(body, nose, rotor);
-    group.position.set(-18, 8.1, -6 + Math.random() * 12);
+    const laneZ = THREE.MathUtils.clamp(state.player.position.z + (Math.random() - 0.5) * 10, -25, 25);
+    const dropAt = THREE.MathUtils.clamp(state.player.position.x + (Math.random() - 0.5) * 5, -25, 25);
+    group.position.set(-34, 8.1, laneZ);
     group.rotation.y = Math.PI / 2;
     group.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
     state.scene.add(group);
-    this.missileJets.push({ group, life: 3.3, dropped: false, dropAt: -2 + Math.random() * 4 });
+    this.missileJets.push({ group, life: 4.5, dropped: false, dropAt });
     state.callbacks.onMessage('Roto Jet missile run — watch the target markers!');
   }
 
@@ -1008,7 +1010,7 @@ export class TournamentGame extends StableContentGame {
     const state = this.productionRuntime();
     for (const jet of [...this.missileJets]) {
       jet.life -= dt;
-      jet.group.position.x += 12.2 * dt;
+      jet.group.position.x += 18 * dt;
       const rotor = jet.group.children[2];
       if (rotor) rotor.rotation.y += dt * 22;
       if (!jet.dropped && jet.group.position.x >= jet.dropAt) {
@@ -1017,7 +1019,7 @@ export class TournamentGame extends StableContentGame {
         this.spawnJetMissile(jet.group.position.clone(), center.clone().add(new THREE.Vector3(-1.4 + Math.random() * 2.8, 0, -1.4 + Math.random() * 2.8)));
         this.spawnJetMissile(jet.group.position.clone().add(new THREE.Vector3(-1, 0, 0.7)), center.clone().add(new THREE.Vector3(-2.4 + Math.random() * 4.8, 0, -2.4 + Math.random() * 4.8)));
       }
-      if (jet.life <= 0 || jet.group.position.x > 20) {
+      if (jet.life <= 0 || jet.group.position.x > 34) {
         state.scene.remove(jet.group);
         this.missileJets.splice(this.missileJets.indexOf(jet), 1);
       }
