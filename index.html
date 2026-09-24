@@ -4,21 +4,81 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#1b1029" />
-    <meta name="description" content="Clean-room, browser-playable 3D fan remake inspired by the discontinued 2015 tournament arena brawler. Open source and welcoming contributors." />
+    <meta name="description" content="Play an unofficial clean-room 3D LEGO Ninjago Tournament fan remake in your browser with 51 fighters, elemental combat, Spinjitzu, upgrades and open-source code." />
     <link rel="canonical" href="https://lego-ninjago-tournament.pages.dev/" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="AI-readable project context" />
+    <link rel="alternate" type="application/json" href="/project-facts.json" title="Canonical project facts" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Ninja Tournament — Open-Source Fan Remake" />
-    <meta property="og:description" content="A clean-room, browser-playable 3D fan remake inspired by the discontinued 2015 tournament arena brawler. Open source and welcoming contributors." />
+    <meta property="og:title" content="LEGO Ninjago Tournament Fan Remake — Play Online" />
+    <meta property="og:description" content="Unofficial clean-room 3D browser fan remake with 51 fighters, elemental combat, Spinjitzu, upgrades, challenges and open-source code." />
     <meta property="og:url" content="https://lego-ninjago-tournament.pages.dev/" />
     <meta property="og:site_name" content="Ninja Tournament Fan Remake" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:image" content="https://lego-ninjago-tournament.pages.dev/social-card.svg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://lego-ninjago-tournament.pages.dev/social-card.svg" />
-    <meta name="twitter:title" content="Ninja Tournament — Open-Source Fan Remake" />
-    <meta name="twitter:description" content="Browser-playable clean-room 3D fan remake with 51 fighters, elemental combat, progression, and open-source contributions." />
+    <meta name="twitter:title" content="LEGO Ninjago Tournament Fan Remake — Play Online" />
+    <meta name="twitter:description" content="Unofficial clean-room browser fan remake with 51 fighters, elemental combat, Spinjitzu, upgrades and open-source code." />
     <meta name="author" content="Youssef Fekry" />
+
+    <script type="application/ld+json">
+    {
+      "@context":"https://schema.org",
+      "@graph":[
+        {
+          "@type":"WebSite",
+          "@id":"https://lego-ninjago-tournament.pages.dev/#website",
+          "url":"https://lego-ninjago-tournament.pages.dev/",
+          "name":"Ninja Tournament — Open-Source Fan Remake",
+          "alternateName":"LEGO Ninjago Tournament Fan Remake",
+          "description":"Unofficial clean-room 3D browser fan remake inspired by the discontinued 2015 LEGO Ninjago Tournament mobile arena game.",
+          "inLanguage":"en",
+          "publisher":{"@id":"https://lego-ninjago-tournament.pages.dev/#author"}
+        },
+        {
+          "@type":"VideoGame",
+          "@id":"https://lego-ninjago-tournament.pages.dev/#game",
+          "name":"Ninja Tournament — Open-Source Fan Remake",
+          "alternateName":"LEGO Ninjago Tournament Fan Remake",
+          "url":"https://lego-ninjago-tournament.pages.dev/",
+          "description":"Unofficial clean-room, open-source 3D browser fan remake inspired by the discontinued 2015 LEGO Ninjago Tournament mobile arena game.",
+          "image":"https://lego-ninjago-tournament.pages.dev/social-card.svg",
+          "gamePlatform":["Web browser","Progressive Web App"],
+          "applicationCategory":"Game",
+          "genre":["Action","Arena brawler","Fan game"],
+          "playMode":"SinglePlayer",
+          "isAccessibleForFree":true,
+          "inLanguage":"en",
+          "author":{"@id":"https://lego-ninjago-tournament.pages.dev/#author"},
+          "sameAs":"https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament",
+          "dateModified":"2026-09-25",
+          "keywords":"LEGO Ninjago Tournament fan remake, Ninjago browser game, Spinjitzu game, open source fan game, Three.js game"
+        },
+        {
+          "@type":"SoftwareApplication",
+          "@id":"https://lego-ninjago-tournament.pages.dev/#software",
+          "name":"Ninja Tournament — Open-Source Fan Remake",
+          "url":"https://lego-ninjago-tournament.pages.dev/",
+          "applicationCategory":"GameApplication",
+          "operatingSystem":"Any modern web browser",
+          "isAccessibleForFree":true,
+          "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+          "softwareVersion":"0.1.0",
+          "author":{"@id":"https://lego-ninjago-tournament.pages.dev/#author"},
+          "license":"https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament/blob/main/LICENSE"
+        },
+        {
+          "@type":"Person",
+          "@id":"https://lego-ninjago-tournament.pages.dev/#author",
+          "name":"Youssef Fekry",
+          "url":"https://github.com/yousseffekryk98-droid"
+        }
+      ]
+    }
+    </script>
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -35,10 +95,17 @@
     <link rel="stylesheet" href="/src/features/controls/styles.css" />
     <link rel="stylesheet" href="/src/shared/feedback/styles.css" />
     <link rel="stylesheet" href="/src/shared/graphics/styles.css" />
-    <title>Ninja Tournament — Fan Remake</title>
+    <title>LEGO Ninjago Tournament Fan Remake — Play Online</title>
   </head>
   <body>
     <div id="app"></div>
+    <noscript>
+      <main>
+        <h1>LEGO Ninjago Tournament Fan Remake</h1>
+        <p>This is an unofficial clean-room, open-source 3D browser fan remake inspired by the discontinued 2015 mobile arena game. The current build includes 51 playable fighters, elemental combat, Spinjitzu, upgrades, challenge modes and keyboard, gamepad and touch controls.</p>
+        <p><a href="/about.html">Read the project overview and FAQ</a> or <a href="https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament">view the source code on GitHub</a>.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/shared/graphics/index.ts"></script>
     <script type="module" src="/src/shared/platform/index.ts"></script>
     <script type="module" src="/src/features/challenges/index.ts"></script>
