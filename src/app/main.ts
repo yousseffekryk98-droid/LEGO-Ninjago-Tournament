@@ -529,6 +529,7 @@ function startGame() {
       <div id="stage-banner" class="stage-banner" aria-live="polite"><small></small><b></b></div>
       <div id="message" class="arena-message"></div>
       <div class="special-wrap"><button id="special-btn" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="special-meter"></i></div></div>
+      ${freePlayMode ? `<button id="ultimate-btn" class="ultimate-spinjitzu-button" aria-label="Tornado of Creation ultimate"><b>∞ TEAM ULTIMATE</b><span>TORNADO OF CREATION · ${formatKeyLabel(keys.ultimate)}</span></button>` : ''}
       <div class="joystick" id="joystick"><div class="joystick-ring"><span id="stick"></span></div></div>
       <div class="action-cluster">
         <button class="action-button jump" data-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
@@ -537,7 +538,7 @@ function startGame() {
         <button class="action-button attack punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
         <button class="action-button kick" data-action="kick" aria-label="Kick"><span class="legacy-icon">➤</span></button>
       </div>
-      <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)}</div>
+      <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)}${freePlayMode ? ` · CREATION ${formatKeyLabel(keys.ultimate)}` : ''}</div>
       <div class="dodge-hint">SWIPE ARENA TO DODGE · ${formatKeyLabel(keys.dodge)}</div>
       <div id="game-over" class="game-over hidden"></div>
     </main>`;
@@ -550,6 +551,7 @@ function startGame() {
   });
   activeGame = game;
   game.setUnlimitedSpecial(freePlayMode);
+  game.setCreationUltimateEnabled(freePlayMode);
   showStageBanner(
     freePlayMode ? 'FREE PLAY MODE' : 'MASTER CHEN PRESENTS',
     freePlayMode ? 'UNLIMITED SPINJITZU' : 'TOURNAMENT OF ELEMENTS'
@@ -565,6 +567,10 @@ function startGame() {
   });
   const special = document.querySelector<HTMLButtonElement>('#special-btn')!;
   special.addEventListener('pointerdown', (event) => { event.preventDefault(); game.action('special'); });
+  document.querySelector<HTMLButtonElement>('#ultimate-btn')?.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    game.action('ultimate');
+  });
 
   const block = document.querySelector<HTMLButtonElement>('#block-btn')!;
   const releaseBlock = () => { block.classList.remove('held'); game.setBlock(false); };
