@@ -530,7 +530,7 @@ export class DojoGame {
     const step = this.currentStep();
     const copy: Record<DojoStep, [string, string]> = {
       move: ['Movement', `Use the joystick/controller or ${formatKeyLabel(this.keyBindings.moveUp)}, ${formatKeyLabel(this.keyBindings.moveLeft)}, ${formatKeyLabel(this.keyBindings.moveDown)}, ${formatKeyLabel(this.keyBindings.moveRight)}.`],
-      attack: ['Punch & Kick', `Move close and land three strikes. Punch: ${formatKeyLabel(this.keyBindings.punch)} · Kick: ${formatKeyLabel(this.keyBindings.kick)}.`],
+      attack: ['Attack', `Move close and land three strikes. Punch: ${formatKeyLabel(this.keyBindings.punch)} · Kick: ${formatKeyLabel(this.keyBindings.kick)}.`],
       jump: ['Jump', `Press jump, controller RB, or ${formatKeyLabel(this.keyBindings.jump)}.`],
       block: ['Block', `Hold shield, controller LB, or ${formatKeyLabel(this.keyBindings.block)}.`],
       grab: ['Grab & Throw', `Move close and press grab / controller X / ${formatKeyLabel(this.keyBindings.grab)}.`],
