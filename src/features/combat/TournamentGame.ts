@@ -1959,6 +1959,10 @@ export class TournamentGame {
     this.buildGong(GONG_X, 0);
     this.buildSpikeTrap(-4.4, -4.2);
     this.buildSpikeTrap(4.6, 4.0);
+    this.buildSpikeTrap(-14.2, 9.4);
+    this.buildSpikeTrap(14.4, -9.2);
+    this.buildSpikeTrap(-9.8, -16.2);
+    this.buildSpikeTrap(10.2, 16.0);
 
     for (const z of [-19.4, 19.4]) {
       const brazier = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x5b3420, roughness: 0.8 }));
@@ -2116,8 +2120,11 @@ export class TournamentGame {
       depthWrite: false
     });
 
-    for (const [innerRadius, outerRadius] of [[2.05, 2.18], [3.35, 3.49], [5.05, 5.17]] as const) {
-      const circle = new THREE.Mesh(new THREE.RingGeometry(innerRadius, outerRadius, 64), lineMaterial);
+    for (const [innerRadius, outerRadius] of [
+      [2.05, 2.18], [3.35, 3.49], [5.05, 5.17],
+      [8.4, 8.52], [12.7, 12.82], [17.0, 17.12], [21.3, 21.42], [25.5, 25.62]
+    ] as const) {
+      const circle = new THREE.Mesh(new THREE.RingGeometry(innerRadius, outerRadius, innerRadius > 6 ? 96 : 64), lineMaterial);
       circle.rotation.x = -Math.PI / 2;
       circle.position.y = 0.065;
       this.scene.add(circle);
