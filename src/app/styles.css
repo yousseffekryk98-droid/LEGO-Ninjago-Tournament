@@ -199,6 +199,33 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 .hud-right b { display:block; color:#e5ab3a; font-size:32px; line-height:.9; }
 .hud-right small { font-size:10px; color:#eee2c8; letter-spacing:.08em; }
 .pause-button { position:absolute; z-index:6; left:8px; top:50%; transform:translateY(-50%); width:29px; height:42px; border-radius:0 14px 14px 0; background:#593b72cc; border:1px solid #c99a39; font-size:13px; }
+.camera-view-button {
+  position:absolute;
+  z-index:6;
+  left:max(8px,env(safe-area-inset-left));
+  top:calc(50% + 52px);
+  min-width:66px;
+  padding:7px 9px 6px;
+  border:1px solid #c99a39;
+  border-radius:7px;
+  background:linear-gradient(145deg,rgba(67,45,83,.94),rgba(29,21,37,.94));
+  box-shadow:inset 0 0 0 1px rgba(246,215,126,.12),0 5px 13px #0008;
+  color:#f2dfaa;
+  font-family:'Barlow Condensed',sans-serif;
+  text-shadow:0 2px 3px #000;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.camera-view-button b,.camera-view-button span{display:block;line-height:1}
+.camera-view-button b{font-size:10px;letter-spacing:.15em;color:#d7b351}
+.camera-view-button span{margin-top:3px;font-size:11px;font-weight:900;letter-spacing:.06em}
+.camera-view-button.overhead{background:linear-gradient(145deg,#74578d,#332541);box-shadow:inset 0 0 0 1px rgba(246,215,126,.18),0 0 16px rgba(218,178,72,.2),0 5px 13px #0008}
+.camera-view-button:active{transform:scale(.96)}
+@media(max-width:520px){
+  .camera-view-button{top:calc(50% + 48px);min-width:58px;padding:6px 7px}
+  .camera-view-button span{font-size:9px}
+}
+
 
 .stage-banner {
   position:absolute;
