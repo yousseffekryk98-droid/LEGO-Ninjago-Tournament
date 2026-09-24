@@ -109,6 +109,19 @@ function consumeActivePowerupForLaunch() {
   }, 0);
 }
 
+function showLoadoutToast(message: string) {
+  document.querySelector('.production-shop-toast')?.remove();
+  const toast = document.createElement('div');
+  toast.className = 'production-shop-toast';
+  toast.innerHTML = `<i>✦</i><span>${message}</span>`;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  window.setTimeout(() => {
+    toast.classList.remove('show');
+    window.setTimeout(() => toast.remove(), 220);
+  }, 1450);
+}
+
 function showPowerups() {
   document.querySelector('#powerup-overlay')?.remove();
   const state = readPowerups();
@@ -120,13 +133,23 @@ function showPowerups() {
   overlay.innerHTML = `
     <section class="powerup-panel">
       <header><div><small>PRE-FIGHT LOADOUT</small><h2>Power-Ups</h2></div><button id="powerup-close" aria-label="Close">×</button></header>
-      <p>Choose one consumable for your next tournament or challenge run. Prize draws also award a bonus power-up.</p>
-      <strong class="powerup-bank">◉ ${bank.toLocaleString()} banked studs</strong>
+      <nav class="shop-production-tabs" aria-label="Loadout sections">
+        <button class="active" type="button">POWER-UPS</button>
+        <button type="button" id="powerup-fighters-tab">FIGHTERS</button>
+        <button type="button" id="powerup-loadout-tab">LOADOUT</button>
+      </nav>
+      <section class="shop-hero">
+        <div><small>TOURNAMENT LOADOUT</small><h3>Prepare before the next fight</h3><p>Buy a consumable, equip one boost, then enter the arena. Only the equipped item is consumed when the run starts.</p></div>
+        <strong class="powerup-bank">◉ ${bank.toLocaleString()} banked studs</strong>
+      </section>
+      <p class="shop-section-label">AVAILABLE POWER-UPS</p>
       <div class="powerup-grid">
         ${POWERUPS.map((item) => {
           const count = state.inventory[item.id];
           const active = state.active === item.id;
-          return `<article class="${active ? 'active' : ''}" data-powerup-card="${item.id}">
+          const rarity = item.id === 'battle-focus' ? 'ELITE' : item.id === 'charged-scroll' ? 'RARE' : 'UNCOMMON';
+          return `<article class="${active ? 'active' : ''}" data-powerup-card="${item.id}" data-rarity="${rarity}">
+            <div class="production-item-art"><span></span><b>${rarity}</b></div>
             <i>${item.icon}</i><small>${active ? 'EQUIPPED FOR NEXT RUN' : 'CONSUMABLE'}</small><h3>${item.name}</h3><p>${item.description}</p><b>Owned ×${count}</b>
             <div><button class="gold-button" data-buy-powerup="${item.id}" ${bank >= item.cost ? '' : 'disabled'}>BUY ◉ ${item.cost.toLocaleString()}</button><button class="gold-button primary" data-equip-powerup="${item.id}" ${count > 0 ? '' : 'disabled'}>${active ? 'UNEQUIP' : 'EQUIP'}</button></div>
           </article>`;
@@ -138,6 +161,13 @@ function showPowerups() {
 
   const close = () => overlay.remove();
   overlay.querySelector('#powerup-close')?.addEventListener('click', close);
+  overlay.querySelector('#powerup-fighters-tab')?.addEventListener('click', () => {
+    close();
+    document.querySelector<HTMLButtonElement>('#fighters-btn')?.click();
+  });
+  overlay.querySelector('#powerup-loadout-tab')?.addEventListener('click', () => {
+    overlay.querySelector<HTMLElement>('.powerup-note')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
   overlay.addEventListener('click', (event) => {
     if (event.target === overlay) close();
   });
@@ -158,6 +188,7 @@ function showPowerups() {
       next.inventory[id] += 1;
       writePowerups(next);
       showPowerups();
+      showLoadoutToast('POWER-UP ACQUIRED');
     });
   });
   overlay.querySelectorAll<HTMLButtonElement>('[data-equip-powerup]').forEach((button) => {
@@ -166,8 +197,10 @@ function showPowerups() {
       const next = readPowerups();
       if (next.inventory[id] <= 0) return;
       next.active = next.active === id ? null : id;
+      const equipped = next.active === id;
       writePowerups(next);
       showPowerups();
+      showLoadoutToast(equipped ? 'LOADOUT UPDATED' : 'POWER-UP UNEQUIPPED');
     });
   });
 }
