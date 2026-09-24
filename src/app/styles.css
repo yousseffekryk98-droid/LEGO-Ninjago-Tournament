@@ -1191,3 +1191,55 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   .game-screen .boss-face { width:46px; height:46px; }
   .game-screen .boss-portrait { padding-right:4px; }
 }
+
+
+/* Elemental Master Gauntlet */
+.boss-rush-button {
+  border-color:#d0a33c;
+  background:
+    linear-gradient(180deg,#7b3153 0%,#55253f 52%,#2f1828 100%);
+  color:#ffe59a;
+  text-shadow:0 2px #35101d;
+}
+.boss-rush-button::before,
+.boss-rush-button::after {
+  background:linear-gradient(#ffe47c,#b67525);
+}
+.boss-rush-mode .legacy-score-plate {
+  background:linear-gradient(180deg,#7a385d 0%,#572842 52%,#361b2c 100%);
+}
+.boss-rush-mode .stage-banner {
+  background:linear-gradient(#7f3b60,#4c253e);
+}
+
+/* Real rendered boss portrait overlays the CSS fallback face. */
+.boss-face {
+  overflow:hidden;
+}
+.boss-face > img {
+  position:absolute;
+  inset:0;
+  z-index:2;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 42%;
+  border-radius:50%;
+  opacity:0;
+  transition:opacity .18s ease;
+  filter:saturate(1.08) contrast(1.05);
+  background:linear-gradient(145deg,var(--boss-color),#211529);
+}
+.boss-face > img.ready {
+  opacity:1;
+}
+.boss-face > i,
+.boss-face::before,
+.boss-face::after {
+  z-index:3;
+}
+.boss-face > img.ready ~ i,
+.boss-face:has(> img.ready)::before,
+.boss-face:has(> img.ready)::after {
+  opacity:0;
+}
