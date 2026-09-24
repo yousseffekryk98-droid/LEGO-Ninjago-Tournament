@@ -3,8 +3,10 @@ import {
   ROSTER,
   createCharacterModel,
   findCharacter,
-  getCharacterIdentity
+  getCharacterIdentity,
+  getElementCombatTheme
 } from '../../src/features/characters';
+import { applyFighterXp, fighterLevelFromXp } from '../../src/features/progression';
 
 test('roster data is complete, unique, and playable', () => {
   expect(ROSTER.length).toBe(51);
@@ -113,4 +115,28 @@ test('hooded ninja models include the refined shared minifigure detail', () => {
   expect(kai.getObjectByName('rightArmWrap')).toBeTruthy();
   expect(kai.getObjectByName('leftKneeWrap')).toBeTruthy();
   expect(kai.getObjectByName('rightBootSole')).toBeTruthy();
+});
+
+
+test('elemental kick themes distinguish core ninja powers', () => {
+  expect(getElementCombatTheme('Fire').effect).toBe('fire');
+  expect(getElementCombatTheme('Fire').icon).toBe('🔥');
+  expect(getElementCombatTheme('Ice').effect).toBe('ice');
+  expect(getElementCombatTheme('Ice').icon).toBe('❄');
+  expect(getElementCombatTheme('Lightning').effect).toBe('lightning');
+  expect(getElementCombatTheme('Earth').effect).toBe('earth');
+  expect(getElementCombatTheme('Energy').effect).toBe('energy');
+  expect(getElementCombatTheme('Water').effect).toBe('water');
+});
+
+test('fighter levels add permanent stats and extra heart capacity', () => {
+  const kai = findCharacter('kai-tournament');
+  expect(fighterLevelFromXp(0)).toBe(1);
+  expect(fighterLevelFromXp(2200)).toBe(3);
+  const level3 = applyFighterXp(kai, 2200);
+  expect(level3.damage).toBeGreaterThan(kai.damage);
+  expect(level3.speed).toBeGreaterThan(kai.speed);
+  expect(level3.maxHealth).toBe(kai.maxHealth + 1);
+  const level5 = applyFighterXp(kai, 8000);
+  expect(level5.maxHealth).toBe(kai.maxHealth + 2);
 });
