@@ -12,14 +12,17 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { overscroll-behavior: none; user-select: none; -webkit-user-select: none; touch-action: none; }
+html, body, #app { width: 100%; height: 100%; min-height:100dvh; margin: 0; overflow: hidden; }
+body { overscroll-behavior: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+button, input { touch-action: manipulation; }
 button { font: inherit; }
 
 .menu-screen, .panel-screen {
   position: relative;
-  min-height: 100%;
+  min-height: 100dvh;
   overflow: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   background:
     radial-gradient(circle at 50% 12%, rgba(115, 52, 150, .48), transparent 30%),
     linear-gradient(145deg, #2d1945 0%, #1b142b 47%, #461d24 100%);
@@ -137,7 +140,7 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 .dojo-grid p { margin:7px 0 0; color:#c8bfce; font-size:12px; line-height:1.55; }
 .dojo-play { display:block; width:min(420px,90vw); margin:0 auto; }
 
-.game-screen { position:fixed; inset:0; overflow:hidden; background:#111; }
+.game-screen { position:fixed; inset:0; height:100dvh; overflow:hidden; background:#111; touch-action:none; }
 .game-screen::after {
   content:'';
   position:absolute;
@@ -627,3 +630,37 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 .result-score-grid b{display:block;color:#f0dd9a;font-size:21px}
 .result-score-grid em{position:absolute;right:5px;top:5px;padding:2px 4px;border-radius:2px;background:#a87924;color:#29180b;font-size:7px;font-style:normal;font-weight:900}
 @media(max-width:720px){.rewards-layout{grid-template-columns:1fr}.draw-wheel-shell{width:126px;height:126px}.legacy-result-card>h2{font-size:52px!important}}
+
+
+/* Responsive interaction pass */
+.freeplay-button{border-color:#d6ae47;background:linear-gradient(#67437a,#352345);box-shadow:0 0 0 2px rgba(232,196,92,.08),0 8px 18px rgba(0,0,0,.26)}
+.freeplay-mode .special-button{box-shadow:0 0 25px #f0cb5daa,inset 0 0 0 3px #9d762a}
+#game-host,#game-host canvas,#dojo-host,#dojo-host canvas,.joystick,.action-cluster,.special-wrap{touch-action:none}
+@media (max-width:520px){
+  .title-card{width:100%;padding:max(24px,5vh) 12px 24px}
+  .selected-fighter,.menu-actions{width:100%}
+  .gold-button{min-height:46px;font-size:14px;padding-inline:12px}
+  .save-stats{gap:7px 10px;font-size:10px}
+  .top-bar{grid-template-columns:40px minmax(0,1fr);gap:9px}
+  .top-bar>strong{grid-column:2;justify-self:start}
+  .top-bar h2{font-size:24px}
+  .fighter-card{grid-template-columns:58px minmax(0,1fr);align-items:start}
+  .fighter-card>.mini-button{grid-column:1/-1;width:100%}
+  .hud-left{max-width:64vw}
+  .stud-copy>small{max-width:160px;white-space:normal}
+  .dojo-coach{width:min(88vw,480px);padding-inline:18px}
+}
+@media (orientation:landscape) and (max-height:480px){
+  .title-card{justify-content:flex-start;padding-top:18px;padding-bottom:18px}
+  .chen-seal{width:48px;height:48px;border-width:3px;font-size:20px}
+  .classic-logo span{font-size:clamp(42px,12vh,68px)}
+  .subtitle{margin:7px 0 10px;font-size:11px}
+  .selected-fighter{padding:8px 12px}
+  .menu-actions{grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+  .gold-button{min-height:38px;font-size:12px}
+  .save-stats{margin-top:9px}
+  .legal-note{display:none}
+  .dojo-coach{top:6px;width:min(52vw,480px);padding:6px 18px 8px}
+  .dojo-coach h2{font-size:22px}.dojo-coach p{font-size:9px}
+  .dojo-fighter-label{top:62px}
+}
