@@ -78,6 +78,14 @@ interface StudPickup {
   age: number;
 }
 
+interface HealthPickup {
+  group: THREE.Group;
+  amount: number;
+  velocity: THREE.Vector3;
+  life: number;
+  age: number;
+}
+
 const ARENA_RADIUS = 14.4;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -97,6 +105,7 @@ export class TournamentGame {
   private boulders: Boulder[] = [];
   private shockwaves: Shockwave[] = [];
   private studPickups: StudPickup[] = [];
+  private healthPickups: HealthPickup[] = [];
   private spikePositions: THREE.Vector3[] = [];
   private callbacks: GameCallbacks;
   private character: CharacterDef;
@@ -253,6 +262,7 @@ export class TournamentGame {
     cancelAnimationFrame(this.animationFrame);
     this.stopSpinjitzuVfx();
     for (const pickup of [...this.studPickups]) this.removeStudPickup(pickup);
+    for (const pickup of [...this.healthPickups]) this.removeHealthPickup(pickup);
     window.removeEventListener('resize', this.resize);
     window.removeEventListener('keydown', this.keyDown);
     window.removeEventListener('keyup', this.keyUp);
@@ -344,6 +354,7 @@ export class TournamentGame {
     this.updateBoulders(dt);
     this.updateShockwaves(dt);
     this.updateStudPickups(dt);
+    this.updateHealthPickups(dt);
     this.updateSpikeHazards();
 
     if (this.enemies.length === 0 && this.intermission <= 0) {
@@ -788,6 +799,11 @@ export class TournamentGame {
     this.scene.remove(enemy.mesh);
     this.spawnBrickBurst(origin, enemy.kind === 'boss' ? 12 : 6);
     this.spawnStudBurst(origin, payout, enemy.kind === 'boss' ? 12 : enemy.kind === 'heavy' ? 7 : 5);
+    const healChance = enemy.kind === 'boss' ? 1 : enemy.kind === 'heavy' ? 0.28 : enemy.kind === 'ranged' ? 0.18 : 0.2;
+    if (Math.random() < healChance) {
+      const healAmount = enemy.kind === 'boss' || Math.random() < 0.34 ? 1 : 0.5;
+      this.spawnHealthPickup(origin, healAmount);
+    }
     if (enemy.kind === 'boss') this.callbacks.onMessage(`${enemy.bossName ?? 'Boss'} defeated! Collect the dropped studs.`);
   }
 
@@ -1316,6 +1332,82 @@ export class TournamentGame {
       });
     }
   }
+
+  private spawnHealthPickup(origin: THREE.Vector3, amount: number) {
+    const group = new THREE.Group();
+    group.name = amount >= 1 ? 'fullHeartPickup' : 'halfHeartPickup';
+    const material = new THREE.MeshStandardMaterial({
+      color: amount >= 1 ? 0xe83f52 : 0xff7187,
+      emissive: amount >= 1 ? 0x5a101a : 0x6b1726,
+      emissiveIntensity: 0.58,
+      roughness: 0.3,
+      metalness: 0.02
+    });
+    const left = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 9), material);
+    const right = left.clone();
+    left.position.set(-0.14, 0.09, 0);
+    right.position.set(0.14, 0.09, 0);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.285, 0.46, 12), material);
+    tip.rotation.z = Math.PI;
+    tip.position.y = -0.14;
+    group.add(left, right, tip);
+    group.scale.setScalar(amount >= 1 ? 1 : 0.8);
+    group.position.copy(origin).add(new THREE.Vector3(0, 0.9, 0));
+    group.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
+    this.scene.add(group);
+    this.healthPickups.push({
+      group,
+      amount,
+      velocity: new THREE.Vector3((Math.random() - 0.5) * 2.8, 3.2 + Math.random() * 1.8, (Math.random() - 0.5) * 2.8),
+      life: 14,
+      age: 0
+    });
+  }
+
+  private updateHealthPickups(dt: number) {
+    for (const pickup of [...this.healthPickups]) {
+      pickup.life -= dt;
+      pickup.age += dt;
+      pickup.velocity.y -= 8.7 * dt;
+      pickup.group.position.addScaledVector(pickup.velocity, dt);
+      if (pickup.group.position.y < 0.42) {
+        pickup.group.position.y = 0.42;
+        if (pickup.velocity.y < 0) pickup.velocity.y *= -0.34;
+        pickup.velocity.x *= Math.pow(0.2, dt);
+        pickup.velocity.z *= Math.pow(0.2, dt);
+      }
+
+      pickup.group.rotation.y += dt * 3.8;
+      const toPlayer = this.player.position.clone().add(new THREE.Vector3(0, 0.75, 0)).sub(pickup.group.position);
+      const distance = toPlayer.length();
+      if (this.health < this.character.maxHealth && pickup.age > 0.25 && distance < 5.2) {
+        pickup.group.position.addScaledVector(toPlayer.normalize(), (5.5 + (5.2 - distance) * 2.6) * dt);
+      }
+
+      if (this.health < this.character.maxHealth && distance < 0.78) {
+        this.health = Math.min(this.character.maxHealth, Math.round((this.health + pickup.amount) * 2) / 2);
+        this.callbacks.onMessage(pickup.amount >= 1 ? 'HEART collected! Health +1' : 'HALF HEART collected! Health +½');
+        this.emitHud();
+        this.removeHealthPickup(pickup);
+        continue;
+      }
+
+      if (pickup.life <= 0) this.removeHealthPickup(pickup);
+    }
+  }
+
+  private removeHealthPickup(pickup: HealthPickup) {
+    const index = this.healthPickups.indexOf(pickup);
+    if (index >= 0) this.healthPickups.splice(index, 1);
+    this.scene.remove(pickup.group);
+    pickup.group.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.geometry.dispose();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => material.dispose());
+    });
+  }
+
 
   private updateStudPickups(dt: number) {
     for (const pickup of [...this.studPickups]) {
