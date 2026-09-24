@@ -1,0 +1,48 @@
+{
+  "name": "Ninja Tournament — Open-Source Fan Remake",
+  "alternateName": "LEGO Ninjago Tournament Fan Remake",
+  "url": "https://lego-ninjago-tournament.pages.dev/",
+  "repository": "https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament",
+  "description": "Unofficial clean-room, open-source 3D browser fan remake inspired by the discontinued 2015 LEGO Ninjago Tournament mobile arena game.",
+  "projectType": [
+    "browser game",
+    "open-source fan remake",
+    "3D arena brawler"
+  ],
+  "status": "playable active development",
+  "author": {
+    "name": "Youssef Fekry"
+  },
+  "license": "MIT for original project code and original project materials",
+  "unofficial": true,
+  "affiliation": "Not affiliated with or endorsed by LEGO, TT Games, Hellbent Games, or other rights holders.",
+  "features": [
+    "51 playable fighters",
+    "elemental combat",
+    "Spinjitzu",
+    "Tornado of Creation team ultimate",
+    "fighter upgrades",
+    "half-heart and full-heart drops",
+    "Tournament mode",
+    "Challenge mode",
+    "Dojo",
+    "keyboard controls",
+    "gamepad controls",
+    "mobile touch controls",
+    "PWA support"
+  ],
+  "technology": [
+    "TypeScript",
+    "Vite",
+    "Three.js",
+    "Playwright",
+    "Capacitor"
+  ],
+  "platforms": [
+    "modern web browser",
+    "PWA",
+    "Android packaging path"
+  ],
+  "cleanRoomPolicy": "No extracted APK/OBB files, proprietary source code, or ripped official game assets are distributed.",
+  "canonicalFactsUpdated": "2026-09-25"
+}
