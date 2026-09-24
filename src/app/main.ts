@@ -554,7 +554,7 @@ function startGame() {
   game.setCreationUltimateEnabled(freePlayMode);
   showStageBanner(
     freePlayMode ? 'FREE PLAY MODE' : 'MASTER CHEN PRESENTS',
-    freePlayMode ? 'UNLIMITED SPINJITZU' : 'TOURNAMENT OF ELEMENTS'
+    freePlayMode ? 'UNLIMITED SPINJITZU · TORNADO OF CREATION' : 'TOURNAMENT OF ELEMENTS'
   );
 
   wireJoystick(game);
