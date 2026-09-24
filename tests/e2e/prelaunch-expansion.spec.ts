@@ -15,8 +15,8 @@ test('pre-launch arena exposes classic and overhead player-follow views', async 
   await expect(view).toHaveAttribute('aria-pressed', 'true');
 
   await page.keyboard.press('v');
-  // Keyboard switching is handled by the game engine while the UI button remains
-  // an independent touch affordance; prove the run remains alive after both inputs.
+  await expect(view).toContainText('CLASSIC');
+  await expect(view).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#game-host canvas')).toBeVisible();
 });
 
