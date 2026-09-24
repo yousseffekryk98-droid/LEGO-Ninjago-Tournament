@@ -775,3 +775,18 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   .ultimate-spinjitzu-button{bottom:54px;min-width:190px;padding:6px 10px}
 }
 @media(prefers-reduced-motion:reduce){.freeplay-mode .ultimate-spinjitzu-button{animation:none}}
+
+
+/* Fighter progression controls */
+.fighter-card-actions{display:grid;gap:7px;min-width:122px}
+.fighter-card-actions .mini-button{width:100%;min-width:0;padding-inline:9px}
+.upgrade-btn{background:linear-gradient(#9b6b1e,#55370d)!important;border-color:#e1b94e!important;color:#fff0a8!important}
+.upgrade-btn:disabled{background:#332c35!important;border-color:#6d625f!important;color:#817a78!important}
+.upgrade-copy{display:block;margin-top:5px;color:#d9bd6a;font-size:8px;font-weight:900;letter-spacing:.05em;line-height:1.3;text-transform:uppercase}
+@media(max-width:760px){
+  .fighter-card{grid-template-columns:58px 1fr;align-items:start}
+  .fighter-card-actions{grid-column:1/-1;grid-template-columns:1fr 1fr;width:100%;min-width:0}
+}
+@media(max-width:390px){
+  .fighter-card-actions{grid-template-columns:1fr}
+}
