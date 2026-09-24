@@ -143,6 +143,26 @@ function formatStuds(value: number) {
   return Math.floor(value).toLocaleString();
 }
 
+function legacyActionIcon(type: 'jump' | 'block' | 'grab' | 'punch' | 'kick' | 'spin') {
+  const common = 'viewBox="0 0 36 36" aria-hidden="true" focusable="false"';
+  if (type === 'jump') {
+    return `<svg ${common}><path d="M18 4 9 15h6v8h6v-8h6L18 4Z"/><path d="M9 29c5-3 13-3 18 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`;
+  }
+  if (type === 'block') {
+    return `<svg ${common}><path d="M18 3 29 7v9c0 8-4.8 14-11 17C11.8 30 7 24 7 16V7l11-4Z"/><path d="M18 8v19" fill="none" stroke="#24172d" stroke-width="3" opacity=".55"/></svg>`;
+  }
+  if (type === 'grab') {
+    return `<svg ${common}><path d="M9 17V9c0-2 3-2 3 0v6h1V6c0-2 3-2 3 0v9h1V5c0-2 3-2 3 0v10h1V7c0-2 3-2 3 0v11l3-3c2-2 4 1 2 3l-7 10c-2 3-5 4-9 3-5-1-8-6-8-11v-3c0-2 4-2 4 0Z"/></svg>`;
+  }
+  if (type === 'punch') {
+    return `<svg ${common}><path d="M8 17v-5c0-3 4-3 4 0v4h1V9c0-3 4-3 4 0v7h1V8c0-3 4-3 4 0v8h1v-5c0-3 4-3 4 0v8c0 8-4 13-11 13-7 0-11-5-11-11 0-3 3-5 6-4l3 2v-2H8Z"/></svg>`;
+  }
+  if (type === 'kick') {
+    return `<svg ${common}><path d="M10 5h9l2 11 8 3c3 1 4 4 2 7l-2 3-13-5-4-9-5-3 3-7Z"/><path d="m21 16 4 8" fill="none" stroke="#24172d" stroke-width="2.5" opacity=".45"/></svg>`;
+  }
+  return `<svg ${common}><path d="M29 15c-1-7-9-11-15-7-5 3-6 10-2 14 4 4 11 3 13-2 2-4-1-8-5-8-4 0-6 5-3 8 2 2 5 1 6-1" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="m27 9 3 6-6 1" fill="currentColor"/></svg>`;
+}
+
 function fighterLevel(id: string) {
   return fighterLevelFromXp(save.fighterXp[id] ?? 0);
 }
@@ -454,14 +474,14 @@ function showDojo() {
         <div class="dojo-progress"><i id="dojo-progress"></i></div>
       </section>
       <div class="dojo-fighter-label"><b>${identity.name}</b><span>${identity.variant ? `${identity.variant} · ` : ''}LV ${fighterLevel(baseFighter.id)} · ${baseFighter.special.replace('-', ' ')}</span></div>
-      <div class="special-wrap"><button id="dojo-special" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="dojo-meter"></i></div></div>
+      <div class="special-wrap"><button id="dojo-special" class="special-button" aria-label="${specialLabel}" title="${specialLabel}"><span class="legacy-icon">${legacyActionIcon('spin')}</span></button><small class="special-name">${specialLabel}</small><div class="meter"><i id="dojo-meter"></i></div></div>
       <div class="joystick" id="dojo-joystick"><div class="joystick-ring"><span id="dojo-stick"></span></div></div>
       <div class="action-cluster dojo-actions">
-        <button class="action-button jump" data-dojo-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
-        <button class="action-button block" id="dojo-block" aria-label="Block"><span class="legacy-icon">⬟</span></button>
-        <button class="action-button grab" data-dojo-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
-        <button class="action-button attack punch" data-dojo-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
-        <button class="action-button kick elemental-kick" data-dojo-action="kick" aria-label="${baseFighter.element} elemental kick" title="${baseFighter.element} kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
+        <button class="action-button jump" data-dojo-action="jump" aria-label="Jump"><span class="legacy-icon">${legacyActionIcon('jump')}</span></button>
+        <button class="action-button block" id="dojo-block" aria-label="Block"><span class="legacy-icon">${legacyActionIcon('block')}</span></button>
+        <button class="action-button grab" data-dojo-action="grab" aria-label="Grab"><span class="legacy-icon">${legacyActionIcon('grab')}</span></button>
+        <button class="action-button attack punch" data-dojo-action="punch" aria-label="Punch"><span class="legacy-icon">${legacyActionIcon('punch')}</span></button>
+        <button class="action-button kick elemental-kick" data-dojo-action="kick" aria-label="${baseFighter.element} elemental kick" title="${baseFighter.element} kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${legacyActionIcon('kick')}</span><span class="element-badge" aria-hidden="true">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
       </div>
       <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · SPINJITZU ${formatKeyLabel(keys.special)}</div>
       <div class="dodge-hint">SWIPE DOJO TO DODGE · ${formatKeyLabel(keys.dodge)} ON DESKTOP</div>
@@ -586,15 +606,15 @@ function startGame() {
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
       <div id="stage-banner" class="stage-banner" aria-live="polite"><small></small><b></b></div>
       <div id="message" class="arena-message"></div>
-      <div class="special-wrap"><button id="special-btn" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="special-meter"></i></div></div>
+      <div class="special-wrap"><button id="special-btn" class="special-button" aria-label="${specialLabel}" title="${specialLabel}"><span class="legacy-icon">${legacyActionIcon('spin')}</span></button><small class="special-name">${specialLabel}</small><div class="meter"><i id="special-meter"></i></div></div>
       ${freePlayMode ? `<button id="ultimate-btn" class="ultimate-spinjitzu-button" aria-label="Tornado of Creation ultimate"><b>∞ TEAM ULTIMATE</b><span>TORNADO OF CREATION · ${formatKeyLabel(keys.ultimate)}</span></button>` : ''}
       <div class="joystick" id="joystick"><div class="joystick-ring"><span id="stick"></span></div></div>
       <div class="action-cluster">
-        <button class="action-button jump" data-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
-        <button class="action-button block" id="block-btn" aria-label="Block"><span class="legacy-icon">⬟</span></button>
-        <button class="action-button grab" data-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
-        <button class="action-button attack punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
-        <button class="action-button kick elemental-kick" data-action="kick" aria-label="${baseFighter.element} elemental kick" title="${baseFighter.element} kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
+        <button class="action-button jump" data-action="jump" aria-label="Jump"><span class="legacy-icon">${legacyActionIcon('jump')}</span></button>
+        <button class="action-button block" id="block-btn" aria-label="Block"><span class="legacy-icon">${legacyActionIcon('block')}</span></button>
+        <button class="action-button grab" data-action="grab" aria-label="Grab"><span class="legacy-icon">${legacyActionIcon('grab')}</span></button>
+        <button class="action-button attack punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">${legacyActionIcon('punch')}</span></button>
+        <button class="action-button kick elemental-kick" data-action="kick" aria-label="${baseFighter.element} elemental kick" title="${baseFighter.element} kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${legacyActionIcon('kick')}</span><span class="element-badge" aria-hidden="true">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
       </div>
       <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)}${freePlayMode ? ` · CREATION ${formatKeyLabel(keys.ultimate)}` : ''}</div>
       <div class="dodge-hint">SWIPE ARENA TO DODGE · ${formatKeyLabel(keys.dodge)}</div>
