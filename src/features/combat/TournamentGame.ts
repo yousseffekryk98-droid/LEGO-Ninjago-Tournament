@@ -105,6 +105,12 @@ export class TournamentGame {
   private input = { x: 0, y: 0, block: false };
   private keyboard = new Set<string>();
   private queuedActions = new Set<Action>();
+  private bufferedAttackTime = 0;
+  private combatMove: 'jab' | 'cross' | 'kick' | 'roundhouse' = 'jab';
+  private combatMoveIndex = 0;
+  private attackAnimationTime = 0;
+  private attackAnimationDuration = 0.28;
+  private unlimitedSpecial = false;
 
   private health: number;
   private studs = 0;
@@ -181,7 +187,19 @@ export class TournamentGame {
   }
 
   action(action: Action) {
+    if (action === 'attack' && (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0 || this.frozenTime > 0)) {
+      this.bufferedAttackTime = 0.24;
+      return;
+    }
     this.queuedActions.add(action);
+  }
+
+  setUnlimitedSpecial(enabled: boolean) {
+    this.unlimitedSpecial = enabled;
+    if (enabled) {
+      this.special = 100;
+      this.emitHud();
+    }
   }
 
   dodge(x = 0, y = 0) {
@@ -236,6 +254,9 @@ export class TournamentGame {
   }
 
   private keyDown = (event: KeyboardEvent) => {
+    if (['Space','KeyJ','KeyK','KeyL','KeyE','KeyQ','ShiftLeft','ShiftRight','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code)) {
+      event.preventDefault();
+    }
     this.keyboard.add(event.code);
     if (event.repeat) return;
     if (event.code === 'Space' || event.code === 'KeyJ') this.action('attack');
@@ -295,6 +316,9 @@ export class TournamentGame {
   private update(dt: number) {
     this.elapsed += dt;
     this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    this.bufferedAttackTime = Math.max(0, this.bufferedAttackTime - dt);
+    this.attackAnimationTime = Math.max(0, this.attackAnimationTime - dt);
+    if (this.unlimitedSpecial && this.spinTime <= 0) this.special = 100;
     this.invulnerable = Math.max(0, this.invulnerable - dt);
     this.frozenTime = Math.max(0, this.frozenTime - dt);
     this.spikeCooldown = Math.max(0, this.spikeCooldown - dt);
@@ -413,7 +437,9 @@ export class TournamentGame {
     (this.playerShadow.material as THREE.MeshBasicMaterial).opacity = clamp(0.3 - this.player.position.y * 0.05, 0.08, 0.3);
 
     if (this.frozenTime <= 0) {
-      if (this.queuedActions.has('attack')) this.performAttack();
+      if (this.queuedActions.has('attack') || (this.bufferedAttackTime > 0 && this.attackCooldown <= 0)) {
+        if (this.performAttack()) this.bufferedAttackTime = 0;
+      }
       if (this.queuedActions.has('jump')) this.performJump();
       if (this.queuedActions.has('grab')) this.performGrab();
       if (this.queuedActions.has('special')) this.performSpecial();
@@ -422,28 +448,44 @@ export class TournamentGame {
   }
 
   private performAttack() {
-    if (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0) return;
+    if (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0) return false;
     if (!this.grounded) {
       this.jumpSlam = true;
       this.jumpVelocity = Math.min(this.jumpVelocity, -10.5);
       this.attackCooldown = 0.65;
+      this.attackAnimationDuration = 0.65;
+      this.attackAnimationTime = this.attackAnimationDuration;
       this.callbacks.onMessage('Jump slam!');
-      return;
+      return true;
     }
 
-    this.attackCooldown = this.character.style === 'speed' ? 0.24 : this.character.style === 'heavy' ? 0.48 : 0.34;
+    const moves = [
+      { name: 'jab' as const, duration: 0.24, damage: 0.82, range: 2.15, knockback: 2.4 },
+      { name: 'cross' as const, duration: 0.28, damage: 1.0, range: 2.25, knockback: 3.2 },
+      { name: 'kick' as const, duration: 0.36, damage: 1.18, range: 2.55, knockback: 4.8 },
+      { name: 'roundhouse' as const, duration: 0.44, damage: 1.34, range: 2.72, knockback: 6.0 }
+    ];
+    const move = moves[this.combatMoveIndex % moves.length];
+    this.combatMoveIndex = (this.combatMoveIndex + 1) % moves.length;
+    this.combatMove = move.name;
+    const styleSpeed = this.character.style === 'speed' ? 0.84 : this.character.style === 'heavy' ? 1.14 : 1;
+    this.attackCooldown = move.duration * styleSpeed;
+    this.attackAnimationDuration = this.attackCooldown;
+    this.attackAnimationTime = this.attackAnimationDuration;
+
     const forward = new THREE.Vector3(Math.sin(this.player.rotation.y), 0, Math.cos(this.player.rotation.y));
     let connected = false;
     for (const enemy of [...this.enemies]) {
       const toEnemy = enemy.mesh.position.clone().sub(this.player.position);
       const distance = toEnemy.length();
-      if (distance <= (this.character.style === 'heavy' ? 2.55 : 2.15) && forward.dot(toEnemy.normalize()) > -0.05) {
+      if (distance <= move.range + (this.character.style === 'heavy' ? 0.18 : 0) && forward.dot(toEnemy.normalize()) > -0.12) {
         const before = enemy.hp;
-        this.hitEnemy(enemy, this.character.damage, this.character.style === 'heavy' ? 5.5 : 3.4);
+        this.hitEnemy(enemy, this.character.damage * move.damage, move.knockback + (this.character.style === 'heavy' ? 1.1 : 0));
         connected ||= enemy.hp < before || !this.enemies.includes(enemy);
       }
     }
     if (!connected) this.combo = Math.max(0, this.combo - 1);
+    return true;
   }
 
   private performJump() {
@@ -497,8 +539,8 @@ export class TournamentGame {
   }
 
   private performSpecial() {
-    if (this.special < 100 || this.spinTime > 0 || !this.grounded || this.dodgeTime > 0) return;
-    this.special = 0;
+    if ((!this.unlimitedSpecial && this.special < 100) || this.spinTime > 0 || !this.grounded || this.dodgeTime > 0) return;
+    this.special = this.unlimitedSpecial ? 100 : 0;
     this.spinTime = 2.1;
     this.spinTick = 0;
     this.startSpinjitzuVfx();
