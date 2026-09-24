@@ -790,3 +790,34 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 @media(max-width:390px){
   .fighter-card-actions{grid-template-columns:1fr}
 }
+
+
+/* Fighter-specific elemental kick control */
+.action-button.elemental-kick{
+  overflow:visible;
+  border-color:var(--element-accent,#f2bb58);
+  background:
+    radial-gradient(circle at 40% 34%,color-mix(in srgb,var(--element-accent,#f2bb58) 70%,white) 0 10%,transparent 11%),
+    radial-gradient(circle,var(--element-color,#7d56a0),#211824 72%);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb,var(--element-color,#7d56a0) 65%,#1a1320),
+    0 0 16px color-mix(in srgb,var(--element-color,#7d56a0) 50%,transparent),
+    0 4px 10px #0009;
+  color:#fff6d7;
+}
+.action-button.elemental-kick .legacy-icon{font-size:25px}
+.action-button.elemental-kick small{
+  position:absolute;
+  left:50%;
+  top:calc(100% + 3px);
+  transform:translateX(-50%);
+  max-width:74px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--element-accent,#f2bb58);
+  font:900 7px 'Barlow Condensed',sans-serif;
+  letter-spacing:.08em;
+  text-shadow:0 2px 3px #000;
+  text-transform:uppercase;
+}
