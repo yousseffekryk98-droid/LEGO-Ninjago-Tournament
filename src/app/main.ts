@@ -218,7 +218,7 @@ function showHome() {
           <span>Best run ${formatStuds(save.bestRun)}</span>
           <span>${save.totalRuns} runs</span>
         </div>
-        <p class="legal-note">Fan project only. No extracted APK/OBB assets, official logos, audio, models, textures, animations, or source code are included. · <a href="/about.html">About / Open Source</a></p>
+        <p class="legal-note">Fan project only. No extracted APK/OBB assets, official logos, audio, models, textures, animations, or source code are included. · <a href="./about.html">About / Open Source</a></p>
       </section>
     </main>`;
 
@@ -742,7 +742,7 @@ function updateHud(state: HudState) {
     showStageBanner(gauntletMode ? 'ELEMENTAL DUEL' : state.bossName ? 'ELEMENTAL MASTER' : 'TOURNAMENT STAGE', state.bossName ? state.bossName : `${gauntletMode ? 'DUEL' : 'WAVE'} ${state.wave}`);
     lastHudWave = state.wave;
   } else if (lastHudEnemies > 0 && state.enemies === 0 && state.wave > 0) {
-    showStageBanner('STAGE COMPLETE', `WAVE ${state.wave} CLEARED`);
+    showStageBanner('STAGE COMPLETE', `${gauntletMode ? 'DUEL' : 'WAVE'} ${state.wave} CLEARED`);
   }
   lastHudEnemies = state.enemies;
 }
