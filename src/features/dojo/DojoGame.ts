@@ -340,8 +340,8 @@ export class DojoGame {
 
   private clampPlayerToDojo() {
     const radius = Math.hypot(this.player.position.x, this.player.position.z);
-    if (radius <= 8.5) return;
-    const scale = 8.5 / radius;
+    if (radius <= 11.0) return;
+    const scale = 11.0 / radius;
     this.player.position.x *= scale;
     this.player.position.z *= scale;
   }
@@ -531,20 +531,20 @@ export class DojoGame {
     const red = new THREE.MeshStandardMaterial({ color: 0x7e2930, roughness: 0.72 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xb88a31, roughness: 0.4, metalness: 0.42 });
 
-    const floor = new THREE.Mesh(new THREE.CylinderGeometry(9.6, 9.6, 0.38, 64), stone);
+    const floor = new THREE.Mesh(new THREE.CylinderGeometry(12.4, 12.4, 0.38, 72), stone);
     floor.position.y = -0.22;
     floor.receiveShadow = true;
     this.scene.add(floor);
 
     // Wooden sparring deck in the middle.
-    for (let row = -6; row <= 6; row++) {
-      const plank = new THREE.Mesh(new THREE.BoxGeometry(12.8, 0.08, 0.78), row % 2 ? wood : darkWood);
+    for (let row = -8; row <= 8; row++) {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.08, 0.78), row % 2 ? wood : darkWood);
       plank.position.set(0, 0.025, row * 0.8);
       plank.receiveShadow = true;
       this.scene.add(plank);
     }
     const deckBorder = new THREE.Mesh(
-      new THREE.RingGeometry(6.1, 6.32, 64),
+      new THREE.RingGeometry(8.25, 8.52, 72),
       new THREE.MeshBasicMaterial({ color: 0xa77b2d, transparent: true, opacity: 0.74, side: THREE.DoubleSide, depthWrite: false })
     );
     deckBorder.rotation.x = -Math.PI / 2;
@@ -555,21 +555,21 @@ export class DojoGame {
     for (let i = 0; i < 14; i++) {
       const angle = i / 14 * Math.PI * 2;
       const wall = new THREE.Mesh(new THREE.BoxGeometry(3.9, 2.65, 0.46), i % 2 ? cream : darkWood);
-      wall.position.set(Math.cos(angle) * 10.5, 1.2, Math.sin(angle) * 10.5);
+      wall.position.set(Math.cos(angle) * 13.65, 1.2, Math.sin(angle) * 13.65);
       wall.rotation.y = -angle + Math.PI / 2;
       wall.castShadow = true;
       wall.receiveShadow = true;
       this.scene.add(wall);
 
       const beam = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.16, 0.52), wood);
-      beam.position.set(Math.cos(angle) * 10.35, 2.48, Math.sin(angle) * 10.35);
+      beam.position.set(Math.cos(angle) * 13.5, 2.48, Math.sin(angle) * 13.5);
       beam.rotation.y = -angle + Math.PI / 2;
       beam.castShadow = true;
       this.scene.add(beam);
     }
 
     // Four corner lantern posts and warm light pools.
-    for (const pos of [[-5.8,-5.2],[5.8,-5.2],[-5.8,5.2],[5.8,5.2]] as const) {
+    for (const pos of [[-8.1,-7.2],[8.1,-7.2],[-8.1,7.2],[8.1,7.2]] as const) {
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.24,3.1,10), wood);
       post.position.set(pos[0],1.55,pos[1]);
       post.castShadow = true;
@@ -591,10 +591,10 @@ export class DojoGame {
     // Hanging tournament-era banners.
     for (const side of [-1,1] as const) {
       const banner = new THREE.Mesh(new THREE.BoxGeometry(1.45,2.7,0.08), side < 0 ? red : new THREE.MeshStandardMaterial({color:0x563568,roughness:0.72}));
-      banner.position.set(side * 7.35,3.25,-6.3);
+      banner.position.set(side * 9.7,3.25,-8.3);
       banner.rotation.y = side * -0.08;
       const medallion = new THREE.Mesh(new THREE.TorusGeometry(0.28,0.06,8,24),gold);
-      medallion.position.set(side * 7.35,3.35,-6.23);
+      medallion.position.set(side * 9.7,3.35,-8.23);
       this.scene.add(banner,medallion);
     }
 
@@ -613,13 +613,13 @@ export class DojoGame {
         staff.rotation.z=-0.1+i*0.1;
         rack.add(staff);
       }
-      rack.position.set(side*7.0,0.9,4.2);
+      rack.position.set(side*9.25,0.9,5.7);
       rack.rotation.y=side>0?-Math.PI/2:Math.PI/2;
       rack.traverse(object=>{if(object instanceof THREE.Mesh)object.castShadow=true;});
       this.scene.add(rack);
     }
 
-    for(const [x,z] of [[-6.6,-1.4],[6.6,1.4]] as const){
+    for(const [x,z] of [[-9.0,-1.9],[9.0,1.9]] as const){
       const bagGroup=new THREE.Group();
       const post=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,2.4,8),wood);
       post.position.y=1.2;
@@ -636,9 +636,9 @@ export class DojoGame {
 
     // Sensei platform at the far side, visually echoing the tutorial screenshots.
     const platform=new THREE.Mesh(new THREE.BoxGeometry(4.2,0.35,2.3),darkWood);
-    platform.position.set(0,0.18,-7.3);
+    platform.position.set(0,0.18,-9.65);
     const mat=new THREE.Mesh(new THREE.BoxGeometry(3.35,0.08,1.55),red);
-    mat.position.set(0,0.39,-7.2);
+    mat.position.set(0,0.39,-9.55);
     this.scene.add(platform,mat);
   }
 
