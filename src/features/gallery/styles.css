@@ -11,3 +11,8 @@
 .gallery-figure{border-radius:3px;border:2px solid #8d682b;background:radial-gradient(circle,#5a406a,#17121d)}
 .gallery-codex{border:3px solid #896429;border-radius:5px;background:linear-gradient(#4b305b,#21172b);box-shadow:inset 0 0 0 2px #17101e}
 .gallery-codex article{border:1px solid #735327;border-radius:3px;background:#251a30}
+
+.gallery-toolbar{display:grid;gap:6px;margin:12px 0 2px}.gallery-toolbar label{color:#d7b654;font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.gallery-toolbar input{width:100%;min-height:44px;padding:9px 12px;border:2px solid #805d28;border-radius:4px;outline:none;background:#18121f;color:#f3ead2;font:800 15px system-ui,sans-serif}.gallery-toolbar input:focus{border-color:#d7b047;box-shadow:0 0 0 3px rgba(215,176,71,.15)}
+.temple-gallery-overlay{touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+@media(max-width:430px){.gallery-grid{grid-template-columns:1fr}.temple-gallery-panel header{align-items:center}.temple-gallery-panel h2{font-size:34px}.gallery-card p{min-height:0}.gallery-filters{padding-bottom:14px}}
+@media(orientation:landscape) and (max-height:480px){.temple-gallery-panel{padding-top:12px}.temple-gallery-panel header{position:sticky;top:0;z-index:4}.gallery-figure{height:76px}}
