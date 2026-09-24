@@ -38,7 +38,7 @@ test('home, roster unlock/selection, and persistence work', async ({ page }) => 
 
   await page.getByRole('button', { name: /FIGHTERS/i }).click();
   const cards = page.locator('.fighter-card');
-  await expect(cards).toHaveCount(50);
+  await expect(cards).toHaveCount(51);
 
   const zane = page.locator('.fighter-card[data-id="zane-techno"]');
   await expect(zane).toBeVisible();

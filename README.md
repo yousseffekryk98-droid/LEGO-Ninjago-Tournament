@@ -28,7 +28,7 @@ Implemented now:
 - visible element-colored Spinjitzu tornado VFX with movable AoE attack, helical energy bands, debris, dust, light, invulnerability window and a clearly labeled special control;
 - physical stud drops from defeated enemies, training props and supply crates, with scatter/bounce/magnet collection;
 - original-style stage introduction/completion presentation, low-health red vignette, boss health bar and a one-use stud-funded Continue flow;
-- **50** playable roster entries/variants covering the documented cast, regional Tox variant and supplied-video legacy fighters (Ronin remains boss-only), with primary names and suit/variant labels separated in the UI;
+- **51** playable roster entries/variants covering the documented cast, regional Tox variant and supplied-video legacy fighters including Kai ZX (Ronin remains boss-only), with primary names and suit/variant labels separated in the UI;
 - a dedicated 3D Dojo tutorial with seven interactive training steps and low-FPS input reconciliation;
 - Temple Gallery-style collection archive with fighter filters, lock state, stats and enemy codex;
 - Single Challenge, timed Score Attack and Boss Challenge modes;

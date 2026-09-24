@@ -87,7 +87,7 @@ A community game page currently lists at least the following playable entries/va
 
 The same reference identifies bosses including Master Chen, Karlof, Ash, Mr. Pale, Neuro, Griffin Turner, and Ronin, plus enemy families such as Anacondrai Cultists, Nindroids, Serpentine, Stone Warriors, Skullkins, and Shade clones.
 
-The current clean-room roster contains 50 data entries. It covers the explicitly documented playable list, the playable Elemental Master bosses supported by the public game documentation, Techno Wu, and the regional Tox replacement noted for the Bulgarian release. Ronin remains boss-only because the public game page specifically identifies him as the only unplayable boss.
+The current clean-room roster contains 51 data entries. It covers the explicitly documented playable list, the playable Elemental Master bosses supported by the public game documentation, Techno Wu, and the regional Tox replacement noted for the Bulgarian release. Ronin remains boss-only because the public game page specifically identifies him as the only unplayable boss.
 
 Some fan posts and modified-game videos claim larger 70+ rosters or show extra golden/hidden variants. Those are not treated as canonical playable entries without stronger evidence; the roster remains data-driven so newly verified variants can be added without rewriting combat code.
 
@@ -176,11 +176,11 @@ The architecture should treat these as modular ability definitions rather than s
 
 ## Supplied-video legacy additions
 
-A September 2026 video-fidelity pass reviewed the user-supplied walkthrough and playlists alongside public archival descriptions. Four previously missing entries are now represented:
+A September 2026 video-fidelity pass reviewed the user-supplied walkthrough and playlists alongside public archival descriptions. Five previously missing entries are now represented:
 
 - Snike — named as unlockable in the original public app description.
 - Bytar — observed as controlled gameplay in a legacy Tournament showcase.
 - Skales — observed as controlled gameplay in a legacy Tournament showcase.
 - Zane (Battle Damaged) — observed as controlled gameplay in a legacy Tournament walkthrough.
 
-The latter three are deliberately classified as video-observed legacy entries because common public roster summaries are inconsistent about them. See `VIDEO-FIDELITY.md` for the evidence policy and implementation matrix.
+The latter four are deliberately classified as video-observed legacy entries because common public roster summaries are inconsistent about them. See `VIDEO-FIDELITY.md` for the evidence policy and implementation matrix.

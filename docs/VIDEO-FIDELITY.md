@@ -95,16 +95,17 @@ Blender-exported GLB models can be introduced later through the existing charact
 
 The primary documented roster remains represented, plus regional/documented additions already tracked in `RESEARCH.md`.
 
-This video pass adds four entries that were missing from the remake:
+This video pass adds five entries that were missing from the remake:
 
 - **Snike** — explicitly named as unlockable in the original public app description.
 - **Bytar** — directly shown in a supplied legacy gameplay showcase.
 - **Skales** — directly shown in a supplied legacy gameplay showcase.
 - **Zane (Battle Damaged)** — directly shown in a supplied legacy gameplay walkthrough.
+- **Kai ZX** — directly shown as a playable fighter in legacy Tournament gameplay (TanJinGames, 2017).
 
-Bytar, Skales and Battle-Damaged Zane are treated as **video-observed legacy entries** because public roster summaries are inconsistent about them. Their inclusion is evidence-driven, but the project should not claim stronger provenance without a better first-party roster archive.
+Bytar, Skales, Battle-Damaged Zane and Kai ZX are treated as **video-observed legacy entries** because public roster summaries are inconsistent about them. Their inclusion is evidence-driven, but the project should not claim stronger provenance without a better first-party roster archive.
 
-The clean-room roster is now **50 entries**. Ronin remains boss-only.
+The clean-room roster is now **51 entries**. Ronin remains boss-only.
 
 ## Asset rule
 

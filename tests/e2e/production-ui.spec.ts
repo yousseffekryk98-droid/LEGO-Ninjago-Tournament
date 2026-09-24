@@ -6,7 +6,7 @@ test('Temple Gallery exposes the full clean-room collection archive', async ({ p
   await page.goto('/');
   await page.getByRole('button', { name: /TEMPLE GALLERY/i }).click();
   await expect(page.getByRole('heading', { name: 'Temple Gallery' })).toBeVisible();
-  await expect(page.locator('.gallery-card')).toHaveCount(50);
+  await expect(page.locator('.gallery-card')).toHaveCount(51);
   await expect(page.locator('.gallery-codex')).toContainText('Anacondrai');
   await expect(page.locator('.gallery-codex')).toContainText('Nindroids');
   await expect(page.locator('.gallery-codex')).toContainText('Bombers');

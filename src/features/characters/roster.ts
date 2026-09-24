@@ -21,6 +21,7 @@ export const ROSTER: CharacterDef[] = [
   { id: 'kai-jungle', name: 'Kai (Jungle)', element: 'Fire', style: 'speed', special: 'charge', color: 0xbe2f29, accent: 0x5f4028, speed: 6.2, damage: 20, maxHealth: 4, cost: 6500 },
   { id: 'kai-techno', name: 'Kai (Techno)', element: 'Fire', style: 'balanced', special: 'overload', color: 0xc5322f, accent: 0x9da5a8, speed: 5.8, damage: 22, maxHealth: 4, cost: 7500 },
   { id: 'kai-dx', name: 'Kai DX', element: 'Fire', style: 'speed', special: 'spinjitzu', color: 0xb52226, accent: 0xd8b640, speed: 6.3, damage: 22, maxHealth: 4, cost: 10500 },
+  { id: 'kai-zx', name: 'Kai ZX', element: 'Fire', style: 'speed', special: 'spinjitzu', color: 0xc21f24, accent: 0xd7aa38, speed: 6.4, damage: 23, maxHealth: 4, cost: 11500 },
 
   { id: 'cole-zukin', name: 'Cole (Jungle)', element: 'Earth', style: 'heavy', special: 'charge', color: 0x242629, accent: 0x6d4a2e, speed: 5.2, damage: 28, maxHealth: 5, cost: 7000 },
   { id: 'jay-zx', name: 'Jay ZX', element: 'Lightning', style: 'speed', special: 'overload', color: 0x2761b8, accent: 0xd6c8ae, speed: 6.8, damage: 18, maxHealth: 4, cost: 9500 },
