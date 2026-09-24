@@ -395,7 +395,6 @@ function showDojo() {
   const fighter = upgradedCharacter(baseFighter);
   const identity = getCharacterIdentity(baseFighter);
   const specialLabel = baseFighter.special === 'spinjitzu' ? 'SPINJITZU' : baseFighter.special.replace('-', ' ').toUpperCase();
-  const keys = getKeyBindings();
   app.innerHTML = `
     <main class="game-screen dojo-game-screen">
       <div id="dojo-host"></div>
@@ -494,6 +493,7 @@ function startGame() {
   lastHudWave = 0;
   lastHudEnemies = 0;
   const baseFighter = findCharacter(save.selected);
+  const keys = getKeyBindings();
   const fighter = upgradedCharacter(baseFighter);
   if (freePlayMode) fighter.special = 'spinjitzu';
   const identity = getCharacterIdentity(baseFighter);
