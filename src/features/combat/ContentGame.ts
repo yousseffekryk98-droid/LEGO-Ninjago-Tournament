@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TournamentGame as StableContentGame, type HudState, type GameCallbacks } from './ContentGameBase';
-import type { CharacterDef } from '../characters';
+import { findCharacter, type CharacterDef } from '../characters';
+import { createCharacterModel } from '../characters/model';
 
 export type { HudState, GameCallbacks } from './ContentGameBase';
 
@@ -123,6 +124,12 @@ export class TournamentGame extends StableContentGame {
   private nextMissileRunAt = 23 + Math.random() * 8;
   private playerAura: THREE.Mesh | null = null;
   private combatFx: CombatFx[] = [];
+  private creationUltimateEnabled = false;
+  private creationUltimateGroup: THREE.Group | null = null;
+  private creationUltimateFighters: THREE.Group[] = [];
+  private creationUltimateTime = 0;
+  private creationUltimateTick = 0;
+  private creationUltimateCooldown = 0;
   private lastPlayerPosition = new THREE.Vector3();
   private visualMoveAmount = 0;
 
@@ -135,6 +142,10 @@ export class TournamentGame extends StableContentGame {
   }
 
   override action(action: BaseAction) {
+    if (action === 'ultimate') {
+      this.triggerCreationTornado();
+      return;
+    }
     const state = this.productionRuntime();
     const specialWasReady = state.special >= 100;
     super.action(action);
@@ -148,6 +159,119 @@ export class TournamentGame extends StableContentGame {
     }
   }
 
+  setCreationUltimateEnabled(enabled: boolean) {
+    this.creationUltimateEnabled = enabled;
+    if (!enabled) this.stopCreationTornado();
+  }
+
+  triggerCreationTornado() {
+    if (!this.creationUltimateEnabled || this.creationUltimateTime > 0 || this.creationUltimateCooldown > 0) return false;
+    const state = this.productionRuntime();
+    const group = new THREE.Group();
+    group.name = 'tornadoOfCreation';
+    group.position.copy(state.player.position).setY(0);
+
+    const teamIds = ['lloyd-tournament', 'kai-tournament', 'cole-tournament', 'zane-zx', 'jay-tournament'];
+    const safe = this.lowFxMode();
+    this.creationUltimateFighters = teamIds.map((id, index) => {
+      const fighter = findCharacter(id);
+      const model = createCharacterModel({ ...fighter, special: 'spinjitzu' }, 0.9);
+      model.userData.creationAngle = index / teamIds.length * Math.PI * 2;
+      model.userData.creationColor = fighter.color;
+      group.add(model);
+
+      const funnel = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.08, 0.34, 2.7, safe ? 22 : 34, 1, true),
+        new THREE.MeshBasicMaterial({
+          color: fighter.color,
+          transparent: true,
+          opacity: 0.2,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      funnel.name = `creationMiniTornado-${id}`;
+      funnel.position.y = 1.25;
+      funnel.userData.creationAngle = model.userData.creationAngle;
+      group.add(funnel);
+      return model;
+    });
+
+    const core = new THREE.Mesh(
+      new THREE.CylinderGeometry(5.6, 1.0, 7.4, safe ? 38 : 64, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0xe9c75d,
+        transparent: true,
+        opacity: 0.16,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      })
+    );
+    core.name = 'creationCore';
+    core.position.y = 3.5;
+    group.add(core);
+
+    const colors = teamIds.map((id) => findCharacter(id).color);
+    for (let index = 0; index < (safe ? 9 : 15); index++) {
+      const t = index / (safe ? 8 : 14);
+      const radius = 1.2 + t * 4.2;
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(radius, 0.07 + t * 0.045, safe ? 7 : 9, safe ? 34 : 54),
+        new THREE.MeshBasicMaterial({
+          color: colors[index % colors.length],
+          transparent: true,
+          opacity: 0.78 - t * 0.28,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      ring.name = 'creationBand';
+      ring.position.y = 0.45 + t * 6.25;
+      ring.rotation.x = Math.PI / 2;
+      ring.userData.spinRate = index % 2 === 0 ? 4.8 : -5.5;
+      group.add(ring);
+    }
+
+    const floorWave = new THREE.Mesh(
+      new THREE.RingGeometry(1.4, 6.8, safe ? 44 : 72),
+      new THREE.MeshBasicMaterial({
+        color: 0xe8c65c,
+        transparent: true,
+        opacity: 0.18,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      })
+    );
+    floorWave.name = 'creationFloorWave';
+    floorWave.rotation.x = -Math.PI / 2;
+    floorWave.position.y = 0.06;
+    group.add(floorWave);
+
+    const light = new THREE.PointLight(0xffdc72, safe ? 4.2 : 6.8, safe ? 12 : 18, 2);
+    light.position.y = 3.4;
+    group.add(light);
+
+    state.scene.add(group);
+    this.creationUltimateGroup = group;
+    this.creationUltimateTime = 4.8;
+    this.creationUltimateTick = 0;
+    this.creationUltimateCooldown = 6.5;
+    state.callbacks.onMessage('TORNADO OF CREATION — NINJA, GO!');
+    return true;
+  }
+
+  private stopCreationTornado() {
+    if (!this.creationUltimateGroup) return;
+    this.productionRuntime().scene.remove(this.creationUltimateGroup);
+    this.creationUltimateGroup = null;
+    this.creationUltimateFighters = [];
+    this.creationUltimateTime = 0;
+    this.creationUltimateTick = 0;
+  }
+
   override destroy() {
     this.productionDestroyed = true;
     cancelAnimationFrame(this.productionFrame);
@@ -158,6 +282,7 @@ export class TournamentGame extends StableContentGame {
     for (const jet of this.missileJets) state.scene.remove(jet.group);
     for (const missile of this.missiles) state.scene.remove(missile.group, missile.marker);
     for (const effect of this.combatFx) state.scene.remove(effect.mesh);
+    this.stopCreationTornado();
     if (this.playerAura) state.scene.remove(this.playerAura);
     this.props = [];
     this.heartPickups = [];
@@ -191,6 +316,7 @@ export class TournamentGame extends StableContentGame {
     this.updateMissileJets(dt);
     this.updateMissiles(dt);
     this.updateCombatFx(dt);
+    this.updateCreationTornado(dt);
     this.updatePresentation();
 
     if (state.wave >= 3 && state.elapsed >= this.nextMissileRunAt && this.missileJets.length === 0) {
@@ -285,6 +411,64 @@ export class TournamentGame extends StableContentGame {
         const index = this.combatFx.indexOf(effect);
         if (index >= 0) this.combatFx.splice(index, 1);
       }
+    }
+  }
+
+  private updateCreationTornado(dt: number) {
+    this.creationUltimateCooldown = Math.max(0, this.creationUltimateCooldown - dt);
+    const group = this.creationUltimateGroup;
+    if (!group) return;
+
+    const state = this.productionRuntime();
+    this.creationUltimateTime = Math.max(0, this.creationUltimateTime - dt);
+    this.creationUltimateTick -= dt;
+    const elapsed = 4.8 - this.creationUltimateTime;
+    group.position.x = state.player.position.x;
+    group.position.z = state.player.position.z;
+    group.rotation.y += dt * (elapsed < 1.25 ? 1.8 : 4.8);
+
+    const gather = THREE.MathUtils.clamp(elapsed / 1.25, 0, 1);
+    const orbitRadius = THREE.MathUtils.lerp(4.8, 1.45, gather);
+    this.creationUltimateFighters.forEach((fighter, index) => {
+      const base = Number(fighter.userData.creationAngle ?? index / Math.max(1, this.creationUltimateFighters.length) * Math.PI * 2);
+      const angle = base + elapsed * (1.8 + index * 0.08);
+      fighter.position.set(Math.cos(angle) * orbitRadius, 0, Math.sin(angle) * orbitRadius);
+      fighter.rotation.y = Math.atan2(-fighter.position.x, -fighter.position.z) + elapsed * 7.5;
+      fighter.visible = this.creationUltimateTime > 0.45;
+    });
+
+    group.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      if (object.name === 'creationBand') object.rotation.z += dt * Number(object.userData.spinRate ?? 4.5);
+      if (object.name.startsWith('creationMiniTornado-')) object.rotation.y += dt * 10;
+      if (object.name === 'creationCore') {
+        object.rotation.y += dt * 5.6;
+        const pulse = 1 + Math.sin(elapsed * 8) * 0.06;
+        object.scale.set(pulse, 1, pulse);
+      }
+      if (object.name === 'creationFloorWave') object.rotation.z -= dt * 3.2;
+    });
+
+    if (elapsed >= 0.75 && this.creationUltimateTick <= 0) {
+      this.creationUltimateTick = 0.16;
+      for (const enemy of [...state.enemies]) {
+        const planar = enemy.mesh.position.clone().sub(group.position).setY(0);
+        const distance = planar.length();
+        if (distance > 11.5) continue;
+        if (distance > 0.05) enemy.mesh.position.addScaledVector(planar.normalize(), -0.18);
+        state.hitEnemy(enemy, state.character.damage * 0.42, 3.4, true);
+      }
+    }
+
+    if (this.creationUltimateTime <= 0) {
+      for (const enemy of [...state.enemies]) {
+        if (enemy.mesh.position.distanceTo(group.position) <= 13.2) {
+          state.hitEnemy(enemy, state.character.damage * 2.2, 12, true);
+        }
+      }
+      this.spawnRing(group.position.clone(), 0xf0cc64, 7.8);
+      state.callbacks.onMessage('Creation energy released!');
+      this.stopCreationTornado();
     }
   }
 
