@@ -378,10 +378,10 @@ function showDojo() {
       <div class="special-wrap"><button id="dojo-special" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="dojo-meter"></i></div></div>
       <div class="joystick" id="dojo-joystick"><div class="joystick-ring"><span id="dojo-stick"></span></div></div>
       <div class="action-cluster dojo-actions">
-        <button class="action-button jump" data-dojo-action="jump" aria-label="Jump">↑</button>
-        <button class="action-button block" id="dojo-block" aria-label="Block">◆</button>
-        <button class="action-button grab" data-dojo-action="grab" aria-label="Grab">✦</button>
-        <button class="action-button attack" data-dojo-action="attack" aria-label="Attack">⚔</button>
+        <button class="action-button jump" data-dojo-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
+        <button class="action-button block" id="dojo-block" aria-label="Block"><span class="legacy-icon">⬟</span></button>
+        <button class="action-button grab" data-dojo-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
+        <button class="action-button attack" data-dojo-action="attack" aria-label="Attack"><span class="legacy-icon">⚔</span></button>
       </div>
       <div class="dodge-hint">SWIPE DOJO TO DODGE · Q ON DESKTOP</div>
       <div id="dojo-complete" class="game-over hidden"></div>

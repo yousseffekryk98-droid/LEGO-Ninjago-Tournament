@@ -61,7 +61,7 @@ Characters demonstrably shown being controlled in legacy gameplay showcase video
 | Red low-energy screen | Screen turns red at low health | Implemented |
 | Current score feedback | Stud/score and multiplier remain visible | Implemented |
 | Temple Gallery | Collection / fighter archive | Implemented |
-| Dojo training | Movement, attack, jump, block, grab, dodge, special tutorial | Implemented |
+| Dojo training | Movement, attack, jump, block, grab, dodge, special tutorial in a fully staged wooden dojo | Implemented |
 | Roto Jet | Flyover, physical breakable supply boxes, studs/hearts and missile attack runs | Implemented |
 | Titanium Dragon | Visible dragon flyover followed by freezing ice projectile/event | Implemented |
 | Condrai Crusher | Visible vehicle arrival, stop, Anacondrai deployment and retreat | Implemented |

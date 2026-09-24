@@ -63,8 +63,8 @@ export class DojoGame {
     this.renderer.toneMappingExposure = 1.05;
     this.host.appendChild(this.renderer.domElement);
 
-    this.scene.background = new THREE.Color(0x18212a);
-    this.scene.fog = new THREE.FogExp2(0x18212a, 0.032);
+    this.scene.background = new THREE.Color(0x241a1d);
+    this.scene.fog = new THREE.FogExp2(0x241a1d, 0.022);
     this.buildDojo();
     this.player = createCharacterModel(character, 1);
     this.player.position.set(-3.5, 0, 2.8);
@@ -79,8 +79,8 @@ export class DojoGame {
     this.shadow.position.y = 0.02;
     this.scene.add(this.shadow);
 
-    this.camera.position.set(11, 13, 12);
-    this.camera.lookAt(0, 0.7, 0);
+    this.camera.position.set(12.2, 10.8, 14.1);
+    this.camera.lookAt(0, 0.8, -0.25);
     window.addEventListener('resize', this.resize);
     window.addEventListener('keydown', this.keyDown);
     window.addEventListener('keyup', this.keyUp);
@@ -397,35 +397,133 @@ export class DojoGame {
   }
 
   private buildDojo() {
-    this.scene.add(new THREE.HemisphereLight(0xbdd9ff, 0x30261f, 1.6));
-    const sun = new THREE.DirectionalLight(0xffdfac, 3.1);
+    this.scene.add(new THREE.HemisphereLight(0xc4d8ff, 0x2f211a, 1.45));
+    const sun = new THREE.DirectionalLight(0xffd9a0, 3.0);
     sun.position.set(-6, 12, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.left = -13;
+    sun.shadow.camera.right = 13;
+    sun.shadow.camera.top = 13;
+    sun.shadow.camera.bottom = -13;
     this.scene.add(sun);
 
-    const floor = new THREE.Mesh(new THREE.CylinderGeometry(9.5, 9.5, 0.38, 48), new THREE.MeshStandardMaterial({ color: 0x5b554d, roughness: 0.93 }));
+    const wood = new THREE.MeshPhysicalMaterial({ color: 0x72472d, roughness: 0.62, clearcoat: 0.18, clearcoatRoughness: 0.42 });
+    const darkWood = new THREE.MeshStandardMaterial({ color: 0x38251f, roughness: 0.84 });
+    const stone = new THREE.MeshStandardMaterial({ color: 0x4c4844, roughness: 0.94 });
+    const cream = new THREE.MeshStandardMaterial({ color: 0xcdbd9f, roughness: 0.82 });
+    const red = new THREE.MeshStandardMaterial({ color: 0x7e2930, roughness: 0.72 });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xb88a31, roughness: 0.4, metalness: 0.42 });
+
+    const floor = new THREE.Mesh(new THREE.CylinderGeometry(9.6, 9.6, 0.38, 64), stone);
     floor.position.y = -0.22;
     floor.receiveShadow = true;
     this.scene.add(floor);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x443831, roughness: 0.92 });
+
+    // Wooden sparring deck in the middle.
+    for (let row = -6; row <= 6; row++) {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(12.8, 0.08, 0.78), row % 2 ? wood : darkWood);
+      plank.position.set(0, 0.025, row * 0.8);
+      plank.receiveShadow = true;
+      this.scene.add(plank);
+    }
+    const deckBorder = new THREE.Mesh(
+      new THREE.RingGeometry(6.1, 6.32, 64),
+      new THREE.MeshBasicMaterial({ color: 0xa77b2d, transparent: true, opacity: 0.74, side: THREE.DoubleSide, depthWrite: false })
+    );
+    deckBorder.rotation.x = -Math.PI / 2;
+    deckBorder.position.y = 0.09;
+    this.scene.add(deckBorder);
+
+    // Timber-and-plaster dojo perimeter.
     for (let i = 0; i < 14; i++) {
       const angle = i / 14 * Math.PI * 2;
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(3.9, 2.4, 0.42), mat);
-      wall.position.set(Math.cos(angle) * 10.5, 1.1, Math.sin(angle) * 10.5);
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(3.9, 2.65, 0.46), i % 2 ? cream : darkWood);
+      wall.position.set(Math.cos(angle) * 10.5, 1.2, Math.sin(angle) * 10.5);
       wall.rotation.y = -angle + Math.PI / 2;
       wall.castShadow = true;
+      wall.receiveShadow = true;
       this.scene.add(wall);
+
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.16, 0.52), wood);
+      beam.position.set(Math.cos(angle) * 10.35, 2.48, Math.sin(angle) * 10.35);
+      beam.rotation.y = -angle + Math.PI / 2;
+      beam.castShadow = true;
+      this.scene.add(beam);
     }
+
+    // Four corner lantern posts and warm light pools.
     for (const pos of [[-5.8,-5.2],[5.8,-5.2],[-5.8,5.2],[5.8,5.2]] as const) {
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.24,2.8,8), new THREE.MeshStandardMaterial({ color:0x7b3f28, roughness:.8 }));
-      post.position.set(pos[0],1.4,pos[1]);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.24,3.1,10), wood);
+      post.position.set(pos[0],1.55,pos[1]);
       post.castShadow = true;
       this.scene.add(post);
-      const lamp = new THREE.PointLight(0xff9f4e,2.7,5,2);
-      lamp.position.set(pos[0],2.3,pos[1]);
+
+      const lanternFrame = new THREE.Mesh(new THREE.BoxGeometry(0.54,0.7,0.54), darkWood);
+      lanternFrame.position.set(pos[0],2.7,pos[1]);
+      const lanternGlow = new THREE.Mesh(
+        new THREE.BoxGeometry(0.38,0.54,0.38),
+        new THREE.MeshBasicMaterial({ color:0xffbd65, transparent:true, opacity:0.78 })
+      );
+      lanternGlow.position.copy(lanternFrame.position);
+      this.scene.add(lanternFrame,lanternGlow);
+      const lamp = new THREE.PointLight(0xff9f4e,3.0,6,2);
+      lamp.position.set(pos[0],2.65,pos[1]);
       this.scene.add(lamp);
     }
+
+    // Hanging tournament-era banners.
+    for (const side of [-1,1] as const) {
+      const banner = new THREE.Mesh(new THREE.BoxGeometry(1.45,2.7,0.08), side < 0 ? red : new THREE.MeshStandardMaterial({color:0x563568,roughness:0.72}));
+      banner.position.set(side * 7.35,3.25,-6.3);
+      banner.rotation.y = side * -0.08;
+      const medallion = new THREE.Mesh(new THREE.TorusGeometry(0.28,0.06,8,24),gold);
+      medallion.position.set(side * 7.35,3.35,-6.23);
+      this.scene.add(banner,medallion);
+    }
+
+    // Weapon racks and practice bags make the room read as a training space.
+    for (const side of [-1,1] as const) {
+      const rack = new THREE.Group();
+      const uprightA = new THREE.Mesh(new THREE.BoxGeometry(0.14,1.8,0.14),wood);
+      const uprightB = uprightA.clone();
+      uprightA.position.x=-0.65; uprightB.position.x=0.65;
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(1.55,0.14,0.14),wood);
+      bar.position.y=0.55;
+      rack.add(uprightA,uprightB,bar);
+      for(let i=0;i<3;i++){
+        const staff=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,1.85,8),i===1?gold:darkWood);
+        staff.position.set(-0.45+i*0.45,0.5,0.05);
+        staff.rotation.z=-0.1+i*0.1;
+        rack.add(staff);
+      }
+      rack.position.set(side*7.0,0.9,4.2);
+      rack.rotation.y=side>0?-Math.PI/2:Math.PI/2;
+      rack.traverse(object=>{if(object instanceof THREE.Mesh)object.castShadow=true;});
+      this.scene.add(rack);
+    }
+
+    for(const [x,z] of [[-6.6,-1.4],[6.6,1.4]] as const){
+      const bagGroup=new THREE.Group();
+      const post=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,2.4,8),wood);
+      post.position.y=1.2;
+      const bag=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.43,1.05,14),red);
+      bag.position.set(0.48,1.45,0);
+      const arm=new THREE.Mesh(new THREE.BoxGeometry(0.95,0.1,0.12),wood);
+      arm.position.set(0.24,2.25,0);
+      bagGroup.add(post,bag,arm);
+      bagGroup.position.set(x,0,z);
+      bagGroup.rotation.y=x>0?Math.PI:0;
+      bagGroup.traverse(object=>{if(object instanceof THREE.Mesh)object.castShadow=true;});
+      this.scene.add(bagGroup);
+    }
+
+    // Sensei platform at the far side, visually echoing the tutorial screenshots.
+    const platform=new THREE.Mesh(new THREE.BoxGeometry(4.2,0.35,2.3),darkWood);
+    platform.position.set(0,0.18,-7.3);
+    const mat=new THREE.Mesh(new THREE.BoxGeometry(3.35,0.08,1.55),red);
+    mat.position.set(0,0.39,-7.2);
+    this.scene.add(platform,mat);
   }
 
 
