@@ -37,6 +37,9 @@ interface RuntimeInternals {
   wave: number;
   elapsed: number;
   attackCooldown: number;
+  combatMove: 'jab' | 'cross' | 'kick' | 'roundhouse';
+  attackAnimationTime: number;
+  attackAnimationDuration: number;
   input: { x: number; y: number; block: boolean };
   grounded: boolean;
   jumpVelocity: number;
@@ -217,16 +220,28 @@ export class TournamentGame extends StableContentGame {
     const weaponRig = state.player.getObjectByName('weaponRig');
 
     const runSwing = Math.sin(state.elapsed * 11) * 0.48 * this.visualMoveAmount;
-    const attackPulse = state.attackCooldown > 0
-      ? Math.sin(Math.min(Math.PI, Math.max(0, (0.55 - state.attackCooldown) * 8.2)))
+    const attackProgress = state.attackAnimationTime > 0 && state.attackAnimationDuration > 0
+      ? THREE.MathUtils.clamp(1 - state.attackAnimationTime / state.attackAnimationDuration, 0, 1)
       : 0;
+    const attackPulse = attackProgress > 0 ? Math.sin(Math.PI * attackProgress) : 0;
+    const attackingWithLeg = state.combatMove === 'kick' || state.combatMove === 'roundhouse';
 
     if (leftLeg && rightLeg) {
       leftLeg.rotation.x = runSwing;
       rightLeg.rotation.x = -runSwing;
+      leftLeg.rotation.z = 0;
+      rightLeg.rotation.z = 0;
       if (!state.grounded) {
         leftLeg.rotation.x = -0.28;
         rightLeg.rotation.x = 0.34;
+      } else if (attackPulse > 0.01 && state.combatMove === 'kick') {
+        rightLeg.rotation.x = -1.38 * attackPulse;
+        rightLeg.rotation.z = 0.18 * attackPulse;
+        leftLeg.rotation.x = 0.18 * attackPulse;
+      } else if (attackPulse > 0.01 && state.combatMove === 'roundhouse') {
+        rightLeg.rotation.x = -0.72 * attackPulse;
+        rightLeg.rotation.z = -1.08 * attackPulse;
+        leftLeg.rotation.x = 0.24 * attackPulse;
       }
     }
 
@@ -241,10 +256,21 @@ export class TournamentGame extends StableContentGame {
         rightArm.rotation.x = -1.05;
         leftArm.rotation.z = -0.58;
         rightArm.rotation.z = 0.58;
-      } else if (attackPulse > 0.01) {
-        rightArm.rotation.x = -1.4 * attackPulse;
-        rightArm.rotation.z = 0.22 + attackPulse * 0.62;
-        leftArm.rotation.x = 0.36 * attackPulse;
+      } else if (attackPulse > 0.01 && state.combatMove === 'jab') {
+        rightArm.rotation.x = -1.5 * attackPulse;
+        rightArm.rotation.z = 0.2 + attackPulse * 0.42;
+        leftArm.rotation.x = -0.72 * attackPulse;
+        leftArm.rotation.z = -0.48;
+      } else if (attackPulse > 0.01 && state.combatMove === 'cross') {
+        leftArm.rotation.x = -1.52 * attackPulse;
+        leftArm.rotation.z = -0.2 - attackPulse * 0.44;
+        rightArm.rotation.x = -0.7 * attackPulse;
+        rightArm.rotation.z = 0.48;
+      } else if (attackPulse > 0.01 && attackingWithLeg) {
+        leftArm.rotation.x = -0.8 * attackPulse;
+        rightArm.rotation.x = -0.8 * attackPulse;
+        leftArm.rotation.z = -0.48;
+        rightArm.rotation.z = 0.48;
       } else if (!state.grounded) {
         leftArm.rotation.x = -0.72;
         rightArm.rotation.x = -0.72;
@@ -254,13 +280,22 @@ export class TournamentGame extends StableContentGame {
     }
 
     if (torso) {
-      torso.rotation.y = attackPulse * -0.24;
-      torso.rotation.z = state.dodgeTime > 0 ? -0.18 : runSwing * 0.05;
+      const twist = state.combatMove === 'cross'
+        ? attackPulse * 0.34
+        : state.combatMove === 'roundhouse'
+          ? attackPulse * -0.62
+          : attackPulse * -0.22;
+      torso.rotation.y = twist;
+      torso.rotation.z = state.dodgeTime > 0
+        ? -0.18
+        : attackingWithLeg
+          ? attackPulse * 0.13
+          : runSwing * 0.05;
     }
-    if (head) head.rotation.y = attackPulse * 0.12;
+    if (head) head.rotation.y = state.combatMove === 'cross' ? attackPulse * -0.18 : attackPulse * 0.12;
     if (weaponRig) {
-      weaponRig.rotation.z = attackPulse * -0.42;
-      weaponRig.rotation.x = attackPulse * -0.18;
+      weaponRig.rotation.z = attackingWithLeg ? 0 : attackPulse * -0.42;
+      weaponRig.rotation.x = attackingWithLeg ? 0 : attackPulse * -0.18;
     }
 
     if (state.spinTime > 0) {
