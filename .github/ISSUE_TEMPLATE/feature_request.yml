@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest an original gameplay, UI, accessibility, or technical improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this improve?
+      description: Explain the player/developer problem first.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Combat
+        - Fighters / progression
+        - Arena / 3D art
+        - Controls / accessibility
+        - Mobile / responsive UI
+        - Performance
+        - Build / deployment
+        - Documentation
+        - Other
+  - type: checkboxes
+    id: cleanroom
+    attributes:
+      label: Clean-room requirement
+      options:
+        - label: This proposal does not require ripped or proprietary game assets/code.
+          required: true
