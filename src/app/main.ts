@@ -200,6 +200,7 @@ function showHome() {
           <button class="gold-button" id="dojo-btn">◇ PLAY DOJO TUTORIAL</button>
           <button class="gold-button" id="controls-btn">⌨ KEYBOARD CONTROLS</button>
           <button class="gold-button freeplay-button" id="freeplay-btn">∞ FREE PLAY · UNLIMITED SPINJITZU</button>
+          <a class="gold-button github-link-button" href="https://github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament" target="_blank" rel="noopener noreferrer" aria-label="Open Ninja Tournament source code on GitHub">⌘ GITHUB · SOURCE CODE</a>
         </div>
         <div class="save-stats">
           <span>◉ ${formatStuds(save.bankStuds)} banked studs</span>
