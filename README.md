@@ -1,4 +1,4 @@
-# LEGO Ninjago Tournament — Fan Remake
+# LEGO Ninjago Tournament — Fan Remake https://lego-ninjago-tournament.pages.dev/
 
 A clean-room, fan-made recreation project inspired by the discontinued 2015 mobile arena brawler.
 
