@@ -844,3 +844,11 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   color:#fff4c6!important;
   box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--element-accent,#e0b84c) 28%,transparent),0 0 12px color-mix(in srgb,var(--element-color,#5b3d72) 42%,transparent)!important;
 }
+
+
+.github-link-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+}
