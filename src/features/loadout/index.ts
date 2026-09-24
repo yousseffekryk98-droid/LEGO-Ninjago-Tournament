@@ -1,6 +1,7 @@
 import { ROSTER } from '../characters';
 
 const SAVE_KEY = 'ninja-tournament-fan-remake-v1';
+const SAVE_CACHE_KEY = `${SAVE_KEY}:cache`;
 export const POWERUP_KEY = 'ninja-tournament-powerups-v1';
 
 export type PowerupId = 'iron-heart' | 'charged-scroll' | 'battle-focus';
@@ -40,14 +41,28 @@ export function readPowerups(): PowerupState {
 
 export function writePowerups(state: PowerupState) {
   localStorage.setItem(POWERUP_KEY, JSON.stringify(state));
+  window.dispatchEvent(new CustomEvent('ninja-powerups-updated'));
 }
 
 function readMainSave() {
-  try {
-    return JSON.parse(localStorage.getItem(SAVE_KEY) ?? '{}') as { bankStuds?: number; selected?: string } & Record<string, unknown>;
-  } catch {
-    return { bankStuds: 0 } as { bankStuds?: number; selected?: string } & Record<string, unknown>;
+  for (const key of [SAVE_KEY, SAVE_CACHE_KEY]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as { bankStuds?: number; selected?: string } & Record<string, unknown>;
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {
+      // Fall through to the mirrored cache.
+    }
   }
+  return { bankStuds: 0 } as { bankStuds?: number; selected?: string } & Record<string, unknown>;
+}
+
+function writeMainSave(save: Record<string, unknown>) {
+  const payload = JSON.stringify(save);
+  localStorage.setItem(SAVE_KEY, payload);
+  localStorage.setItem(SAVE_CACHE_KEY, payload);
+  window.dispatchEvent(new CustomEvent('ninja-save-updated'));
 }
 
 function awardRandomPowerup() {
@@ -62,7 +77,12 @@ function awardRandomPowerup() {
 function consumeActivePowerupForLaunch() {
   const state = readPowerups();
   const id = state.active;
-  if (!id || state.inventory[id] <= 0) return;
+  if (!id) return;
+  if (state.inventory[id] <= 0) {
+    state.active = null;
+    writePowerups(state);
+    return;
+  }
 
   const save = readMainSave();
   const fighter = ROSTER.find((entry) => entry.id === save.selected) ?? ROSTER[0];
@@ -117,6 +137,9 @@ function showPowerups() {
   document.body.appendChild(overlay);
 
   overlay.querySelector('#powerup-close')?.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) overlay.remove();
+  });
   overlay.querySelectorAll<HTMLButtonElement>('[data-buy-powerup]').forEach((button) => {
     button.addEventListener('click', () => {
       const id = button.dataset.buyPowerup as PowerupId;
@@ -125,7 +148,7 @@ function showPowerups() {
       const currentBank = Math.max(0, Number(mainSave.bankStuds ?? 0));
       if (currentBank < item.cost) return;
       mainSave.bankStuds = currentBank - item.cost;
-      localStorage.setItem(SAVE_KEY, JSON.stringify(mainSave));
+      writeMainSave(mainSave);
       const next = readPowerups();
       next.inventory[id] += 1;
       writePowerups(next);
@@ -184,4 +207,6 @@ document.addEventListener('click', (event) => {
 
 const observer = new MutationObserver(enhance);
 observer.observe(document.documentElement, { childList: true, subtree: true });
+window.addEventListener('ninja-save-updated', enhance);
+window.addEventListener('ninja-powerups-updated', enhance);
 window.addEventListener('DOMContentLoaded', enhance);
