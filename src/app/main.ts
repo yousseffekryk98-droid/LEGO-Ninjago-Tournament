@@ -159,10 +159,11 @@ function showHome() {
   app.innerHTML = `
     <main class="menu-screen">
       <div class="dragon-pattern"></div>
-      <section class="title-card">
-        <p class="eyebrow">CLEAN-ROOM FAN REMAKE</p>
-        <h1><span>NINJA</span><strong>TOURNAMENT</strong></h1>
-        <p class="subtitle">Clean-room reconstruction of the discontinued 2015 arena loop with original procedural 3D minifigure models and data-driven fighters.</p>
+      <section class="title-card legacy-title-card">
+        <div class="chen-seal" aria-hidden="true"><i></i><b>陳</b></div>
+        <p class="eyebrow">MASTER CHEN PRESENTS</p>
+        <h1 class="classic-logo"><span>NINJA</span><strong>TOURNAMENT</strong><em>OF ELEMENTS</em></h1>
+        <p class="subtitle">Enter Chen's Island arena, master your elemental fighter, survive the waves and unlock your True Potential.</p>
         <div class="selected-fighter">
           <span class="fighter-dot" style="--fighter:#${selected.color.toString(16).padStart(6, '0')}"></span>
           <div>
@@ -454,19 +455,34 @@ function startGame() {
   app.innerHTML = `
     <main class="game-screen">
       <div id="game-host"></div>
-      <div class="hud hud-left"><div class="portrait-ring"><span style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}"></span></div><div class="player-hud-copy"><b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small><div id="hearts" class="hearts"></div><div id="studs" class="studs"><span class="stud-icon" aria-hidden="true"></span><span class="stud-copy"><b id="stud-count">0</b><small>RUN STUDS · BANK ${formatStuds(save.bankStuds)} · LV ${fighterLevel(baseFighter.id)}</small></span></div></div></div>
-      <div class="hud hud-center"><b id="wave-label">WAVE 0</b><small id="enemy-label">GET READY</small><div id="boss-health" class="boss-health hidden"><span><i id="boss-health-fill"></i></span><em id="boss-health-copy"></em></div></div>
-      <div class="hud hud-right"><b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small></div>
+      <div class="hud hud-left">
+        <div class="portrait-ring" style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}">
+          <span class="portrait-hood"></span><span class="portrait-face"></span><span class="portrait-eyes"></span>
+        </div>
+        <div class="player-hud-copy">
+          <b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small>
+          <div id="hearts" class="hearts"></div>
+          <div id="studs" class="studs"><span class="stud-icon" aria-hidden="true"></span><span class="stud-copy"><b id="stud-count">0</b><small>RUN STUDS · BANK ${formatStuds(save.bankStuds)} · LV ${fighterLevel(baseFighter.id)}</small></span></div>
+        </div>
+      </div>
+      <div class="hud hud-center legacy-score-plate">
+        <small>TOURNAMENT</small><b id="wave-label">WAVE 0</b><span id="enemy-label">GET READY</span>
+        <div id="boss-health" class="boss-health hidden"><span><i id="boss-health-fill"></i></span><em id="boss-health-copy"></em></div>
+      </div>
+      <div class="hud hud-right">
+        <div id="boss-portrait" class="boss-portrait hidden"><div class="boss-face"><i></i></div><span id="boss-portrait-name">ELEMENTAL MASTER</span></div>
+        <b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small>
+      </div>
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
       <div id="stage-banner" class="stage-banner" aria-live="polite"><small></small><b></b></div>
       <div id="message" class="arena-message"></div>
       <div class="special-wrap"><button id="special-btn" class="special-button" aria-label="${specialLabel}" title="${specialLabel}">↻</button><small class="special-name">${specialLabel}</small><div class="meter"><i id="special-meter"></i></div></div>
       <div class="joystick" id="joystick"><div class="joystick-ring"><span id="stick"></span></div></div>
       <div class="action-cluster">
-        <button class="action-button jump" data-action="jump" aria-label="Jump">↑</button>
-        <button class="action-button block" id="block-btn" aria-label="Block">◆</button>
-        <button class="action-button grab" data-action="grab" aria-label="Grab">✦</button>
-        <button class="action-button attack" data-action="attack" aria-label="Attack">⚔</button>
+        <button class="action-button jump" data-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
+        <button class="action-button block" id="block-btn" aria-label="Block"><span class="legacy-icon">⬟</span></button>
+        <button class="action-button grab" data-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
+        <button class="action-button attack" data-action="attack" aria-label="Attack"><span class="legacy-icon">⚔</span></button>
       </div>
       <div class="dodge-hint">SWIPE ARENA TO DODGE</div>
       <div id="game-over" class="game-over hidden"></div>
@@ -517,6 +533,8 @@ function updateHud(state: HudState) {
   const bossHealth = document.querySelector<HTMLElement>('#boss-health');
   const bossHealthFill = document.querySelector<HTMLElement>('#boss-health-fill');
   const bossHealthCopy = document.querySelector<HTMLElement>('#boss-health-copy');
+  const bossPortrait = document.querySelector<HTMLElement>('#boss-portrait');
+  const bossPortraitName = document.querySelector<HTMLElement>('#boss-portrait-name');
   const meter = document.querySelector<HTMLElement>('#special-meter');
   if (hearts) hearts.textContent = Array.from({ length: state.maxHealth }, (_, i) => i < state.health ? '♥' : '♡').join('');
   if (studCount) studCount.textContent = formatStuds(state.studs);
@@ -532,10 +550,12 @@ function updateHud(state: HudState) {
   if (bossHealth && bossHealthFill && bossHealthCopy) {
     const visible = Boolean(state.bossName && state.bossMaxHealth);
     bossHealth.classList.toggle('hidden', !visible);
+    bossPortrait?.classList.toggle('hidden', !visible);
     if (visible) {
       const ratio = Math.max(0, Math.min(1, (state.bossHealth ?? 0) / (state.bossMaxHealth ?? 1)));
       bossHealthFill.style.width = `${Math.round(ratio * 100)}%`;
       bossHealthCopy.textContent = `${state.bossName} · ${Math.ceil(state.bossHealth ?? 0)}/${Math.ceil(state.bossMaxHealth ?? 0)}`;
+      if (bossPortraitName) bossPortraitName.textContent = state.bossName ?? 'ELEMENTAL MASTER';
     }
   }
   if (meter) meter.style.width = `${Math.round(state.special)}%`;
@@ -573,7 +593,7 @@ function showArenaMessage(text: string) {
 }
 
 function showDefeatScreen(game: TournamentGame, runStuds: number, wave: number, fighterId: string) {
-  const continueCost = 1000;
+  const continueCost = 2000;
   const overlay = document.querySelector<HTMLElement>('#game-over');
   if (!overlay) return;
 
@@ -581,13 +601,13 @@ function showDefeatScreen(game: TournamentGame, runStuds: number, wave: number, 
     overlay.classList.remove('hidden');
     overlay.innerHTML = `
       <section>
-        <small>KNOCKED OUT</small>
+        <small>CURRENT SCORE · ${formatStuds(runStuds)}</small>
         <h2>Continue?</h2>
-        <p>Spend ◉ ${formatStuds(continueCost)} from your bank to revive once and keep this run.</p>
+        <p class="legacy-continue-copy">Continuing will cost <b>2,000 Studs</b>.<br/>Do you want to continue?</p>
         <p>Bank balance: ◉ ${formatStuds(save.bankStuds)}</p>
-        <div class="menu-actions">
-          <button class="gold-button primary" id="continue-btn">CONTINUE · ◉ ${formatStuds(continueCost)}</button>
-          <button class="gold-button" id="finish-run-btn">END RUN</button>
+        <div class="continue-actions">
+          <button class="legacy-choice decline" id="finish-run-btn" aria-label="End run">✕</button>
+          <button class="legacy-choice accept" id="continue-btn" aria-label="Continue for 2,000 studs">✓</button>
         </div>
       </section>`;
 
