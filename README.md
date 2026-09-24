@@ -103,7 +103,7 @@ Generate signed APK/AAB releases from Android Studio. Keep signing keys out of t
 
 ## Controls
 
-Desktop defaults: `WASD` / arrows move, `J` punch/box, `I` kick, `K` jump, `L` grab/throw, `Shift` block, `E` Spinjitzu/special, `Q` dodge. All keyboard bindings can be changed from **Keyboard Controls** on the main menu. Attack while airborne to perform a jump slam.
+Desktop defaults: `WASD` / arrows move, `J` punch/box, `I` kick, `K` jump, `L` grab/throw, `Shift` block, `E` Spinjitzu/special, `Q` dodge, `R` Tornado of Creation ultimate in Free Play. All keyboard bindings can be changed from **Keyboard Controls** on the main menu. Attack while airborne to perform a jump slam.
 
 Controller: left stick/D-pad move, A punch, RT kick, RB jump, X grab, LB block, Y Spinjitzu/special, B dodge.
 
