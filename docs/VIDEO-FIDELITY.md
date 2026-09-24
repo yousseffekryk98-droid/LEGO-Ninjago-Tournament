@@ -90,6 +90,8 @@ The arena remains original geometry, but now follows the footage's visual langua
 - gold architectural accents;
 - serpent-wrapped perimeter pillars;
 - visible braziers and warm local lighting;
+- Master Chen and two tournament guards visibly staged on the elevated viewing throne;
+- legacy-styled Select a Ninja, Power-Up selection and Temple Gallery panels;
 - stronger key/rim lighting and shadows;
 - fog/depth treatment;
 - red low-health vignette;

@@ -222,7 +222,7 @@ function showRoster() {
 
   app.innerHTML = `
     <main class="panel-screen">
-      <header class="top-bar"><button class="back-button" id="back-btn">‹</button><div><small>TOURNAMENT ARCHIVES</small><h2>Fighters · ${ROSTER.length}</h2></div><strong>◉ ${formatStuds(save.bankStuds)}</strong></header>
+      <header class="top-bar legacy-selection-bar"><button class="back-button" id="back-btn">‹</button><div><small>MASTER CHEN'S TOURNAMENT</small><h2>Select a Ninja · ${ROSTER.length}</h2></div><strong>◉ ${formatStuds(save.bankStuds)}</strong></header>
       <section class="roster-toolbar">
         <label for="fighter-search">Find a fighter</label>
         <input id="fighter-search" type="search" autocomplete="off" placeholder="Search Zane, Kai, Ice, Spinjitzu..." />
@@ -495,6 +495,7 @@ function startGame() {
     onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id)
   });
   activeGame = game;
+  showStageBanner('MASTER CHEN PRESENTS', 'TOURNAMENT OF ELEMENTS');
 
   wireJoystick(game);
   wireArenaSwipe(game, host);

@@ -119,7 +119,7 @@ export class TournamentGame {
   private dodgeDirection = new THREE.Vector3();
   private frozenTime = 0;
   private spikeCooldown = 0;
-  private intermission = 0.35;
+  private intermission = 1.8;
   private hudTimer = 0;
   private eventTimer = 7;
   private elapsed = 0;
@@ -1410,6 +1410,20 @@ export class TournamentGame {
     for (const object of [throneBack, throneSeat, crest]) {
       object.castShadow = true;
       this.scene.add(object);
+    }
+
+    const chen = createGenericFighterModel(0x7b2631, 0xd3a84c, 0.78, 'villain', 'staff');
+    chen.name = 'chenThroneSpectator';
+    chen.position.set(0, 6.92, -11.52);
+    chen.rotation.y = 0;
+    this.scene.add(chen);
+
+    for (const side of [-1, 1] as const) {
+      const guard = createGenericFighterModel(0x342535, 0xb8892e, 0.7, 'villain', 'katana');
+      guard.name = side < 0 ? 'chenGuardLeft' : 'chenGuardRight';
+      guard.position.set(side * 1.65, 6.84, -11.62);
+      guard.rotation.y = 0;
+      this.scene.add(guard);
     }
 
     // More readable stone slab seams across the arena, without textures.
