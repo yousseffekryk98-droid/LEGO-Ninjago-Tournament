@@ -640,7 +640,14 @@ function updateHud(state: HudState) {
   const bossPortrait = document.querySelector<HTMLElement>('#boss-portrait');
   const bossPortraitName = document.querySelector<HTMLElement>('#boss-portrait-name');
   const meter = document.querySelector<HTMLElement>('#special-meter');
-  if (hearts) hearts.textContent = Array.from({ length: state.maxHealth }, (_, i) => i < state.health ? '♥' : '♡').join('');
+  if (hearts) {
+    hearts.innerHTML = Array.from({ length: state.maxHealth }, (_, index) => {
+      const remaining = state.health - index;
+      const kind = remaining >= 1 ? 'full' : remaining >= 0.5 ? 'half' : 'empty';
+      return `<span class="heart ${kind}" aria-hidden="true">♥</span>`;
+    }).join('');
+    hearts.setAttribute('aria-label', `${state.health} of ${state.maxHealth} hearts`);
+  }
   if (studCount) studCount.textContent = formatStuds(state.studs);
   if (multiplier) multiplier.textContent = `${state.multiplier}×`;
 
