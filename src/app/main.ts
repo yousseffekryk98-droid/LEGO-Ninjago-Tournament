@@ -8,6 +8,7 @@ import {
   characterSearchText,
   findCharacter,
   getCharacterIdentity,
+  getElementCombatTheme,
   type CharacterDef
 } from '../features/characters';
 
@@ -429,6 +430,9 @@ function showDojo() {
   const keys = getKeyBindings();
   const fighter = upgradedCharacter(baseFighter);
   const identity = getCharacterIdentity(baseFighter);
+  const elementTheme = getElementCombatTheme(baseFighter.element);
+  const elementColor = `#${elementTheme.color.toString(16).padStart(6, '0')}`;
+  const elementAccent = `#${elementTheme.accent.toString(16).padStart(6, '0')}`;
   const specialLabel = baseFighter.special === 'spinjitzu' ? 'SPINJITZU' : baseFighter.special.replace('-', ' ').toUpperCase();
   app.innerHTML = `
     <main class="game-screen dojo-game-screen">
@@ -570,7 +574,7 @@ function startGame() {
         <button class="action-button block" id="block-btn" aria-label="Block"><span class="legacy-icon">⬟</span></button>
         <button class="action-button grab" data-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
         <button class="action-button attack punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
-        <button class="action-button kick" data-action="kick" aria-label="Kick"><span class="legacy-icon">➤</span></button>
+        <button class="action-button kick elemental-kick" data-action="kick" aria-label="${baseFighter.element} elemental kick" title="${baseFighter.element} kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
       </div>
       <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)}${freePlayMode ? ` · CREATION ${formatKeyLabel(keys.ultimate)}` : ''}</div>
       <div class="dodge-hint">SWIPE ARENA TO DODGE · ${formatKeyLabel(keys.dodge)}</div>
