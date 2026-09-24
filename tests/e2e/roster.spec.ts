@@ -83,6 +83,8 @@ test('level five fighters render True Potential visuals and documented obsidian 
 test('video-observed legacy fighters have distinct model treatments', () => {
   const kaiZx = createCharacterModel(findCharacter('kai-zx'));
   expect(kaiZx.getObjectByName('shoulderPad1')).toBeTruthy();
+  expect(kaiZx.getObjectByName('zxChestPlate')).toBeTruthy();
+  expect(kaiZx.getObjectByName('zxBladeRack1')).toBeTruthy();
   expect(kaiZx.getObjectByName('headStud')).toBeTruthy();
 
   const damagedZane = createCharacterModel(findCharacter('zane-battle-damaged'));

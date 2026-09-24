@@ -255,13 +255,39 @@ function addHeadgear(group: THREE.Group, profile: FighterModelProfile, primary: 
   }
 
   if (profile.shoulderArmor) {
-    addMesh(group, 'armorCollar', new THREE.TorusGeometry(0.37, 0.075, 8, 24), accent, [0, 1.74, 0], [Math.PI / 2, 0, 0]);
+    const style = profile.armorStyle ?? 'heavy';
+    const padDepth = style === 'zx' ? 0.7 : style === 'samurai' ? 0.66 : 0.58;
+    const padWidth = style === 'dx' ? 0.36 : 0.42;
+    addMesh(group, 'armorCollar', new THREE.TorusGeometry(style === 'zx' ? 0.4 : 0.37, 0.075, 8, 24), accent, [0, 1.74, 0], [Math.PI / 2, 0, 0]);
     for (const side of [-1, 1] as const) {
-      addMesh(group, `shoulderPad${side}`, new THREE.BoxGeometry(0.42, 0.14, 0.58), accent, [side * 0.57, 1.69, -0.02], [0, 0, side * -0.08]);
-      addMesh(group, `shoulderSpike${side}`, new THREE.ConeGeometry(0.095, 0.28, 8), accent, [side * 0.7, 1.82, -0.03], [0, 0, side * -0.34]);
+      addMesh(group, `shoulderPad${side}`, new THREE.BoxGeometry(padWidth, 0.14, padDepth), accent, [side * 0.57, 1.69, style === 'zx' ? -0.08 : -0.02], [0, 0, side * -0.08]);
+      if (style !== 'dx') {
+        addMesh(group, `shoulderSpike${side}`, new THREE.ConeGeometry(style === 'samurai' ? 0.11 : 0.095, style === 'zx' ? 0.34 : 0.28, 8), accent, [side * 0.7, 1.82, -0.03], [0, 0, side * -0.34]);
+      }
     }
-    addMesh(group, 'backArmorPlate', new THREE.BoxGeometry(0.9, 0.13, 0.52), accent, [0, 1.68, -0.18]);
+    addMesh(group, 'backArmorPlate', new THREE.BoxGeometry(style === 'zx' ? 1.02 : 0.9, 0.13, style === 'zx' ? 0.62 : 0.52), accent, [0, 1.68, -0.18]);
     addMesh(group, 'armorBackStud', new THREE.CylinderGeometry(0.16, 0.16, 0.1, 12), accent, [0, 1.64, -0.48], [Math.PI / 2, 0, 0]);
+
+    if (style === 'zx') {
+      const chest = addMesh(group, 'zxChestPlate', createTorsoGeometry(0.62, 0.78, 0.5, 0.09), accent, [0, 1.42, 0.32]);
+      chest.scale.set(1, 1, 0.7);
+      addMesh(group, 'zxChestCore', new THREE.TorusGeometry(0.16, 0.045, 8, 22), accent, [0, 1.48, 0.385], [Math.PI / 2, 0, 0]);
+      for (const side of [-1, 1] as const) {
+        addMesh(group, `zxBladeRack${side}`, new THREE.CylinderGeometry(0.055, 0.055, 1.05, 10), accent, [side * 0.29, 1.86, -0.48], [0, 0, side * 0.54]);
+        addMesh(group, `zxBackFin${side}`, new THREE.BoxGeometry(0.11, 0.56, 0.28), accent, [side * 0.42, 1.91, -0.34], [0.12, 0, side * -0.22]);
+      }
+    } else if (style === 'dx') {
+      addMesh(group, 'dxDragonMedallion', new THREE.TorusGeometry(0.16, 0.045, 8, 24), accent, [0.18, 1.47, 0.33], [Math.PI / 2, 0, 0]);
+      addMesh(group, 'dxChestSlash', new THREE.BoxGeometry(0.1, 0.62, 0.04), accent, [-0.08, 1.36, 0.31], [0, 0, -0.62]);
+    } else if (style === 'techno') {
+      const tech = material(0x6ed9ff, true, 0.18);
+      addMesh(group, 'technoChestNode', new THREE.CylinderGeometry(0.095, 0.095, 0.035, 14), tech, [0.22, 1.48, 0.335], [Math.PI / 2, 0, 0]);
+      addMesh(group, 'technoBackRail', new THREE.BoxGeometry(0.7, 0.08, 0.12), tech, [0, 1.86, -0.38]);
+    } else if (style === 'samurai') {
+      addMesh(group, 'samuraiChestPlate', new THREE.BoxGeometry(0.75, 0.5, 0.1), accent, [0, 1.4, 0.31]);
+      addMesh(group, 'samuraiWaistGuard', new THREE.BoxGeometry(0.98, 0.26, 0.55), accent, [0, 0.82, 0]);
+    }
+
     addMesh(group, 'swordClipLeft', new THREE.CylinderGeometry(0.055, 0.055, 0.72, 10), accent, [-0.24, 1.75, -0.42], [0, 0, -0.48]);
     addMesh(group, 'swordClipRight', new THREE.CylinderGeometry(0.055, 0.055, 0.72, 10), accent, [0.24, 1.75, -0.42], [0, 0, 0.48]);
   }

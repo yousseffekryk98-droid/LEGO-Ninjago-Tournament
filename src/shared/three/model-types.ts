@@ -24,6 +24,7 @@ export interface FighterModelProfile {
   weapon: FighterWeapon;
   hood: boolean;
   shoulderArmor: boolean;
+  armorStyle?: 'zx' | 'dx' | 'techno' | 'samurai' | 'heavy';
   extraArms: boolean;
   metallic: boolean;
   faceColor?: number;

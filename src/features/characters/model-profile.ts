@@ -18,6 +18,7 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
       weapon: id === 'zane-teacher' ? 'staff' : id.startsWith('zane') ? 'shuriken' : 'katana',
       hood: !id.includes('teacher'),
       shoulderArmor: id.includes('zx') || id.includes('techno'),
+      armorStyle: id.includes('zx') ? 'zx' : id.includes('techno') ? 'techno' : undefined,
       extraArms: false,
       metallic: true,
       faceColor: 0xd7e0e4,
@@ -93,6 +94,7 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
       weapon: 'dual-katana',
       hood: false,
       shoulderArmor: true,
+      armorStyle: 'samurai',
       extraArms: false,
       metallic: true
     };
@@ -129,6 +131,7 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
       weapon: ninjaWeapon(id),
       hood: !id.includes('teacher'),
       shoulderArmor: id.includes('zx') || id.includes('dx') || id.includes('techno'),
+      armorStyle: id.includes('zx') ? 'zx' : id.includes('dx') ? 'dx' : id.includes('techno') ? 'techno' : undefined,
       extraArms: false,
       metallic: false
     };
@@ -139,6 +142,7 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     weapon: character.style === 'ranged' ? 'staff' : character.style === 'heavy' ? 'scythe' : 'katana',
     hood: false,
     shoulderArmor: character.style === 'heavy',
+    armorStyle: character.style === 'heavy' ? 'heavy' : undefined,
     extraArms: false,
     metallic: element.includes('metal')
   };
