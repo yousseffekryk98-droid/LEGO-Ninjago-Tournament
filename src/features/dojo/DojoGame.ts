@@ -157,11 +157,12 @@ export class DojoGame {
       || code === this.keyBindings.moveRight
       || code === this.keyBindings.moveUp
       || code === this.keyBindings.moveDown
+      || ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(code)
       || code === this.keyBindings.block;
   }
 
   private keyDown = (event: KeyboardEvent) => {
-    if (Object.values(this.keyBindings).includes(event.code)) event.preventDefault();
+    if (Object.values(this.keyBindings).includes(event.code) || ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code)) event.preventDefault();
     this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
     this.keyboard.add(event.code);
     if (!event.repeat && this.isTimedKey(event.code)) {
@@ -238,10 +239,10 @@ export class DojoGame {
 
     let x = this.input.x;
     let y = this.input.y;
-    if (this.keyboard.has(this.keyBindings.moveLeft)) x -= 1;
-    if (this.keyboard.has(this.keyBindings.moveRight)) x += 1;
-    if (this.keyboard.has(this.keyBindings.moveUp)) y -= 1;
-    if (this.keyboard.has(this.keyBindings.moveDown)) y += 1;
+    if (this.keyboard.has(this.keyBindings.moveLeft) || this.keyboard.has('ArrowLeft')) x -= 1;
+    if (this.keyboard.has(this.keyBindings.moveRight) || this.keyboard.has('ArrowRight')) x += 1;
+    if (this.keyboard.has(this.keyBindings.moveUp) || this.keyboard.has('ArrowUp')) y -= 1;
+    if (this.keyboard.has(this.keyBindings.moveDown) || this.keyboard.has('ArrowDown')) y += 1;
     const move = new THREE.Vector2(x, y);
     if (move.lengthSq() > 1) move.normalize();
 
@@ -311,10 +312,10 @@ export class DojoGame {
   }
 
   private keyDirection(code: string) {
-    if (code === this.keyBindings.moveLeft) return { x: -1, y: 0 };
-    if (code === this.keyBindings.moveRight) return { x: 1, y: 0 };
-    if (code === this.keyBindings.moveUp) return { x: 0, y: -1 };
-    if (code === this.keyBindings.moveDown) return { x: 0, y: 1 };
+    if (code === this.keyBindings.moveLeft || code === 'ArrowLeft') return { x: -1, y: 0 };
+    if (code === this.keyBindings.moveRight || code === 'ArrowRight') return { x: 1, y: 0 };
+    if (code === this.keyBindings.moveUp || code === 'ArrowUp') return { x: 0, y: -1 };
+    if (code === this.keyBindings.moveDown || code === 'ArrowDown') return { x: 0, y: 1 };
     return null;
   }
 
