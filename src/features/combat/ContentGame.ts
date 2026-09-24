@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { TournamentGame as StableContentGame, type HudState, type GameCallbacks } from './ContentGameBase';
+import { TournamentGame as StableContentGame, type HudState, type GameCallbacks, type TournamentGameOptions } from './ContentGameBase';
 import { findCharacter, type CharacterDef } from '../characters';
 import { createCharacterModel } from '../characters/model';
 
-export type { HudState, GameCallbacks } from './ContentGameBase';
+export type { HudState, GameCallbacks, TournamentGameOptions } from './ContentGameBase';
 
 type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special' | 'ultimate';
 type EnemyFaction =
@@ -37,6 +37,7 @@ interface RuntimeInternals {
   special: number;
   wave: number;
   elapsed: number;
+  gameMode: 'waves' | 'duels';
   attackCooldown: number;
   combatMove: 'jab' | 'cross' | 'kick' | 'roundhouse';
   attackAnimationTime: number;
@@ -133,8 +134,8 @@ export class TournamentGame extends StableContentGame {
   private lastPlayerPosition = new THREE.Vector3();
   private visualMoveAmount = 0;
 
-  constructor(host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks) {
-    super(host, character, callbacks);
+  constructor(host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks, options: TournamentGameOptions = {}) {
+    super(host, character, callbacks, options);
     this.lastPlayerPosition.copy(this.productionRuntime().player.position).setY(0);
     this.spawnTrainingProps();
     this.createPlayerAura();
@@ -319,7 +320,7 @@ export class TournamentGame extends StableContentGame {
     this.updateCreationTornado(dt);
     this.updatePresentation();
 
-    if (state.wave >= 3 && state.elapsed >= this.nextMissileRunAt && this.missileJets.length === 0) {
+    if (state.gameMode === 'waves' && state.wave >= 3 && state.elapsed >= this.nextMissileRunAt && this.missileJets.length === 0) {
       this.spawnMissileJetRun();
       this.nextMissileRunAt = state.elapsed + 29 + Math.random() * 13;
     }
