@@ -19,8 +19,11 @@ button { font: inherit; }
 
 .menu-screen, .panel-screen {
   position: relative;
+  height: 100dvh;
   min-height: 100dvh;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   background:
@@ -717,3 +720,22 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 .production-menu-kicker i:last-child{background:linear-gradient(90deg,#bd8d32,transparent)}
 .production-hud-mark{display:block;width:22px;height:3px;margin:0 auto 3px;background:linear-gradient(90deg,transparent,#d8ad43,transparent);box-shadow:0 0 9px rgba(221,177,68,.28)}
 @media(max-width:520px){.production-menu-kicker{font-size:8px}.production-menu-kicker i{width:28px}}
+
+
+/* Fighter-select laptop scrolling: the app root is intentionally locked for gameplay,
+   so the selection panel must own a real viewport-height scroll container. */
+.panel-screen:has(.legacy-selection-bar){
+  height:100dvh;
+  max-height:100dvh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior-y:contain;
+  scroll-behavior:smooth;
+  padding-bottom:max(48px,env(safe-area-inset-bottom));
+}
+.panel-screen:has(.legacy-selection-bar) .roster-grid{padding-bottom:64px}
+@media (min-width:701px) and (max-height:900px){
+  .panel-screen:has(.legacy-selection-bar) .top-bar{min-height:64px;padding-top:10px;padding-bottom:9px}
+  .panel-screen:has(.legacy-selection-bar) .character-showcase{min-height:240px}
+  .panel-screen:has(.legacy-selection-bar) .character-preview-stage{height:220px}
+}
