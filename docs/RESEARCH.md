@@ -1,6 +1,6 @@
 # LEGO Ninjago: Tournament — Reconstruction Research
 
-_Last research pass: 2026-09-21._
+_Last research / implementation audit: 2026-09-24._
 
 This document is a clean-room behavior and presentation reference for the fan remake. It intentionally does **not** contain extracted APK/OBB code, proprietary models, textures, audio, animation files, logos, or other copyrighted game assets.
 
@@ -24,7 +24,7 @@ Reference screenshots consistently show:
 - dark purple/black UI plates edged with bronze/gold rings;
 - heavy impact flashes and defeated fighters breaking into brick-like pieces.
 
-The current prototype reproduces this **layout and interaction language** with original procedural geometry and CSS rather than copied art.
+The current build reproduces this **layout and interaction language** with original procedural geometry and CSS rather than copied art, including the lower diagonal camera, purple/gold score plates, circular portraits, legacy-style controls, staged Chen throne, tournament banners and arena crowd silhouettes.
 
 ## Core loop
 
@@ -50,7 +50,7 @@ Contemporary reviews and reference pages consistently describe the following act
 - dodge/evade;
 - charged special ability such as Spinjitzu.
 
-The first playable milestone implements move, attack, block, jump, grab/throw, and Spinjitzu. A dedicated dodge/roll state and jump-slam combo are next-pass items.
+The current build implements movement, attack, block, jump, jump-slam, grab/throw, dodge/roll and charged specials including Spinjitzu.
 
 ## Wave, boss, and hazard behavior
 
@@ -65,7 +65,7 @@ Documented arena/events include:
 - **Condrai Crushers:** reinforcement delivery/event behavior.
 - **Training equipment:** destructible bags/props and damaging spikes.
 
-The prototype already includes gong KOs and marked falling boulders. The other event families remain on the roadmap.
+The current build includes gong KOs, marked falling boulders, a visible Titanium Dragon flyover with freezing projectile, Roto Jet flyovers with breakable supply boxes and missile runs, visible Condrai Crusher reinforcement delivery, destructible training equipment and damaging spike traps.
 
 ## Economy and progression
 
@@ -79,7 +79,7 @@ Archived descriptions establish:
 - a daily draw/reward system in community documentation;
 - special abilities/power-ups beyond Spinjitzu.
 
-The prototype currently banks run studs locally and uses them for roster unlocks. Character XP, five-level potential, daily draws, consumable power-ups, and challenge tracking are planned.
+The current build banks run studs locally and uses them for roster unlocks and Continue. Character XP, five-level potential/True Potential, daily draws, consumable pre-fight power-ups, challenge tracking and current/best-score results are implemented.
 
 ## Roster research
 
@@ -101,7 +101,7 @@ Some fan posts and modified-game videos claim larger 70+ rosters or show extra g
 - Toxic Cloud
 - Shout
 
-The architecture should treat these as modular ability definitions rather than special-casing each fighter in the main game loop.
+All seven special families are represented through the data-driven fighter definitions and the combat content layer.
 
 ## Sources used for this pass
 
@@ -122,56 +122,24 @@ The architecture should treat these as modular ability definitions rather than s
 - Keep fighter stats, enemy types, abilities, waves, hazards, UI and progression data-driven.
 - Prefer original procedural/blocky placeholder art until licensed/original replacement assets exist.
 
-## Build roadmap
+## Implementation status
 
-### Milestone 0.1 — playable clean-room prototype (current)
+The clean-room gameplay milestones are now implemented in code:
 
-- 3D arena and fixed diagonal camera
-- procedural fighters/environment
-- mobile joystick + desktop keyboard
-- attack, jump, block, grab/throw
-- Spinjitzu charge + AoE
-- combo/stud multiplier
-- wave manager
-- melee/heavy/ranged enemies
-- boss waves
-- gong KO hazard
-- Boulder Basher event
-- roster + unlock economy
-- local save
-- responsive HUD
+- fixed diagonal 3D arena plus a fully staged Dojo;
+- mobile, keyboard and controller input;
+- attack, jump/jump-slam, block, grab/throw, dodge and seven special families;
+- combo/stud multiplier, physical stud/heart pickups, banking and 2,000-stud Continue;
+- escalating waves, boss waves and distinct legacy enemy families;
+- gong KO, Boulder Basher, Titanium Dragon, Roto Jet, Condrai Crusher, spikes and training props;
+- boss-specific mechanics for Karlof, Ash, Mr. Pale, Neuro, Griffin Turner, Master Chen and Ronin;
+- roster unlock economy, fighter XP, levels 1–5 and True Potential;
+- pre-fight power-ups, challenges, daily tasks/prize draw and current/best score results;
+- Temple Gallery, enemy codex and playable Dojo tutorial;
+- camera/impact shake, micro hit-stop, combat sparks, brick breakup and synthesized clean-room SFX;
+- deterministic save migration, PWA/offline support, Capacitor Android path, graphics presets and automated tests.
 
-### Milestone 0.2 — original-loop fidelity
-
-- dodge/roll and jump slam
-- hit-stun / animation state validation
-- individual boss mechanics (Karlof tremor, Ash reposition, Mr. Pale invisibility, etc.)
-- Titanium Dragon, Roto Jet, Condrai Crusher and spike/training events
-- destructible props with hearts/studs
-- power-up inventory
-- character XP and potential levels 1–5
-- challenges + daily tasks + prize draw
-- improved camera shake, hit stop and combat VFX
-
-### Milestone 0.3 — content architecture
-
-- fully data-driven ability system
-- more verified characters/variants
-- enemy factions and faction behaviors
-- Dojo tutorial as a playable scene
-- gallery/museum equivalent using original fan assets
-- controller support
-- audio hooks for original/licensed sound packs
-
-### Milestone 0.4 — release quality
-
-- deterministic save migrations
-- PWA/offline support
-- Android wrapper (Capacitor) or native mobile packaging
-- performance presets for low/mid/high devices
-- accessibility and remappable controls
-- automated gameplay/state tests
-- original art/audio replacement pass
+The remaining gap is **production art/release acceptance**, not missing core gameplay: fully authored/licensed character models and animation clips, final environment textures/artwork, original/licensed music/voice, real-device visual/performance acceptance, and final signed Android packaging.
 
 
 ## Supplied-video legacy additions
@@ -182,5 +150,6 @@ A September 2026 video-fidelity pass reviewed the user-supplied walkthrough and 
 - Bytar — observed as controlled gameplay in a legacy Tournament showcase.
 - Skales — observed as controlled gameplay in a legacy Tournament showcase.
 - Zane (Battle Damaged) — observed as controlled gameplay in a legacy Tournament walkthrough.
+- Kai ZX — observed as a playable fighter in legacy Tournament gameplay and represented with a dedicated ZX armor silhouette.
 
-The latter four are deliberately classified as video-observed legacy entries because common public roster summaries are inconsistent about them. See `VIDEO-FIDELITY.md` for the evidence policy and implementation matrix.
+Bytar, Skales, Battle-Damaged Zane and Kai ZX are deliberately classified as video-observed legacy entries because common public roster summaries are inconsistent about them. See `VIDEO-FIDELITY.md` for the evidence policy and implementation matrix.
