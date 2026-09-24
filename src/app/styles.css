@@ -821,3 +821,16 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   text-shadow:0 2px 3px #000;
   text-transform:uppercase;
 }
+
+
+/* Fractional health HUD */
+.hearts{display:flex;align-items:center;gap:1px;letter-spacing:0}
+.hearts .heart{display:inline-block;position:relative;width:.84em;color:#4a3338;-webkit-text-stroke:1px #5a1219;text-shadow:0 1px 2px #0008}
+.hearts .heart.full{color:#ea3847}
+.hearts .heart.empty{color:#4a3338;opacity:.68}
+.hearts .heart.half{
+  background:linear-gradient(90deg,#ea3847 0 50%,#4a3338 50% 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
