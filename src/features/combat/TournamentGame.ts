@@ -78,13 +78,13 @@ interface StudPickup {
   age: number;
 }
 
-const ARENA_RADIUS = 11.25;
+const ARENA_RADIUS = 14.4;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export class TournamentGame {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
-  private cameraBasePosition = new THREE.Vector3(13.4, 12.4, 15.2);
+  private cameraBasePosition = new THREE.Vector3(17.2, 14.8, 19.2);
   private cameraShakeTime = 0;
   private cameraShakeStrength = 0;
   private hitStopTime = 0;
@@ -1421,7 +1421,7 @@ export class TournamentGame {
     this.scene.add(rim);
 
     const floor = new THREE.Mesh(
-      new THREE.CylinderGeometry(12.4, 12.4, 0.55, 64),
+      new THREE.CylinderGeometry(15.8, 15.8, 0.55, 72),
       new THREE.MeshStandardMaterial({ color: 0x4d535b, roughness: 0.93, metalness: 0.02 })
     );
     floor.receiveShadow = true;
@@ -1429,7 +1429,7 @@ export class TournamentGame {
     this.scene.add(floor);
 
     const inner = new THREE.Mesh(
-      new THREE.CylinderGeometry(8.3, 8.3, 0.04, 64),
+      new THREE.CylinderGeometry(11.4, 11.4, 0.04, 72),
       new THREE.MeshStandardMaterial({ color: 0x3f464d, roughness: 0.88 })
     );
     inner.position.y = 0.01;
@@ -1437,7 +1437,7 @@ export class TournamentGame {
     this.scene.add(inner);
 
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(7.9, 8.2, 64),
+      new THREE.RingGeometry(10.9, 11.3, 72),
       new THREE.MeshBasicMaterial({ color: 0x242b31, transparent: true, opacity: 0.72, side: THREE.DoubleSide })
     );
     ring.rotation.x = -Math.PI / 2;
@@ -1447,7 +1447,7 @@ export class TournamentGame {
 
     for (let i = 0; i < 24; i++) {
       const angle = (i / 24) * Math.PI * 2;
-      const radius = i % 2 ? 9.7 : 10.4;
+      const radius = i % 2 ? 12.7 : 13.8;
       const tile = new THREE.Mesh(
         new THREE.BoxGeometry(2.2, 0.08, 1.25),
         new THREE.MeshStandardMaterial({ color: i % 3 === 0 ? 0x555c63 : 0x474e55, roughness: 0.95 })
@@ -1463,7 +1463,7 @@ export class TournamentGame {
       const angle = (i / 18) * Math.PI * 2;
       if (Math.abs(Math.cos(angle)) > 0.9 && Math.abs(Math.sin(angle)) < 0.32) continue;
       const wall = new THREE.Mesh(new THREE.BoxGeometry(4.6, 2.5 + Math.random() * 1.1, 0.65), wallMaterial);
-      wall.position.set(Math.cos(angle) * 13.2, 1.1, Math.sin(angle) * 13.2);
+      wall.position.set(Math.cos(angle) * 16.7, 1.1, Math.sin(angle) * 16.7);
       wall.rotation.y = -angle + Math.PI / 2;
       wall.castShadow = true;
       wall.receiveShadow = true;
@@ -1471,17 +1471,17 @@ export class TournamentGame {
     }
 
     this.buildArenaGate();
-    this.buildSerpentPillar(-8.9, -8.4, 0.28);
-    this.buildSerpentPillar(8.9, -8.4, -0.28);
-    this.buildSerpentPillar(-9.7, 7.6, 0.2);
-    this.buildSerpentPillar(9.7, 7.6, -0.2);
+    this.buildSerpentPillar(-12.1, -11.5, 0.28);
+    this.buildSerpentPillar(12.1, -11.5, -0.28);
+    this.buildSerpentPillar(-12.8, 10.4, 0.2);
+    this.buildSerpentPillar(12.8, 10.4, -0.2);
 
-    this.buildGong(-10.7, 0);
-    this.buildGong(10.7, 0);
+    this.buildGong(-14.2, 0);
+    this.buildGong(14.2, 0);
     this.buildSpikeTrap(-4.4, -4.2);
     this.buildSpikeTrap(4.6, 4.0);
 
-    for (const z of [-6.2, 6.2]) {
+    for (const z of [-8.4, 8.4]) {
       const brazier = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x5b3420, roughness: 0.8 }));
       brazier.position.set(0, 0.4, z);
       brazier.castShadow = true;
@@ -1516,7 +1516,7 @@ export class TournamentGame {
           new THREE.BoxGeometry(4.8 + level * 0.55, 0.55 + level * 0.16, 8.0),
           level % 2 ? darkStone : stone
         );
-        stand.position.set(side * (14.1 + level * 0.45), 0.25 + level * 0.48, 0.6);
+        stand.position.set(side * (17.2 + level * 0.5), 0.25 + level * 0.48, 0.6);
         stand.castShadow = true;
         stand.receiveShadow = true;
         this.scene.add(stand);
@@ -1535,7 +1535,7 @@ export class TournamentGame {
           head.position.y = 0.72;
           spectator.add(body, head);
           spectator.position.set(
-            side * (12.5 + row * 0.62),
+            side * (15.7 + row * 0.68),
             1.0 + row * 0.55,
             -4.4 + i * 1.08 + (row % 2) * 0.35
           );
@@ -1547,10 +1547,10 @@ export class TournamentGame {
 
     // Tournament banners echo the red/purple/gold architecture in reference footage.
     const bannerPoints: Array<[number, number, number, THREE.Material]> = [
-      [-11.7, 4.0, -6.4, red],
-      [11.7, 4.0, -6.4, purple],
-      [-12.2, 4.1, 5.8, purple],
-      [12.2, 4.1, 5.8, red]
+      [-15.0, 4.0, -8.4, red],
+      [15.0, 4.0, -8.4, purple],
+      [-15.5, 4.1, 7.7, purple],
+      [15.5, 4.1, 7.7, red]
     ];
     for (const [x, y, z, bannerMaterial] of bannerPoints) {
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.8, 10), timber);
@@ -1570,22 +1570,22 @@ export class TournamentGame {
 
     // Chen's elevated viewing throne above the far gate.
     const balcony = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.42, 2.4), darkStone);
-    balcony.position.set(0, 6.55, -12.25);
+    balcony.position.set(0, 6.55, -15.75);
     balcony.castShadow = true;
     balcony.receiveShadow = true;
     this.scene.add(balcony);
     for (const x of [-2.25, -1.5, 1.5, 2.25]) {
       const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 1.0, 10), gold);
-      rail.position.set(x, 7.02, -11.42);
+      rail.position.set(x, 7.02, -14.92);
       rail.castShadow = true;
       this.scene.add(rail);
     }
     const throneBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.05, 0.38), red);
-    throneBack.position.set(0, 7.45, -12.12);
+    throneBack.position.set(0, 7.45, -15.62);
     const throneSeat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.35, 1.05), gold);
-    throneSeat.position.set(0, 6.76, -11.78);
+    throneSeat.position.set(0, 6.76, -15.28);
     const crest = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.09, 8, 28), gold);
-    crest.position.set(0, 8.08, -11.88);
+    crest.position.set(0, 8.08, -15.38);
     for (const object of [throneBack, throneSeat, crest]) {
       object.castShadow = true;
       this.scene.add(object);
@@ -1593,14 +1593,14 @@ export class TournamentGame {
 
     const chen = createGenericFighterModel(0x7b2631, 0xd3a84c, 0.78, 'villain', 'staff');
     chen.name = 'chenThroneSpectator';
-    chen.position.set(0, 6.92, -11.52);
+    chen.position.set(0, 6.92, -15.02);
     chen.rotation.y = 0;
     this.scene.add(chen);
 
     for (const side of [-1, 1] as const) {
       const guard = createGenericFighterModel(0x342535, 0xb8892e, 0.7, 'villain', 'katana');
       guard.name = side < 0 ? 'chenGuardLeft' : 'chenGuardRight';
-      guard.position.set(side * 1.65, 6.84, -11.62);
+      guard.position.set(side * 1.65, 6.84, -15.12);
       guard.rotation.y = 0;
       this.scene.add(guard);
     }
@@ -1674,7 +1674,7 @@ export class TournamentGame {
     const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x661e24, roughness: 0.72, metalness: 0.06 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xb8872c, roughness: 0.38, metalness: 0.52 });
 
-    const z = -12.45;
+    const z = -16.05;
     const leftTower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 5.4, 2.1), stone);
     leftTower.position.set(-4.05, 2.4, z);
     const rightTower = leftTower.clone();
