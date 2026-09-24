@@ -938,7 +938,7 @@ export class TournamentGame {
         enemy.mesh.position.z = planar.y;
       }
 
-      if (Math.abs(enemy.mesh.position.x) > 13.15 && Math.abs(enemy.mesh.position.z) < 1.95 && enemy.knock.length() > 1.5) {
+      if (Math.abs(enemy.mesh.position.x) > 27.6 && Math.abs(enemy.mesh.position.z) < 2.35 && enemy.knock.length() > 1.5) {
         this.defeatEnemy(enemy);
         this.callbacks.onMessage('GONG KO! Instant arena knockout.');
       }
@@ -1169,7 +1169,7 @@ export class TournamentGame {
         }
         projectile.life = 0;
       }
-      if (projectile.life <= 0 || projectile.mesh.position.length() > 32) {
+      if (projectile.life <= 0 || projectile.mesh.position.length() > 43) {
         this.scene.remove(projectile.mesh);
         this.projectiles.splice(this.projectiles.indexOf(projectile), 1);
       }
@@ -1218,7 +1218,7 @@ export class TournamentGame {
       mesh = createCharacterModel(bossCharacter, scale);
       mesh.userData.bossElement = bossCharacter.element;
     } else {
-      const family = this.wave % 4;
+      const family = this.wave <= 2 ? 0 : this.wave % 4;
       if (family === 0) {
         const serpentPrimary = kind === 'ranged' ? 0x46663a : kind === 'heavy' ? 0x5e365f : 0x6c435f;
         const serpentAccent = kind === 'ranged' ? 0xd6ca55 : 0xd0a34a;
