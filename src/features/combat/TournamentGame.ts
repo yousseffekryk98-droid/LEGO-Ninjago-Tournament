@@ -178,7 +178,7 @@ export class TournamentGame {
     this.host.appendChild(this.renderer.domElement);
 
     this.scene.background = new THREE.Color(0x251a22);
-    this.scene.fog = new THREE.FogExp2(0x251a22, 0.019);
+    this.scene.fog = new THREE.FogExp2(0x251a22, 0.0135);
     this.buildArena();
 
     this.player = createCharacterModel(character, 1);
@@ -1776,10 +1776,10 @@ export class TournamentGame {
     key.position.set(-8, 14, 9);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.left = -15;
-    key.shadow.camera.right = 15;
-    key.shadow.camera.top = 15;
-    key.shadow.camera.bottom = -15;
+    key.shadow.camera.left = -36;
+    key.shadow.camera.right = 36;
+    key.shadow.camera.top = 36;
+    key.shadow.camera.bottom = -36;
     key.shadow.bias = -0.00045;
     this.scene.add(key);
 
@@ -1951,7 +1951,7 @@ export class TournamentGame {
           new THREE.BoxGeometry(4.8 + level * 0.55, 0.55 + level * 0.16, 8.0),
           level % 2 ? darkStone : stone
         );
-        stand.position.set(side * (17.2 + level * 0.5), 0.25 + level * 0.48, 0.6);
+        stand.position.set(side * (31.4 + level * 0.55), 0.25 + level * 0.48, 0.6);
         stand.castShadow = true;
         stand.receiveShadow = true;
         this.scene.add(stand);
@@ -1970,9 +1970,9 @@ export class TournamentGame {
           head.position.y = 0.72;
           spectator.add(body, head);
           spectator.position.set(
-            side * (15.7 + row * 0.68),
+            side * (29.8 + row * 0.72),
             1.0 + row * 0.55,
-            -4.4 + i * 1.08 + (row % 2) * 0.35
+            -7.4 + i * 1.82 + (row % 2) * 0.45
           );
           spectator.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
           this.scene.add(spectator);
@@ -1982,10 +1982,10 @@ export class TournamentGame {
 
     // Tournament banners echo the red/purple/gold architecture in reference footage.
     const bannerPoints: Array<[number, number, number, THREE.Material]> = [
-      [-15.0, 4.0, -8.4, red],
-      [15.0, 4.0, -8.4, purple],
-      [-15.5, 4.1, 7.7, purple],
-      [15.5, 4.1, 7.7, red]
+      [-29.3, 4.0, -14.2, red],
+      [29.3, 4.0, -14.2, purple],
+      [-29.5, 4.1, 13.8, purple],
+      [29.5, 4.1, 13.8, red]
     ];
     for (const [x, y, z, bannerMaterial] of bannerPoints) {
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.8, 10), timber);
@@ -2005,22 +2005,22 @@ export class TournamentGame {
 
     // Chen's elevated viewing throne above the far gate.
     const balcony = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.42, 2.4), darkStone);
-    balcony.position.set(0, 6.55, -15.75);
+    balcony.position.set(0, 6.55, -30.85);
     balcony.castShadow = true;
     balcony.receiveShadow = true;
     this.scene.add(balcony);
     for (const x of [-2.25, -1.5, 1.5, 2.25]) {
       const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 1.0, 10), gold);
-      rail.position.set(x, 7.02, -14.92);
+      rail.position.set(x, 7.02, -30.02);
       rail.castShadow = true;
       this.scene.add(rail);
     }
     const throneBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.05, 0.38), red);
-    throneBack.position.set(0, 7.45, -15.62);
+    throneBack.position.set(0, 7.45, -30.72);
     const throneSeat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.35, 1.05), gold);
-    throneSeat.position.set(0, 6.76, -15.28);
+    throneSeat.position.set(0, 6.76, -30.38);
     const crest = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.09, 8, 28), gold);
-    crest.position.set(0, 8.08, -15.38);
+    crest.position.set(0, 8.08, -30.48);
     for (const object of [throneBack, throneSeat, crest]) {
       object.castShadow = true;
       this.scene.add(object);
@@ -2028,14 +2028,14 @@ export class TournamentGame {
 
     const chen = createGenericFighterModel(0x7b2631, 0xd3a84c, 0.78, 'villain', 'staff');
     chen.name = 'chenThroneSpectator';
-    chen.position.set(0, 6.92, -15.02);
+    chen.position.set(0, 6.92, -30.12);
     chen.rotation.y = 0;
     this.scene.add(chen);
 
     for (const side of [-1, 1] as const) {
       const guard = createGenericFighterModel(0x342535, 0xb8892e, 0.7, 'villain', 'katana');
       guard.name = side < 0 ? 'chenGuardLeft' : 'chenGuardRight';
-      guard.position.set(side * 1.65, 6.84, -15.12);
+      guard.position.set(side * 1.65, 6.84, -30.22);
       guard.rotation.y = 0;
       this.scene.add(guard);
     }
@@ -2109,7 +2109,7 @@ export class TournamentGame {
     const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x661e24, roughness: 0.72, metalness: 0.06 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xb8872c, roughness: 0.38, metalness: 0.52 });
 
-    const z = -16.05;
+    const z = -31.15;
     const leftTower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 5.4, 2.1), stone);
     leftTower.position.set(-4.05, 2.4, z);
     const rightTower = leftTower.clone();
