@@ -173,6 +173,7 @@ function cleanupGame() {
 
 function showHome() {
   cleanupGame();
+  freePlayMode = false;
   const selected = findCharacter(save.selected);
   const selectedIdentity = getCharacterIdentity(selected);
   const level = fighterLevel(selected.id);
@@ -385,15 +386,11 @@ function showRewards() {
 
 function showDojo() {
   cleanupGame();
+  freePlayMode = false;
   const baseFighter = findCharacter(save.selected);
   const fighter = upgradedCharacter(baseFighter);
-  if (freePlayMode) fighter.special = 'spinjitzu';
   const identity = getCharacterIdentity(baseFighter);
-  const specialLabel = freePlayMode
-    ? 'SPINJITZU ∞'
-    : baseFighter.special === 'spinjitzu'
-      ? 'SPINJITZU'
-      : baseFighter.special.replace('-', ' ').toUpperCase();
+  const specialLabel = baseFighter.special === 'spinjitzu' ? 'SPINJITZU' : baseFighter.special.replace('-', ' ').toUpperCase();
   app.innerHTML = `
     <main class="game-screen dojo-game-screen">
       <div id="dojo-host"></div>
@@ -490,10 +487,15 @@ function startGame() {
   lastHudEnemies = 0;
   const baseFighter = findCharacter(save.selected);
   const fighter = upgradedCharacter(baseFighter);
+  if (freePlayMode) fighter.special = 'spinjitzu';
   const identity = getCharacterIdentity(baseFighter);
-  const specialLabel = baseFighter.special === 'spinjitzu' ? 'SPINJITZU' : baseFighter.special.replace('-', ' ').toUpperCase();
+  const specialLabel = freePlayMode
+    ? 'SPINJITZU ∞'
+    : baseFighter.special === 'spinjitzu'
+      ? 'SPINJITZU'
+      : baseFighter.special.replace('-', ' ').toUpperCase();
   app.innerHTML = `
-    <main class="game-screen">
+    <main class="game-screen ${freePlayMode ? 'freeplay-mode' : ''}">
       <div id="game-host"></div>
       <div class="hud hud-left">
         <div class="portrait-ring" style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}">
