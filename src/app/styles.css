@@ -852,3 +852,313 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   justify-content:center;
   text-decoration:none;
 }
+
+
+/* Legacy fidelity pass — clean-room styling based on public gameplay references. */
+.game-screen .portrait-ring {
+  width:64px;
+  height:64px;
+  padding:5px;
+  background:
+    linear-gradient(145deg,#fff0a0 0%,#d8a43b 20%,#875316 56%,#e4ba50 82%,#6a3e0d 100%);
+  border:2px solid #38230d;
+  box-shadow:
+    inset 0 0 0 2px #f6d76e,
+    inset 0 0 0 5px #3d244d,
+    0 4px 12px #000b;
+}
+.game-screen .portrait-ring span {
+  position:relative;
+  overflow:hidden;
+  border:0;
+  background:
+    radial-gradient(circle at 50% 33%,#f3c84d 0 22%,transparent 23%),
+    linear-gradient(160deg,var(--fighter) 0 58%,#17131c 59% 64%,var(--fighter) 65%);
+  box-shadow:inset 0 0 16px #0008;
+}
+.game-screen .portrait-ring span::before,
+.game-screen .portrait-ring span::after {
+  content:'';
+  position:absolute;
+  top:19px;
+  width:6px;
+  height:3px;
+  border-radius:50%;
+  background:#161218;
+}
+.game-screen .portrait-ring span::before { left:17px; }
+.game-screen .portrait-ring span::after { right:17px; }
+
+.game-screen .hearts {
+  display:flex;
+  gap:1px;
+  margin-top:2px;
+  font-size:29px;
+  line-height:24px;
+  filter:drop-shadow(0 2px 1px #3d080d);
+}
+.game-screen .heart.full { color:#ef3344; }
+.game-screen .heart.half { color:#ef3344; clip-path:inset(0 50% 0 0); }
+.game-screen .heart.empty { color:#3b262b; opacity:.78; -webkit-text-stroke:1px #160f12; }
+
+.game-screen .studs {
+  padding:2px 8px 2px 3px;
+  border-radius:999px;
+  background:linear-gradient(90deg,rgba(24,17,30,.88),rgba(67,43,79,.64));
+  border:1px solid rgba(218,173,63,.38);
+}
+.game-screen .stud-copy > b {
+  color:#f5d35d;
+  text-shadow:0 1px #4e3106;
+}
+
+.game-screen .legacy-score-plate {
+  min-width:224px;
+  padding:6px 34px 8px;
+  border:3px solid #d1a03a;
+  background:
+    linear-gradient(180deg,#76518e 0%,#54366d 48%,#382548 100%);
+  box-shadow:
+    inset 0 0 0 2px #2a1833,
+    inset 0 5px 8px rgba(255,255,255,.08),
+    0 5px 14px #000a;
+}
+.game-screen .legacy-score-plate > b {
+  font-size:22px;
+  color:#ffe36d;
+}
+.game-screen .legacy-score-plate > span {
+  color:#f7edcf;
+}
+
+.game-screen .boss-portrait {
+  --boss-color:#7a261f;
+  --boss-accent:#d7a841;
+  padding:4px 8px 4px 4px;
+  border:2px solid #b98527;
+  border-radius:999px 10px 10px 999px;
+  background:linear-gradient(90deg,rgba(31,20,39,.96),rgba(64,39,76,.88));
+  box-shadow:inset 0 0 0 1px rgba(255,224,119,.18),0 4px 12px #0009;
+}
+.game-screen .boss-face {
+  width:56px;
+  height:56px;
+  border:4px solid #d4a13a;
+  background:
+    radial-gradient(circle at 50% 34%,#f2c54d 0 24%,transparent 25%),
+    linear-gradient(155deg,var(--boss-accent) 0 18%,var(--boss-color) 19% 70%,#211529 71%);
+  box-shadow:
+    inset 0 0 0 2px #33203b,
+    inset 0 -9px 13px #0006,
+    0 2px 8px #000b;
+}
+.game-screen .boss-face::before,
+.game-screen .boss-face::after {
+  top:20px;
+  width:6px;
+  height:4px;
+}
+.game-screen .boss-face i {
+  top:34px;
+  width:18px;
+  height:3px;
+  background:var(--boss-accent);
+}
+.game-screen .boss-portrait > span {
+  max-width:150px;
+  color:#f9df8c;
+  font-size:11px;
+  line-height:1.05;
+}
+
+.game-screen .boss-health > span {
+  height:11px;
+  border:2px solid #c79632;
+  border-radius:3px;
+  background:#1a111c;
+  box-shadow:inset 0 0 0 1px #3f2848,0 2px 7px #000a;
+}
+.game-screen .boss-health i {
+  background:linear-gradient(90deg,#8e1f2c,#d53b37 48%,#f4c24e 100%);
+  box-shadow:inset 0 2px rgba(255,255,255,.2);
+}
+
+.game-screen .joystick-ring {
+  width:120px;
+  height:120px;
+  border:5px solid #b8842c;
+  outline:2px solid #3a2548;
+  background:
+    radial-gradient(circle at 50% 50%,rgba(118,81,143,.42) 0 40%,rgba(43,28,54,.72) 41% 70%,rgba(20,14,27,.78) 71%);
+  box-shadow:
+    inset 0 0 0 3px #e0b347,
+    inset 0 0 0 7px #3a2548,
+    0 5px 14px #0009;
+}
+.game-screen .joystick-ring span {
+  width:54px;
+  height:54px;
+  border:3px solid #e5bb4f;
+  background:
+    radial-gradient(circle at 38% 30%,#cba050,#7e4d1c 58%,#48280e 100%);
+  box-shadow:inset 0 0 0 2px #5a3412,0 4px 9px #000a;
+}
+
+.game-screen .action-button,
+.game-screen .special-button {
+  border:5px solid #c3922d;
+  outline:2px solid #3b2548;
+  background:
+    radial-gradient(circle at 42% 34%,#76518f 0 28%,#53356a 52%,#2b1d38 78%,#1a1222 100%);
+  box-shadow:
+    inset 0 0 0 3px #e0b549,
+    inset 0 0 0 7px #3a2548,
+    inset 0 7px 12px rgba(255,255,255,.06),
+    0 5px 12px #000a;
+}
+.game-screen .action-button {
+  width:68px;
+  height:68px;
+}
+.game-screen .action-button .legacy-icon {
+  color:#d8d6d6;
+  font-size:30px;
+  text-shadow:0 2px 1px #171018;
+}
+.game-screen .action-button.attack .legacy-icon,
+.game-screen .action-button.kick .legacy-icon,
+.game-screen .special-button {
+  color:#f0c650;
+}
+.game-screen .action-button.kick {
+  background:
+    radial-gradient(circle at 42% 34%,color-mix(in srgb,var(--element-color) 48%,#6b477f) 0 30%,#4d3160 55%,#281b34 82%);
+}
+.game-screen .action-button.kick small {
+  position:absolute;
+  left:50%;
+  bottom:-15px;
+  transform:translateX(-50%);
+  max-width:92px;
+  color:#f3d88c;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.game-screen .action-button:active,
+.game-screen .special-button:active {
+  transform:scale(.92);
+  filter:brightness(1.16);
+}
+
+.gold-button {
+  position:relative;
+  overflow:hidden;
+  min-height:54px;
+  border:3px solid #bb8b2b;
+  border-radius:10px;
+  background:linear-gradient(180deg,#5f3e72 0%,#432b55 46%,#2b1d38 100%);
+  box-shadow:
+    inset 0 0 0 2px #2c1b35,
+    inset 0 4px 0 rgba(255,255,255,.05),
+    0 6px 12px #0006;
+  color:#f8e3a0;
+  text-shadow:0 2px 1px #2b1806;
+}
+.gold-button::before,
+.gold-button::after {
+  content:'';
+  position:absolute;
+  top:5px;
+  bottom:5px;
+  width:7px;
+  border-radius:4px;
+  background:linear-gradient(#f1cf69,#93611b);
+  opacity:.78;
+}
+.gold-button::before { left:6px; }
+.gold-button::after { right:6px; }
+.gold-button.primary {
+  background:linear-gradient(180deg,#d1a343 0%,#9b671f 54%,#673d10 100%);
+  border-color:#f0cb65;
+  color:#fff8db;
+}
+
+.fighter-card {
+  border:2px solid rgba(187,139,43,.5);
+  border-radius:10px;
+  background:
+    linear-gradient(145deg,rgba(44,29,53,.95),rgba(23,17,29,.94));
+  box-shadow:
+    inset 0 0 0 1px rgba(255,225,128,.08),
+    0 4px 12px rgba(0,0,0,.32);
+}
+.fighter-card.selected {
+  outline:3px solid #d3a13b;
+  outline-offset:1px;
+  background:
+    linear-gradient(145deg,rgba(103,64,119,.96),rgba(42,28,53,.96));
+  box-shadow:0 0 20px rgba(219,175,67,.22);
+}
+.fighter-avatar {
+  width:64px;
+  height:64px;
+  overflow:hidden;
+  border:4px solid #c89934;
+  border-radius:50%;
+  outline:2px solid #35213f;
+  background:radial-gradient(circle at 50% 38%,#f2c64f 0 20%,var(--fighter) 21% 62%,#211629 63%);
+  box-shadow:inset 0 0 10px #0007,0 3px 8px #0008;
+}
+.fighter-avatar span {
+  top:8px;
+  width:34px;
+  height:28px;
+  border:0;
+  border-radius:12px 12px 7px 7px;
+  background:var(--fighter);
+  box-shadow:inset 0 -7px rgba(0,0,0,.17);
+}
+.fighter-avatar span::before,
+.fighter-avatar span::after {
+  content:'';
+  position:absolute;
+  top:12px;
+  width:5px;
+  height:3px;
+  border-radius:50%;
+  background:#171319;
+}
+.fighter-avatar span::before { left:8px; }
+.fighter-avatar span::after { right:8px; }
+.fighter-avatar i {
+  top:36px;
+  width:48px;
+  height:31px;
+  border:0;
+  border-radius:7px 7px 2px 2px;
+  background:
+    linear-gradient(90deg,var(--accent) 0 10%,var(--fighter) 11% 89%,var(--accent) 90%);
+}
+.fighter-avatar small {
+  position:absolute;
+  right:-1px;
+  bottom:-1px;
+  z-index:3;
+  padding:2px 4px;
+  border-radius:5px;
+  background:#2c1c37;
+  border:1px solid #c79431;
+  color:#f4cf65;
+  font-size:7px;
+}
+
+@media (max-width:700px) {
+  .game-screen .portrait-ring { width:54px; height:54px; }
+  .game-screen .action-button { width:60px; height:60px; border-width:4px; }
+  .game-screen .joystick-ring { width:104px; height:104px; }
+  .game-screen .boss-face { width:46px; height:46px; }
+  .game-screen .boss-portrait { padding-right:4px; }
+}
