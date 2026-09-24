@@ -171,7 +171,7 @@ export class TournamentGame extends StableContentGame {
     group.name = 'tornadoOfCreation';
     group.position.copy(state.player.position).setY(0);
 
-    const teamIds = ['lloyd-tournament', 'kai-tournament', 'cole-tournament', 'zane-zx', 'jay-tournament'];
+    const teamIds = ['lloyd-tournament', 'kai-tournament', 'cole-tournament', 'zane-zx', 'jay-tournament', 'nya'];
     const safe = this.lowFxMode();
     this.creationUltimateFighters = teamIds.map((id, index) => {
       const fighter = findCharacter(id);
@@ -259,7 +259,7 @@ export class TournamentGame extends StableContentGame {
     this.creationUltimateTime = 4.8;
     this.creationUltimateTick = 0;
     this.creationUltimateCooldown = 6.5;
-    state.callbacks.onMessage('TORNADO OF CREATION — NINJA, GO!');
+    state.callbacks.onMessage('TORNADO OF CREATION — ALL NINJA, GO!');
     return true;
   }
 
@@ -440,7 +440,12 @@ export class TournamentGame extends StableContentGame {
     group.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
       if (object.name === 'creationBand') object.rotation.z += dt * Number(object.userData.spinRate ?? 4.5);
-      if (object.name.startsWith('creationMiniTornado-')) object.rotation.y += dt * 10;
+      if (object.name.startsWith('creationMiniTornado-')) {
+        const base = Number(object.userData.creationAngle ?? 0);
+        const angle = base + elapsed * 1.9;
+        object.position.set(Math.cos(angle) * orbitRadius, 1.25, Math.sin(angle) * orbitRadius);
+        object.rotation.y += dt * 10;
+      }
       if (object.name === 'creationCore') {
         object.rotation.y += dt * 5.6;
         const pulse = 1 + Math.sin(elapsed * 8) * 0.06;
