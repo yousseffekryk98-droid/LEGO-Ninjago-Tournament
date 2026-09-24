@@ -23,6 +23,7 @@ export interface GameCallbacks {
   onMessage: (message: string) => void;
   onGameOver: (score: number, wave: number) => void;
   onVictory?: (score: number, fights: number) => void;
+  onCameraModeChange?: (mode: 'classic' | 'overhead') => void;
 }
 
 export interface TournamentGameOptions {
@@ -239,6 +240,7 @@ export class TournamentGame {
   toggleCameraView() {
     this.cameraMode = this.cameraMode === 'classic' ? 'overhead' : 'classic';
     this.callbacks.onMessage(this.cameraMode === 'overhead' ? 'Overhead tactical view' : 'Classic tournament view');
+    this.callbacks.onCameraModeChange?.(this.cameraMode);
     return this.cameraMode;
   }
 
