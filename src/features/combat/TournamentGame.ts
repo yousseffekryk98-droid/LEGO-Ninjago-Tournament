@@ -22,6 +22,12 @@ export interface GameCallbacks {
   onHud: (state: HudState) => void;
   onMessage: (message: string) => void;
   onGameOver: (score: number, wave: number) => void;
+  onVictory?: (score: number, fights: number) => void;
+}
+
+export interface TournamentGameOptions {
+  mode?: 'waves' | 'duels';
+  duelOpponents?: CharacterDef[];
 }
 
 type AttackAction = 'attack' | 'punch' | 'kick';
@@ -114,6 +120,10 @@ export class TournamentGame {
   private spikePositions: THREE.Vector3[] = [];
   private callbacks: GameCallbacks;
   private character: CharacterDef;
+  private gameMode: 'waves' | 'duels' = 'waves';
+  private duelOpponents: CharacterDef[] = [];
+  private duelIndex = 0;
+  private victorySent = false;
   private animationFrame = 0;
   private running = true;
   private paused = false;
@@ -155,9 +165,11 @@ export class TournamentGame {
   private elapsed = 0;
   private lastDamageAt = -999;
 
-  constructor(private host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks) {
+  constructor(private host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks, options: TournamentGameOptions = {}) {
     this.character = character;
     this.callbacks = callbacks;
+    this.gameMode = options.mode ?? 'waves';
+    this.duelOpponents = options.duelOpponents ?? [];
     this.health = character.maxHealth;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -194,7 +206,7 @@ export class TournamentGame {
     window.addEventListener('keyup', this.keyUp);
     window.addEventListener('ninja-controls-updated', this.refreshControls);
     this.resize();
-    this.callbacks.onMessage('Tournament begins! Survive the waves.');
+    this.callbacks.onMessage(this.gameMode === 'duels' ? 'Elemental Gauntlet begins! Defeat every challenger.' : 'Tournament begins! Survive the waves.');
     this.emitHud();
     this.loop();
   }
@@ -395,7 +407,7 @@ export class TournamentGame {
       this.intermission = 1.4;
     }
 
-    if (this.wave >= 2 && this.eventTimer <= 0 && this.enemies.length > 0) {
+    if (this.gameMode === 'waves' && this.wave >= 2 && this.eventTimer <= 0 && this.enemies.length > 0) {
       this.triggerArenaEvent();
       this.eventTimer = Math.max(7.5, 14 - this.wave * 0.22) + Math.random() * 3;
     }
@@ -891,6 +903,7 @@ export class TournamentGame {
     const index = this.enemies.indexOf(enemy);
     if (index < 0) return;
     this.enemies.splice(index, 1);
+    if (this.enemies.length === 0) this.intermission = Math.max(this.intermission, this.gameMode === 'duels' ? 1.15 : 0.85);
     const multiplier = this.getMultiplier();
     const payout = (enemy.kind === 'boss' ? 500 : enemy.kind === 'heavy' ? 80 : enemy.kind === 'ranged' ? 60 : 45) * multiplier;
     this.special = clamp(this.special + (enemy.kind === 'boss' ? 35 : 12), 0, 100);
@@ -1111,6 +1124,10 @@ export class TournamentGame {
   }
 
   private spawnWave() {
+    if (this.gameMode === 'duels') {
+      this.spawnDuel();
+      return;
+    }
     this.wave += 1;
     const isBossWave = this.wave % 5 === 0;
     if (isBossWave) {
@@ -1138,6 +1155,51 @@ export class TournamentGame {
       this.callbacks.onMessage(`Wave ${this.wave}`);
     }
     this.emitHud();
+  }
+
+  private spawnDuel() {
+    if (this.duelIndex >= this.duelOpponents.length) {
+      if (!this.victorySent) {
+        this.victorySent = true;
+        this.paused = true;
+        this.callbacks.onMessage('ELEMENTAL GAUNTLET COMPLETE!');
+        this.callbacks.onVictory?.(this.studs, this.duelIndex);
+      }
+      return;
+    }
+
+    const opponent = this.duelOpponents[this.duelIndex];
+    this.duelIndex += 1;
+    this.wave = this.duelIndex;
+    this.health = Math.min(this.character.maxHealth, this.health + (this.duelIndex > 1 ? 0.5 : 0));
+    const angle = Math.PI + (Math.random() - 0.5) * 0.5;
+    const point = this.spawnPointNearPlayer(9.5, angle);
+    this.enemies.push(this.createDuelOpponent(opponent, point.x, point.y, this.duelIndex));
+    this.callbacks.onMessage(`DUEL ${this.duelIndex}/${this.duelOpponents.length}: ${opponent.name}`);
+    this.emitHud();
+  }
+
+  private createDuelOpponent(opponent: CharacterDef, x: number, z: number, index: number): Enemy {
+    const mesh = createCharacterModel(opponent, 1.08);
+    mesh.position.set(x, 0, z);
+    mesh.userData.duelOpponentId = opponent.id;
+    this.scene.add(mesh);
+
+    const maxHp = 120 + opponent.maxHealth * 28 + index * 14;
+    return {
+      mesh,
+      kind: 'boss',
+      hp: maxHp,
+      maxHp,
+      speed: clamp(opponent.speed * 0.48 + index * 0.015, 2.2, 3.8),
+      damage: clamp(0.5 + opponent.damage / 58 + index * 0.012, 0.62, 1.45),
+      attackCooldown: 0.75 + Math.random() * 0.35,
+      specialCooldown: 3.7 + Math.random() * 1.7,
+      hiddenTime: 0,
+      knock: new THREE.Vector3(),
+      bossName: opponent.name,
+      hitFlash: 0
+    };
   }
 
   private createEnemy(kind: EnemyKind, x: number, z: number, bossName?: string): Enemy {
