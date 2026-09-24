@@ -15,6 +15,7 @@ test('challenge arena exposes single, timed and boss modes and can start a run',
   await single.getByRole('button', { name: 'START' }).click();
   await expect(page.locator('#challenge-game-host canvas')).toBeVisible();
   await expect(page.locator('.challenge-game')).toHaveAttribute('data-mode', 'first-gate');
-  await expect(page.locator('.challenge-actions button')).toHaveCount(5);
+  await expect(page.locator('.challenge-actions button')).toHaveCount(6);
   await expect(page.locator('.challenge-dpad button')).toHaveCount(4);
+  await expect(page.locator('.challenge-element-kick')).toBeVisible();
 });
