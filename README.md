@@ -103,9 +103,9 @@ Generate signed APK/AAB releases from Android Studio. Keep signing keys out of t
 
 ## Controls
 
-Desktop: WASD / arrows to move, `Space` or `J` attack, `K` jump, `L` grab/throw, `Shift` block, `E` special, `Q` dodge. Attack while airborne to perform a jump slam.
+Desktop defaults: `WASD` / arrows move, `J` punch/box, `I` kick, `K` jump, `L` grab/throw, `Shift` block, `E` Spinjitzu/special, `Q` dodge. All keyboard bindings can be changed from **Keyboard Controls** on the main menu. Attack while airborne to perform a jump slam.
 
-Controller: left stick/D-pad move, A attack, RB jump, X grab, LB block, Y special, B dodge.
+Controller: left stick/D-pad move, A punch, RT kick, RB jump, X grab, LB block, Y Spinjitzu/special, B dodge.
 
 Mobile: left virtual joystick plus the on-screen action cluster. Swipe across the arena/Dojo to dodge. Fill the special meter by landing hits, then press the labeled spiral button to trigger Spinjitzu or the selected fighter's special.
 
