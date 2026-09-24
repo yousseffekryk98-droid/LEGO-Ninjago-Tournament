@@ -1,7 +1,7 @@
 {
   "name": "Ninja Tournament — Fan Remake",
   "short_name": "Ninja Tournament",
-  "description": "A clean-room, offline-capable tournament arena fan remake.",
+  "description": "Unofficial clean-room 3D LEGO Ninjago Tournament fan remake with 51 fighters, elemental combat, Spinjitzu and open-source code.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
