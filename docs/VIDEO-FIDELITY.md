@@ -65,7 +65,7 @@ Characters demonstrably shown being controlled in legacy gameplay showcase video
 | Titanium Dragon | Freezing ice attack/event | Implemented |
 | Condrai Crusher | Reinforcement delivery/event | Implemented |
 | Boulder Basher | Telegraph then falling boulders | Implemented |
-| Training props | Breakable practice props can reward studs | Implemented |
+| Training props | Breakable practice props can reward studs or hearts | Implemented with physical stud drops + magnetic heart pickups |
 | Spike hazards | Arena spikes damage the player | Implemented |
 | Mr. Pale invisibility | Boss can become difficult to see / hit | Implemented |
 | Karlof tremor | Ground shockwave boss behavior | Implemented |

@@ -24,6 +24,7 @@ interface RuntimeInternals {
   running: boolean;
   paused: boolean;
   studs: number;
+  health: number;
   special: number;
   wave: number;
   elapsed: number;
@@ -38,6 +39,12 @@ interface ArenaProp {
   hp: number;
   wobble: number;
   alive: boolean;
+}
+
+interface HeartPickup {
+  group: THREE.Group;
+  velocity: THREE.Vector3;
+  life: number;
 }
 
 interface FactionBrain {
@@ -81,6 +88,7 @@ export class TournamentGame extends StableContentGame {
   private productionDestroyed = false;
   private previousProductionElapsed = 0;
   private props: ArenaProp[] = [];
+  private heartPickups: HeartPickup[] = [];
   private factionBrains = new WeakMap<THREE.Group, FactionBrain>();
   private bombs: BombHazard[] = [];
   private missileJets: MissileJet[] = [];
@@ -108,11 +116,13 @@ export class TournamentGame extends StableContentGame {
     cancelAnimationFrame(this.productionFrame);
     const state = this.productionRuntime();
     for (const prop of this.props) state.scene.remove(prop.group);
+    for (const heart of this.heartPickups) state.scene.remove(heart.group);
     for (const bomb of this.bombs) state.scene.remove(bomb.mesh, bomb.marker);
     for (const jet of this.missileJets) state.scene.remove(jet.group);
     for (const missile of this.missiles) state.scene.remove(missile.group, missile.marker);
     if (this.playerAura) state.scene.remove(this.playerAura);
     this.props = [];
+    this.heartPickups = [];
     this.bombs = [];
     this.missileJets = [];
     this.missiles = [];
@@ -138,6 +148,7 @@ export class TournamentGame extends StableContentGame {
     this.updateFactionBehaviors(dt);
     this.updateBombs(dt);
     this.updateTrainingProps(dt);
+    this.updateHeartPickups(dt);
     this.updateMissileJets(dt);
     this.updateMissiles(dt);
     this.updatePresentation();
@@ -235,7 +246,13 @@ export class TournamentGame extends StableContentGame {
       state.scene.remove(prop.group);
       const payout = 120 * Math.max(1, state.getMultiplier());
       this.spawnStudBurst(prop.group.position.clone(), payout, 6);
-      state.callbacks.onMessage(`Training bag smashed! ${payout.toLocaleString()} studs dropped`);
+      const droppedHeart = Math.random() < 0.32;
+      if (droppedHeart) this.spawnHeartPickup(prop.group.position.clone());
+      state.callbacks.onMessage(
+        droppedHeart
+          ? `Training bag smashed! ${payout.toLocaleString()} studs + HEART dropped`
+          : `Training bag smashed! ${payout.toLocaleString()} studs dropped`
+      );
       this.spawnPropDebris(prop.group.position);
       state.emitHud();
     }
@@ -248,6 +265,74 @@ export class TournamentGame extends StableContentGame {
       prop.group.rotation.z = prop.wobble > 0
         ? Math.sin(prop.wobble * 34) * prop.wobble * 0.45
         : prop.group.rotation.z * Math.pow(0.02, dt);
+    }
+  }
+
+  private spawnHeartPickup(origin: THREE.Vector3) {
+    const state = this.productionRuntime();
+    const group = new THREE.Group();
+    const red = new THREE.MeshStandardMaterial({
+      color: 0xe83f4f,
+      emissive: 0x551018,
+      emissiveIntensity: 0.45,
+      roughness: 0.34,
+      metalness: 0.02
+    });
+    const left = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 9), red);
+    const right = left.clone();
+    left.position.set(-0.15, 0.1, 0);
+    right.position.set(0.15, 0.1, 0);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.29, 0.48, 12), red);
+    tip.rotation.z = Math.PI;
+    tip.position.y = -0.13;
+    group.add(left, right, tip);
+    group.scale.setScalar(0.92);
+    group.position.copy(origin).add(new THREE.Vector3(0, 1.05, 0));
+    group.traverse((object) => {
+      if (object instanceof THREE.Mesh) object.castShadow = true;
+    });
+    state.scene.add(group);
+    this.heartPickups.push({
+      group,
+      velocity: new THREE.Vector3((Math.random() - 0.5) * 2.3, 3.4 + Math.random() * 1.6, (Math.random() - 0.5) * 2.3),
+      life: 12
+    });
+    this.spawnRing(origin, 0xe83f4f, 1.25);
+  }
+
+  private updateHeartPickups(dt: number) {
+    const state = this.productionRuntime();
+    for (const heart of [...this.heartPickups]) {
+      heart.life -= dt;
+      heart.velocity.y -= 8.6 * dt;
+      heart.group.position.addScaledVector(heart.velocity, dt);
+      if (heart.group.position.y < 0.45) {
+        heart.group.position.y = 0.45;
+        heart.velocity.y = Math.abs(heart.velocity.y) * 0.35;
+        heart.velocity.x *= 0.78;
+        heart.velocity.z *= 0.78;
+      }
+      heart.group.rotation.y += dt * 3.4;
+      heart.group.position.y += Math.sin(state.elapsed * 6 + heart.life) * dt * 0.07;
+
+      const toPlayer = state.player.position.clone().sub(heart.group.position);
+      const distance = toPlayer.length();
+      if (distance < 4.2 && distance > 0.001) {
+        heart.group.position.addScaledVector(toPlayer.normalize(), dt * (5.5 + (4.2 - distance) * 2.2));
+      }
+      if (distance < 0.85) {
+        state.health = Math.min(state.character.maxHealth, state.health + 1);
+        state.callbacks.onMessage('HEART collected! Health +1');
+        state.emitHud();
+        this.spawnRing(state.player.position, 0xe83f4f, 1.45);
+        state.scene.remove(heart.group);
+        this.heartPickups.splice(this.heartPickups.indexOf(heart), 1);
+        continue;
+      }
+      if (heart.life <= 0) {
+        state.scene.remove(heart.group);
+        this.heartPickups.splice(this.heartPickups.indexOf(heart), 1);
+      }
     }
   }
 
