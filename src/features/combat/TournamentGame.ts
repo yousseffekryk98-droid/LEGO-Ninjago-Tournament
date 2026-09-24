@@ -1011,21 +1011,97 @@ export class TournamentGame {
 
     const element = enemy.bossCharacter?.element ?? '';
     const theme = getElementCombatTheme(element);
+    const origin = enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.05, 0));
+
     if (/Ice/i.test(element) && toPlayer.lengthSq() > 0.01) {
-      this.spawnEnemyProjectile(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.05, 0)), toPlayer.normalize().multiplyScalar(8.5), enemy.damage * 0.72, theme.color, 'freeze');
-      this.callbacks.onMessage(`${name}: ICE BLAST!`);
+      for (let i = -1; i <= 1; i++) {
+        const direction = toPlayer.clone().normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), i * 0.12).multiplyScalar(8.5);
+        this.spawnEnemyProjectile(origin, direction, enemy.damage * 0.58, theme.color, 'freeze');
+      }
+      this.callbacks.onMessage(`${name}: ICE SHURIKEN!`);
       return;
     }
-    if (/Fire|Lightning|Energy|Poison|Amber|Mind|Light|Shadow/i.test(element) && toPlayer.lengthSq() > 0.01) {
+
+    if (/Smoke|Shadow|Form/i.test(element)) {
+      const side = enemy.specialCount % 2 === 0 ? 1 : -1;
+      const offset = new THREE.Vector3(
+        Math.sin(this.player.rotation.y + side * Math.PI / 2),
+        0,
+        Math.cos(this.player.rotation.y + side * Math.PI / 2)
+      ).multiplyScalar(2.7);
+      enemy.mesh.position.copy(this.player.position).add(offset);
+      enemy.hiddenTime = 1.15;
+      this.setEnemyOpacity(enemy, 0.24);
+      enemy.attackCooldown = 0.18;
+      this.callbacks.onMessage(`${name}: ${element.toUpperCase()} STEP!`);
+      return;
+    }
+
+    if (/Speed/i.test(element) && toPlayer.lengthSq() > 0.01) {
+      enemy.knock.add(toPlayer.normalize().multiplyScalar(15));
+      enemy.attackCooldown = 0.08;
+      this.callbacks.onMessage(`${name}: SPEED CHARGE!`);
+      return;
+    }
+
+    if (/Water/i.test(element)) {
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const direction = new THREE.Vector3(Math.cos(angle), 0.05, Math.sin(angle)).multiplyScalar(7.3);
+        this.spawnEnemyProjectile(origin, direction, enemy.damage * 0.48, theme.color);
+      }
+      this.spawnShockwave(enemy.mesh.position, 6.8, 0.72);
+      this.callbacks.onMessage(`${name}: TIDAL BURST!`);
+      return;
+    }
+
+    if (/Poison|Venomari|Serpentine|Anacondrai|Constrictai|Hypnobrai/i.test(element) && toPlayer.lengthSq() > 0.01) {
+      for (let i = -2; i <= 2; i++) {
+        const direction = toPlayer.clone().normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), i * 0.14).multiplyScalar(7.7);
+        this.spawnEnemyProjectile(origin, direction, enemy.damage * 0.5, theme.color);
+      }
+      if (enemy.specialCount % 2 === 0) enemy.knock.add(toPlayer.clone().normalize().multiplyScalar(8.5));
+      this.callbacks.onMessage(`${name}: SERPENT VENOM!`);
+      return;
+    }
+
+    if (/Creation|Staff of Elements/i.test(element)) {
+      this.spawnShockwave(enemy.mesh.position, 8.7, 1.15);
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 + this.elapsed * 0.2;
+        const direction = new THREE.Vector3(Math.cos(angle), 0.05, Math.sin(angle)).multiplyScalar(8.1);
+        this.spawnEnemyProjectile(origin, direction, enemy.damage * 0.48, theme.color);
+      }
+      this.callbacks.onMessage(`${name}: CREATION SURGE!`);
+      return;
+    }
+
+    if (/Nindroid|Samurai/i.test(element) && toPlayer.lengthSq() > 0.01) {
+      for (let i = -2; i <= 2; i++) {
+        const direction = toPlayer.clone().normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), i * 0.09).multiplyScalar(9.4);
+        this.spawnEnemyProjectile(origin, direction, enemy.damage * 0.46, theme.color);
+      }
+      this.callbacks.onMessage(`${name}: WEAPON VOLLEY!`);
+      return;
+    }
+
+    if (/Earth|Metal/i.test(element)) {
+      this.spawnShockwave(enemy.mesh.position, 8.4, 1.36);
+      enemy.knock.y = 0;
+      this.callbacks.onMessage(`${name}: ${element.toUpperCase()} TREMOR!`);
+      return;
+    }
+
+    if (/Fire|Lightning|Energy|Amber|Mind|Light|Dark Magic|Brown Power/i.test(element) && toPlayer.lengthSq() > 0.01) {
       for (let i = -1; i <= 1; i++) {
         const direction = toPlayer.clone().normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), i * 0.18).multiplyScalar(8.8);
-        this.spawnEnemyProjectile(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.05, 0)), direction, enemy.damage * 0.62, theme.color);
+        this.spawnEnemyProjectile(origin, direction, enemy.damage * 0.62, theme.color);
       }
       this.callbacks.onMessage(`${name}: ${element.toUpperCase()} BURST!`);
       return;
     }
 
-    this.spawnShockwave(enemy.mesh.position, /Earth|Metal/i.test(element) ? 8.2 : 6.5, 1.0);
+    this.spawnShockwave(enemy.mesh.position, 6.5, 1.0);
     this.callbacks.onMessage(`${name}: ELEMENTAL STRIKE!`);
   }
 
