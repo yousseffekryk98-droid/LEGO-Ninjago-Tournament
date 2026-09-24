@@ -206,7 +206,7 @@ function showHome() {
         <div class="menu-actions">
           <button class="gold-button primary" id="play-btn">▶ ENTER TOURNAMENT</button>
           <button class="gold-button gauntlet-button" id="gauntlet-btn">⚔ ELEMENTAL GAUNTLET · VERSUS PATH</button>
-          <button class="gold-button" id="fighters-btn">◉ FIGHTERS (${ROSTER.length})</button>
+          <button class="gold-button fighters-menu-button" id="fighters-btn"><img class="menu-vector-icon" src="./icons/minifigure-silhouette.svg" alt="" /> FIGHTERS (${ROSTER.length})</button>
           <button class="gold-button" id="rewards-btn">✦ DAILY DRAW & CHALLENGES ${save.daily.draws > 0 ? `(${save.daily.draws})` : ''}</button>
           <button class="gold-button" id="dojo-btn">◇ PLAY DOJO TUTORIAL</button>
           <button class="gold-button" id="controls-btn">⌨ KEYBOARD CONTROLS</button>
@@ -550,12 +550,14 @@ function updateDojoStep(step: DojoStep, title: string, copy: string, progress: n
 function startTournament() {
   freePlayMode = false;
   gauntletMode = false;
+  gauntletAllFighters = false;
   startGame();
 }
 
 function startFreePlay() {
   freePlayMode = true;
   gauntletMode = false;
+  gauntletAllFighters = false;
   startGame();
 }
 
