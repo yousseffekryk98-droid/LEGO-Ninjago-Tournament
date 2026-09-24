@@ -102,3 +102,15 @@ test('video-observed legacy fighters have distinct model treatments', () => {
   const skales = createCharacterModel(findCharacter('skales'));
   expect(skales.getObjectByName('serpentineTail')).toBeTruthy();
 });
+
+
+test('hooded ninja models include the refined shared minifigure detail', () => {
+  const kai = createCharacterModel(findCharacter('kai-tournament'));
+  expect(kai.getObjectByName('hoodCrown')).toBeTruthy();
+  expect(kai.getObjectByName('hoodCheekLeft')).toBeTruthy();
+  expect(kai.getObjectByName('maskLowerFold')).toBeTruthy();
+  expect(kai.getObjectByName('leftArmCuff')).toBeTruthy();
+  expect(kai.getObjectByName('rightArmWrap')).toBeTruthy();
+  expect(kai.getObjectByName('leftKneeWrap')).toBeTruthy();
+  expect(kai.getObjectByName('rightBootSole')).toBeTruthy();
+});
