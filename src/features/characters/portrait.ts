@@ -3,13 +3,14 @@ import type { CharacterDef } from './types';
 const hex = (value: number) => `#${value.toString(16).padStart(6, '0')}`;
 
 function escapeXml(value: string) {
-  return value.replace(/[<>&'"]/g, (char) => ({
+  const entities: Record<string, string> = {
     '<': '&lt;',
     '>': '&gt;',
     '&': '&amp;',
     "'": '&apos;',
     '"': '&quot;'
-  }[char] ?? char));
+  };
+  return value.replace(/[<>&'"]/g, (char) => entities[char] ?? char);
 }
 
 /**
