@@ -39,6 +39,7 @@ interface DodgeController {
 }
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
+const SAVE_CACHE_KEY = `${STORAGE_KEY}:cache`;
 const LEVEL_THRESHOLDS = [0, 800, 2200, 4500, 8000];
 
 function localDateKey() {
@@ -53,7 +54,7 @@ function freshDaily(): DailyState {
 
 const defaults = (): SaveData => ({
   bankStuds: 0,
-  unlocked: ROSTER.filter((c) => c.unlockedByDefault).map((c) => c.id),
+  unlocked: ROSTER.map((c) => c.id),
   selected: ROSTER[0].id,
   bestWave: 0,
   bestRun: 0,
@@ -62,35 +63,47 @@ const defaults = (): SaveData => ({
   daily: freshDaily()
 });
 
-function loadSave(): SaveData {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as Partial<SaveData> | null;
-    if (!saved) return defaults();
-    const base = defaults();
-    const daily = saved.daily && saved.daily.date === localDateKey()
-      ? {
-          date: saved.daily.date,
-          draws: Math.max(0, saved.daily.draws ?? 0),
-          runs: Math.max(0, saved.daily.runs ?? 0),
-          studs: Math.max(0, saved.daily.studs ?? 0),
-          bestWave: Math.max(0, saved.daily.bestWave ?? 0),
-          claimed: Array.isArray(saved.daily.claimed) ? saved.daily.claimed : []
-        }
-      : freshDaily();
-
-    return {
-      bankStuds: Math.max(0, saved.bankStuds ?? base.bankStuds),
-      unlocked: Array.from(new Set([...(saved.unlocked ?? []), ...base.unlocked])),
-      selected: saved.selected && ROSTER.some((c) => c.id === saved.selected) ? saved.selected : base.selected,
-      bestWave: Math.max(0, saved.bestWave ?? 0),
-      bestRun: Math.max(0, saved.bestRun ?? 0),
-      totalRuns: Math.max(0, saved.totalRuns ?? 0),
-      fighterXp: saved.fighterXp && typeof saved.fighterXp === 'object' ? saved.fighterXp : {},
-      daily
-    };
-  } catch {
-    return defaults();
+function readSaveSnapshot(): Partial<SaveData> | null {
+  for (const key of [STORAGE_KEY, SAVE_CACHE_KEY]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as Partial<SaveData> | null;
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {
+      // A damaged primary save should never destroy the mirrored cache.
+    }
   }
+  return null;
+}
+
+function loadSave(): SaveData {
+  const saved = readSaveSnapshot();
+  if (!saved) return defaults();
+
+  const base = defaults();
+  const daily = saved.daily && saved.daily.date === localDateKey()
+    ? {
+        date: saved.daily.date,
+        draws: Math.max(0, saved.daily.draws ?? 0),
+        runs: Math.max(0, saved.daily.runs ?? 0),
+        studs: Math.max(0, saved.daily.studs ?? 0),
+        bestWave: Math.max(0, saved.daily.bestWave ?? 0),
+        claimed: Array.isArray(saved.daily.claimed) ? saved.daily.claimed : []
+      }
+    : freshDaily();
+
+  return {
+    bankStuds: Math.max(0, saved.bankStuds ?? base.bankStuds),
+    // Free-play build: every playable roster entry stays available even for old saves.
+    unlocked: ROSTER.map((fighter) => fighter.id),
+    selected: saved.selected && ROSTER.some((c) => c.id === saved.selected) ? saved.selected : base.selected,
+    bestWave: Math.max(0, saved.bestWave ?? 0),
+    bestRun: Math.max(0, saved.bestRun ?? 0),
+    totalRuns: Math.max(0, saved.totalRuns ?? 0),
+    fighterXp: saved.fighterXp && typeof saved.fighterXp === 'object' ? saved.fighterXp : {},
+    daily
+  };
 }
 
 let save = loadSave();
@@ -101,10 +114,17 @@ let continueUsedThisRun = false;
 let lastHudWave = 0;
 let lastHudEnemies = 0;
 let stageBannerTimer = 0;
+let freePlayMode = false;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+  const payload = JSON.stringify(save);
+  localStorage.setItem(STORAGE_KEY, payload);
+  localStorage.setItem(SAVE_CACHE_KEY, payload);
+}
+
+function refreshSaveFromStorage() {
+  save = loadSave();
 }
 
 function formatStuds(value: number) {
@@ -178,6 +198,7 @@ function showHome() {
           <button class="gold-button" id="fighters-btn">◉ FIGHTERS (${ROSTER.length})</button>
           <button class="gold-button" id="rewards-btn">✦ DAILY DRAW & CHALLENGES ${save.daily.draws > 0 ? `(${save.daily.draws})` : ''}</button>
           <button class="gold-button" id="dojo-btn">◇ PLAY DOJO TUTORIAL</button>
+          <button class="gold-button freeplay-button" id="freeplay-btn">∞ FREE PLAY · UNLIMITED SPINJITZU</button>
         </div>
         <div class="save-stats">
           <span>◉ ${formatStuds(save.bankStuds)} banked studs</span>
@@ -189,10 +210,11 @@ function showHome() {
       </section>
     </main>`;
 
-  document.querySelector('#play-btn')?.addEventListener('click', startGame);
+  document.querySelector('#play-btn')?.addEventListener('click', startTournament);
   document.querySelector('#fighters-btn')?.addEventListener('click', showRoster);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
   document.querySelector('#dojo-btn')?.addEventListener('click', showDojo);
+  document.querySelector('#freeplay-btn')?.addEventListener('click', startFreePlay);
 }
 
 function showRoster() {
@@ -365,8 +387,13 @@ function showDojo() {
   cleanupGame();
   const baseFighter = findCharacter(save.selected);
   const fighter = upgradedCharacter(baseFighter);
+  if (freePlayMode) fighter.special = 'spinjitzu';
   const identity = getCharacterIdentity(baseFighter);
-  const specialLabel = baseFighter.special === 'spinjitzu' ? 'SPINJITZU' : baseFighter.special.replace('-', ' ').toUpperCase();
+  const specialLabel = freePlayMode
+    ? 'SPINJITZU ∞'
+    : baseFighter.special === 'spinjitzu'
+      ? 'SPINJITZU'
+      : baseFighter.special.replace('-', ' ').toUpperCase();
   app.innerHTML = `
     <main class="game-screen dojo-game-screen">
       <div id="dojo-host"></div>
@@ -403,7 +430,7 @@ function showDojo() {
       if (!overlay) return;
       overlay.classList.remove('hidden');
       overlay.innerHTML = `<section><small>SENSEI'S DOJO</small><h2>Training Complete</h2><p>You are ready for the Tournament of Elements.</p><div class="menu-actions"><button class="gold-button primary" id="dojo-enter-tournament">ENTER TOURNAMENT</button><button class="gold-button" id="dojo-menu">MAIN MENU</button></div></section>`;
-      document.querySelector('#dojo-enter-tournament')?.addEventListener('click', startGame);
+      document.querySelector('#dojo-enter-tournament')?.addEventListener('click', startTournament);
       document.querySelector('#dojo-menu')?.addEventListener('click', showHome);
     }
   });
@@ -444,6 +471,16 @@ function updateDojoStep(step: DojoStep, title: string, copy: string, progress: n
   if (titleEl) titleEl.textContent = title;
   if (copyEl) copyEl.textContent = copy;
   if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
+}
+
+function startTournament() {
+  freePlayMode = false;
+  startGame();
+}
+
+function startFreePlay() {
+  freePlayMode = true;
+  startGame();
 }
 
 function startGame() {
@@ -498,7 +535,11 @@ function startGame() {
     onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id)
   });
   activeGame = game;
-  showStageBanner('MASTER CHEN PRESENTS', 'TOURNAMENT OF ELEMENTS');
+  game.setUnlimitedSpecial(freePlayMode);
+  showStageBanner(
+    freePlayMode ? 'FREE PLAY MODE' : 'MASTER CHEN PRESENTS',
+    freePlayMode ? 'UNLIMITED SPINJITZU' : 'TOURNAMENT OF ELEMENTS'
+  );
 
   wireJoystick(game);
   wireArenaSwipe(game, host);
@@ -523,7 +564,20 @@ function startGame() {
   block.addEventListener('pointercancel', releaseBlock);
 
   document.querySelector('#exit-btn')?.addEventListener('click', () => {
-    if (confirm('Leave this tournament run?')) showHome();
+    if (confirm('Leave this tournament run?')) window.addEventListener('ninja-save-updated', () => {
+  refreshSaveFromStorage();
+  if (document.querySelector('main.menu-screen')) showHome();
+});
+window.addEventListener('storage', (event) => {
+  if (event.key === STORAGE_KEY || event.key === SAVE_CACHE_KEY) refreshSaveFromStorage();
+});
+window.addEventListener('pagehide', persist);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') persist();
+});
+
+persist();
+showHome();
   });
 }
 
@@ -667,7 +721,7 @@ function finalizeRun(runStuds: number, wave: number, fighterId: string) {
       <p class="xp-award">+${formatStuds(xpEarned)} FIGHTER XP · LEVEL ${afterLevel}${afterLevel > beforeLevel ? ' · TRUE POTENTIAL RISING!' : ''}</p>
       <div class="menu-actions"><button class="gold-button primary" id="retry-btn">RETRY</button><button class="gold-button" id="rewards-btn">DAILY REWARDS</button><button class="gold-button" id="menu-btn">MAIN MENU</button></div>
     </section>`;
-  document.querySelector('#retry-btn')?.addEventListener('click', startGame);
+  document.querySelector('#retry-btn')?.addEventListener('click', freePlayMode ? startFreePlay : startTournament);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
   document.querySelector('#menu-btn')?.addEventListener('click', showHome);
 }
