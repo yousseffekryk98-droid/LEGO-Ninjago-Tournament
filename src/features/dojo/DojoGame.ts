@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { CharacterDef } from '../characters';
+import { getElementCombatTheme, type CharacterDef } from '../characters';
 import { createCharacterModel } from '../characters/model';
 import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 import { formatKeyLabel, getKeyBindings, type KeyBindings } from '../controls';
@@ -373,6 +373,7 @@ export class DojoGame {
     this.actionCooldown = move.duration;
     this.attackAnimationDuration = move.duration;
     this.attackAnimationTime = move.duration;
+    if (kind === 'kick') this.spawnElementKickFx();
     const distance = this.player.position.distanceTo(this.dummy.position);
     if (distance <= 2.55) {
       this.flashDummy();
@@ -385,6 +386,34 @@ export class DojoGame {
       }
     }
   }
+
+  private spawnElementKickFx() {
+    const theme = getElementCombatTheme(this.character.element);
+    const forward = new THREE.Vector3(Math.sin(this.player.rotation.y), 0, Math.cos(this.player.rotation.y));
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.7, 0.9, 36),
+      new THREE.MeshBasicMaterial({ color: theme.color, transparent: true, opacity: 0.82, side: THREE.DoubleSide, depthWrite: false })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.copy(this.player.position).addScaledVector(forward, 1.25).setY(0.06);
+    ring.scale.setScalar(0.2);
+    this.scene.add(ring);
+    const started = performance.now();
+    const animate = () => {
+      if (!this.running) { this.scene.remove(ring); return; }
+      const t = Math.min(1, (performance.now() - started) / 300);
+      ring.scale.setScalar(0.2 + t * 2.5);
+      (ring.material as THREE.MeshBasicMaterial).opacity = 0.82 * (1 - t);
+      ring.rotation.z += 0.09;
+      if (t >= 1) {
+        this.scene.remove(ring);
+        ring.geometry.dispose();
+        (ring.material as THREE.Material).dispose();
+      } else requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }
+
 
   private updatePlayerPose(move: THREE.Vector2) {
     const leftArm = this.player.getObjectByName('leftArm');
