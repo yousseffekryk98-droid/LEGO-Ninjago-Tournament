@@ -1,3 +1,5 @@
+import { getKeyBindings } from '../../features/controls';
+
 export {};
 
 type InstallPromptEvent = Event & {
@@ -6,6 +8,7 @@ type InstallPromptEvent = Event & {
 };
 
 const controllerKeys = new Set<string>();
+let keyBindings = getKeyBindings();
 let installPrompt: InstallPromptEvent | null = null;
 let status: HTMLDivElement | null = null;
 let installButton: HTMLButtonElement | null = null;
@@ -47,17 +50,18 @@ function updateGamepad() {
   if (status) status.dataset.controller = 'on';
   const x = pad.axes[0] ?? 0;
   const y = pad.axes[1] ?? 0;
-  setControllerKey('ArrowLeft', axisPressed(x, -1) || Boolean(pad.buttons[14]?.pressed));
-  setControllerKey('ArrowRight', axisPressed(x, 1) || Boolean(pad.buttons[15]?.pressed));
-  setControllerKey('ArrowUp', axisPressed(y, -1) || Boolean(pad.buttons[12]?.pressed));
-  setControllerKey('ArrowDown', axisPressed(y, 1) || Boolean(pad.buttons[13]?.pressed));
+  setControllerKey(keyBindings.moveLeft, axisPressed(x, -1) || Boolean(pad.buttons[14]?.pressed));
+  setControllerKey(keyBindings.moveRight, axisPressed(x, 1) || Boolean(pad.buttons[15]?.pressed));
+  setControllerKey(keyBindings.moveUp, axisPressed(y, -1) || Boolean(pad.buttons[12]?.pressed));
+  setControllerKey(keyBindings.moveDown, axisPressed(y, 1) || Boolean(pad.buttons[13]?.pressed));
 
-  setControllerKey('KeyJ', Boolean(pad.buttons[0]?.pressed));
-  setControllerKey('KeyQ', Boolean(pad.buttons[1]?.pressed));
-  setControllerKey('KeyL', Boolean(pad.buttons[2]?.pressed));
-  setControllerKey('KeyE', Boolean(pad.buttons[3]?.pressed));
-  setControllerKey('ShiftLeft', Boolean(pad.buttons[4]?.pressed));
-  setControllerKey('KeyK', Boolean(pad.buttons[5]?.pressed));
+  setControllerKey(keyBindings.punch, Boolean(pad.buttons[0]?.pressed));
+  setControllerKey(keyBindings.dodge, Boolean(pad.buttons[1]?.pressed));
+  setControllerKey(keyBindings.grab, Boolean(pad.buttons[2]?.pressed));
+  setControllerKey(keyBindings.special, Boolean(pad.buttons[3]?.pressed));
+  setControllerKey(keyBindings.block, Boolean(pad.buttons[4]?.pressed));
+  setControllerKey(keyBindings.jump, Boolean(pad.buttons[5]?.pressed));
+  setControllerKey(keyBindings.kick, Boolean(pad.buttons[7]?.pressed));
 }
 
 function mountPlatformUi() {
@@ -98,6 +102,10 @@ window.addEventListener('gamepadconnected', () => {
 });
 window.addEventListener('gamepaddisconnected', releaseControllerKeys);
 window.addEventListener('blur', releaseControllerKeys);
+window.addEventListener('ninja-controls-updated', () => {
+  releaseControllerKeys();
+  keyBindings = getKeyBindings();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   mountPlatformUi();
