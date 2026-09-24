@@ -11,3 +11,7 @@
 .powerup-grid h3{color:#f3df9c;text-transform:uppercase}
 .powerup-grid p{color:#d5c6d6}
 .powerup-panel header button{border:3px solid #ad812d;border-radius:50%;background:#4e3260}
+
+.powerup-overlay{touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+@media(max-width:430px){.powerup-panel{width:92vw;padding-top:14px}.powerup-panel header{gap:10px}.powerup-panel h2{font-size:34px}.powerup-grid article{min-height:0;padding:15px}.powerup-grid article>div{grid-template-columns:1fr}.powerup-grid article>i{width:56px;height:56px}}
+@media(orientation:landscape) and (max-height:480px){.powerup-panel{padding-top:12px}.powerup-grid{grid-template-columns:repeat(3,1fr)}.powerup-grid article{min-height:210px;padding:12px}.powerup-grid article>i{width:48px;height:48px;font-size:22px}.powerup-grid h3{font-size:19px}.powerup-grid p{font-size:11px}}
