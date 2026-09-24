@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { CharacterDef } from '../characters';
 import { createCharacterModel } from '../characters/model';
 import { createGenericFighterModel } from '../../shared/three/minifigure-model';
+import { getKeyBindings, type KeyBindings } from '../controls';
 
 export interface HudState {
   health: number;
@@ -23,7 +24,8 @@ export interface GameCallbacks {
   onGameOver: (score: number, wave: number) => void;
 }
 
-type Action = 'attack' | 'jump' | 'grab' | 'special';
+type AttackAction = 'attack' | 'punch' | 'kick';
+type Action = AttackAction | 'jump' | 'grab' | 'special';
 type EnemyKind = 'melee' | 'heavy' | 'ranged' | 'boss';
 type ProjectileEffect = 'damage' | 'freeze';
 
@@ -106,6 +108,8 @@ export class TournamentGame {
   private keyboard = new Set<string>();
   private queuedActions = new Set<Action>();
   private bufferedAttackTime = 0;
+  private bufferedAttackAction: AttackAction = 'attack';
+  private keyBindings: KeyBindings = getKeyBindings();
   private combatMove: 'jab' | 'cross' | 'kick' | 'roundhouse' = 'jab';
   private combatMoveIndex = 0;
   private attackAnimationTime = 0;
@@ -171,6 +175,7 @@ export class TournamentGame {
     window.addEventListener('resize', this.resize);
     window.addEventListener('keydown', this.keyDown);
     window.addEventListener('keyup', this.keyUp);
+    window.addEventListener('ninja-controls-updated', this.refreshControls);
     this.resize();
     this.callbacks.onMessage('Tournament begins! Survive the waves.');
     this.emitHud();
@@ -187,8 +192,10 @@ export class TournamentGame {
   }
 
   action(action: Action) {
-    if (action === 'attack' && (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0 || this.frozenTime > 0)) {
+    const isAttack = action === 'attack' || action === 'punch' || action === 'kick';
+    if (isAttack && (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0 || this.frozenTime > 0)) {
       this.bufferedAttackTime = 0.55;
+      this.bufferedAttackAction = action;
       return;
     }
     this.queuedActions.add(action);
@@ -249,27 +256,31 @@ export class TournamentGame {
     window.removeEventListener('resize', this.resize);
     window.removeEventListener('keydown', this.keyDown);
     window.removeEventListener('keyup', this.keyUp);
+    window.removeEventListener('ninja-controls-updated', this.refreshControls);
     this.renderer.dispose();
     this.host.replaceChildren();
   }
 
+  private refreshControls = () => {
+    this.keyBindings = getKeyBindings();
+  };
+
   private keyDown = (event: KeyboardEvent) => {
-    if (['Space','KeyJ','KeyK','KeyL','KeyE','KeyQ','ShiftLeft','ShiftRight','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code)) {
-      event.preventDefault();
-    }
+    if (Object.values(this.keyBindings).includes(event.code)) event.preventDefault();
     this.keyboard.add(event.code);
     if (event.repeat) return;
-    if (event.code === 'Space' || event.code === 'KeyJ') this.action('attack');
-    if (event.code === 'KeyK') this.action('jump');
-    if (event.code === 'KeyL') this.action('grab');
-    if (event.code === 'KeyE') this.action('special');
-    if (event.code === 'KeyQ') this.dodge(this.input.x, this.input.y);
-    if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') this.input.block = true;
+    if (event.code === this.keyBindings.punch) this.action('punch');
+    if (event.code === this.keyBindings.kick) this.action('kick');
+    if (event.code === this.keyBindings.jump) this.action('jump');
+    if (event.code === this.keyBindings.grab) this.action('grab');
+    if (event.code === this.keyBindings.special) this.action('special');
+    if (event.code === this.keyBindings.dodge) this.dodge(this.input.x, this.input.y);
+    if (event.code === this.keyBindings.block) this.input.block = true;
   };
 
   private keyUp = (event: KeyboardEvent) => {
     this.keyboard.delete(event.code);
-    if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') this.input.block = false;
+    if (event.code === this.keyBindings.block) this.input.block = false;
   };
 
   private resize = () => {
@@ -357,10 +368,10 @@ export class TournamentGame {
   private updatePlayer(dt: number) {
     let x = this.input.x;
     let z = this.input.y;
-    if (this.keyboard.has('KeyA') || this.keyboard.has('ArrowLeft')) x -= 1;
-    if (this.keyboard.has('KeyD') || this.keyboard.has('ArrowRight')) x += 1;
-    if (this.keyboard.has('KeyW') || this.keyboard.has('ArrowUp')) z -= 1;
-    if (this.keyboard.has('KeyS') || this.keyboard.has('ArrowDown')) z += 1;
+    if (this.keyboard.has(this.keyBindings.moveLeft)) x -= 1;
+    if (this.keyboard.has(this.keyBindings.moveRight)) x += 1;
+    if (this.keyboard.has(this.keyBindings.moveUp)) z -= 1;
+    if (this.keyboard.has(this.keyBindings.moveDown)) z += 1;
 
     const move = new THREE.Vector2(x, z);
     if (move.lengthSq() > 1) move.normalize();
@@ -437,9 +448,15 @@ export class TournamentGame {
     (this.playerShadow.material as THREE.MeshBasicMaterial).opacity = clamp(0.3 - this.player.position.y * 0.05, 0.08, 0.3);
 
     if (this.frozenTime <= 0) {
-      if (this.queuedActions.has('attack') || (this.bufferedAttackTime > 0 && this.attackCooldown <= 0)) {
-        if (this.performAttack()) this.bufferedAttackTime = 0;
-      }
+      const queuedAttack: AttackAction | null = this.queuedActions.has('kick')
+        ? 'kick'
+        : this.queuedActions.has('punch')
+          ? 'punch'
+          : this.queuedActions.has('attack')
+            ? 'attack'
+            : null;
+      const requestedAttack = queuedAttack ?? (this.bufferedAttackTime > 0 && this.attackCooldown <= 0 ? this.bufferedAttackAction : null);
+      if (requestedAttack && this.performAttack(requestedAttack)) this.bufferedAttackTime = 0;
       if (this.queuedActions.has('jump')) this.performJump();
       if (this.queuedActions.has('grab')) this.performGrab();
       if (this.queuedActions.has('special')) this.performSpecial();
@@ -447,7 +464,7 @@ export class TournamentGame {
     this.queuedActions.clear();
   }
 
-  private performAttack() {
+  private performAttack(preferred: AttackAction = 'attack') {
     if (this.attackCooldown > 0 || this.spinTime > 0 || this.dodgeTime > 0) return false;
     if (!this.grounded) {
       this.jumpSlam = true;
@@ -465,8 +482,13 @@ export class TournamentGame {
       { name: 'kick' as const, duration: 0.36, damage: 1.18, range: 2.55, knockback: 4.8 },
       { name: 'roundhouse' as const, duration: 0.44, damage: 1.34, range: 2.72, knockback: 6.0 }
     ];
-    const move = moves[this.combatMoveIndex % moves.length];
-    this.combatMoveIndex = (this.combatMoveIndex + 1) % moves.length;
+    const sequence = preferred === 'punch'
+      ? moves.slice(0, 2)
+      : preferred === 'kick'
+        ? moves.slice(2)
+        : moves;
+    const move = sequence[this.combatMoveIndex % sequence.length];
+    this.combatMoveIndex = (this.combatMoveIndex + 1) % 4;
     this.combatMove = move.name;
     const styleSpeed = this.character.style === 'speed' ? 0.84 : this.character.style === 'heavy' ? 1.14 : 1;
     this.attackCooldown = move.duration * styleSpeed;
