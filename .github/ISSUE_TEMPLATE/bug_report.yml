@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible gameplay, UI, build, or compatibility problem
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve the project. Please do not include secrets or copyrighted ripped assets.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: "1. Open...\n2. Select...\n3. Press..."
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / device
+      placeholder: "Chrome 153, Windows 11 / Android 15"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console errors or screenshots
+      description: Remove tokens, personal data, or other secrets before posting.
