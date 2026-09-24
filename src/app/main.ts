@@ -9,6 +9,7 @@ import {
   findCharacter,
   getCharacterIdentity,
   getElementCombatTheme,
+  fighterPortraitDataUri,
   type CharacterDef
 } from '../features/characters';
 import {
@@ -50,6 +51,11 @@ interface DodgeController {
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
 const SAVE_CACHE_KEY = `${STORAGE_KEY}:cache`;
+const GAUNTLET_IDS = [
+  'kai-tournament', 'jay-tournament', 'cole-tournament', 'zane-techno',
+  'ash', 'karlof', 'paleman', 'skylor', 'shade', 'chamille', 'tox',
+  'griffin-turner', 'neuro', 'clouse', 'master-chen', 'garmadon-robes'
+] as const;
 
 function localDateKey() {
   const now = new Date();
@@ -124,6 +130,7 @@ let lastHudWave = 0;
 let lastHudEnemies = 0;
 let stageBannerTimer = 0;
 let freePlayMode = false;
+let gauntletMode = false;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function persist() {
@@ -172,6 +179,7 @@ function cleanupGame() {
 function showHome() {
   cleanupGame();
   freePlayMode = false;
+  gauntletMode = false;
   const selected = findCharacter(save.selected);
   const selectedIdentity = getCharacterIdentity(selected);
   const level = fighterLevel(selected.id);
@@ -185,7 +193,7 @@ function showHome() {
         <h1 class="classic-logo"><span>NINJA</span><strong>TOURNAMENT</strong><em>OF ELEMENTS</em></h1>
         <p class="subtitle">Enter Chen's Island arena, master your elemental fighter, survive the waves and unlock your True Potential.</p>
         <div class="selected-fighter">
-          <span class="fighter-dot" style="--fighter:#${selected.color.toString(16).padStart(6, '0')}"></span>
+          <span class="fighter-dot fighter-portrait-dot" style="--fighter:#${selected.color.toString(16).padStart(6, '0')}"><img src="${fighterPortraitDataUri(selected)}" alt="" /></span>
           <div>
             <small>SELECTED FIGHTER · LEVEL ${level}</small>
             <b class="fighter-primary-name">${selectedIdentity.name}</b>
@@ -195,6 +203,7 @@ function showHome() {
         </div>
         <div class="menu-actions">
           <button class="gold-button primary" id="play-btn">▶ ENTER TOURNAMENT</button>
+          <button class="gold-button gauntlet-button" id="gauntlet-btn">⚔ ELEMENTAL GAUNTLET · VERSUS PATH</button>
           <button class="gold-button" id="fighters-btn">◉ FIGHTERS (${ROSTER.length})</button>
           <button class="gold-button" id="rewards-btn">✦ DAILY DRAW & CHALLENGES ${save.daily.draws > 0 ? `(${save.daily.draws})` : ''}</button>
           <button class="gold-button" id="dojo-btn">◇ PLAY DOJO TUTORIAL</button>
@@ -212,6 +221,7 @@ function showHome() {
     </main>`;
 
   document.querySelector('#play-btn')?.addEventListener('click', startTournament);
+  document.querySelector('#gauntlet-btn')?.addEventListener('click', showGauntletPath);
   document.querySelector('#fighters-btn')?.addEventListener('click', showRoster);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
   document.querySelector('#dojo-btn')?.addEventListener('click', showDojo);
@@ -232,13 +242,13 @@ function showRoster() {
     const identity = getCharacterIdentity(fighter);
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
-        <button class="fighter-avatar preview-character-btn" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}"><span></span><i></i><small>3D</small></button>
+        <button class="fighter-avatar preview-character-btn" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}"><img src="${fighterPortraitDataUri(fighter)}" alt="" loading="lazy" /><small>3D VIEW</small></button>
         <div class="fighter-copy">
           <h3><span class="fighter-primary-name">${identity.name}</span> <small>LV ${progress.level}</small></h3>
           ${identity.variant ? `<span class="fighter-variant">${identity.variant}</span>` : ''}
           <p>${fighter.element} · ${fighter.style} · ${fighter.special.replace('-', ' ')}</p>
           <div class="stat-row"><span>SPD ${upgraded.speed.toFixed(1)}</span><span>DMG ${upgraded.damage}</span><span>♥ ${upgraded.maxHealth}</span></div>
-          ${unlocked ? `<div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'MAX POTENTIAL' : `${progress.current}/${progress.target} XP`}</em><small class="upgrade-copy">${nextUpgradeCopy(fighter.id)}</small>` : ''}
+          ${unlocked ? `<div class="potential-levels" aria-label="Potential level ${progress.level} of 5">${Array.from({ length: 5 }, (_, index) => `<i class="${index < progress.level ? 'active' : ''}"></i>`).join('')}</div><div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'TRUE POTENTIAL · LEVEL 5' : `LEVEL ${progress.level} · ${progress.current}/${progress.target} XP`}</em><small class="upgrade-copy">${nextUpgradeCopy(fighter.id)}</small>` : ''}
         </div>
         ${unlocked
           ? `<div class="fighter-card-actions"><button class="mini-button select-btn" data-select="${fighter.id}">${selected ? 'SELECTED' : 'SELECT'}</button><button class="mini-button upgrade-btn" data-upgrade="${fighter.id}" ${progress.level >= 5 || !canUpgrade ? 'disabled' : ''}>${progress.level >= 5 ? 'MAX LEVEL' : `UPGRADE ◉ ${formatStuds(upgradeCost)}`}</button></div>`
@@ -333,6 +343,40 @@ function showRoster() {
       showRoster();
     });
   });
+}
+
+function gauntletOpponents() {
+  return GAUNTLET_IDS
+    .map((id) => findCharacter(id))
+    .filter((fighter) => fighter.id !== save.selected);
+}
+
+function showGauntletPath() {
+  cleanupGame();
+  const selected = findCharacter(save.selected);
+  const opponents = gauntletOpponents();
+  app.innerHTML = `
+    <main class="panel-screen gauntlet-screen">
+      <header class="top-bar legacy-selection-bar"><button class="back-button" id="back-btn">‹</button><div><small>MASTER CHEN'S CHALLENGE ROUTE</small><h2>Elemental Gauntlet</h2></div><strong>${opponents.length} DUELS</strong></header>
+      <section class="gauntlet-intro">
+        <div><small>SECOND TOURNAMENT PATH</small><h3>Fight the Elemental Masters one by one</h3><p>This route is inspired by the original game's challenge and Elemental Master duel structure. Win every duel to clear the path. Your fighter keeps damage between rounds but recovers half a heart before the next challenger.</p></div>
+        <div class="gauntlet-selected"><img src="${fighterPortraitDataUri(selected)}" alt="" /><span><small>YOUR FIGHTER</small><b>${getCharacterIdentity(selected).name}</b><em>LEVEL ${fighterLevel(selected.id)}</em></span></div>
+      </section>
+      <section class="gauntlet-path" aria-label="Elemental gauntlet route">
+        ${opponents.map((fighter, index) => {
+          const identity = getCharacterIdentity(fighter);
+          return `<article class="gauntlet-node" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
+            <span class="gauntlet-stage">${index + 1}</span>
+            <img src="${fighterPortraitDataUri(fighter)}" alt="" loading="lazy" />
+            <div><small>DUEL ${index + 1}</small><b>${identity.name}</b><em>${identity.variant ?? fighter.element}</em></div>
+          </article>`;
+        }).join('')}
+      </section>
+      <div class="gauntlet-start-wrap"><button class="gold-button primary" id="start-gauntlet-btn">⚔ START ELEMENTAL GAUNTLET</button><small>Defeat all ${opponents.length} challengers · classic/overhead view available during combat</small></div>
+    </main>`;
+
+  document.querySelector('#back-btn')?.addEventListener('click', showHome);
+  document.querySelector('#start-gauntlet-btn')?.addEventListener('click', startGauntlet);
 }
 
 function showRewards() {
@@ -495,11 +539,19 @@ function updateDojoStep(step: DojoStep, title: string, copy: string, progress: n
 
 function startTournament() {
   freePlayMode = false;
+  gauntletMode = false;
   startGame();
 }
 
 function startFreePlay() {
   freePlayMode = true;
+  gauntletMode = false;
+  startGame();
+}
+
+function startGauntlet() {
+  freePlayMode = false;
+  gauntletMode = true;
   startGame();
 }
 
@@ -522,12 +574,10 @@ function startGame() {
       ? 'SPINJITZU'
       : baseFighter.special.replace('-', ' ').toUpperCase();
   app.innerHTML = `
-    <main class="game-screen ${freePlayMode ? 'freeplay-mode' : ''}">
+    <main class="game-screen ${freePlayMode ? 'freeplay-mode' : ''} ${gauntletMode ? 'gauntlet-mode' : ''}">
       <div id="game-host"></div>
       <div class="hud hud-left">
-        <div class="portrait-ring" style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}">
-          <span class="portrait-hood"></span><span class="portrait-face"></span><span class="portrait-eyes"></span>
-        </div>
+        <div class="portrait-ring" style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}"><img src="${fighterPortraitDataUri(baseFighter)}" alt="" /></div>
         <div class="player-hud-copy">
           <b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small>
           <div id="hearts" class="hearts"></div>
@@ -536,7 +586,7 @@ function startGame() {
       </div>
       <div class="hud hud-center legacy-score-plate">
         <i class="production-hud-mark" aria-hidden="true"></i>
-        <small>TOURNAMENT</small><b id="wave-label">WAVE 0</b><span id="enemy-label">GET READY</span>
+        <small>${gauntletMode ? 'ELEMENTAL GAUNTLET' : 'TOURNAMENT'}</small><b id="wave-label">${gauntletMode ? 'DUEL 0' : 'WAVE 0'}</b><span id="enemy-label">GET READY</span>
         <div id="boss-health" class="boss-health hidden"><span><i id="boss-health-fill"></i></span><em id="boss-health-copy"></em></div>
       </div>
       <div class="hud hud-right">
@@ -566,14 +616,15 @@ function startGame() {
   const game = new TournamentGame(host, fighter, {
     onHud: updateHud,
     onMessage: showArenaMessage,
-    onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id)
-  });
+    onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id),
+    onVictory: (runStuds, fights) => finalizeGauntletVictory(runStuds, fights, baseFighter.id)
+  }, gauntletMode ? { mode: 'duels', duelOpponents: gauntletOpponents() } : { mode: 'waves' });
   activeGame = game;
   game.setUnlimitedSpecial(freePlayMode);
   game.setCreationUltimateEnabled(freePlayMode);
   showStageBanner(
-    freePlayMode ? 'FREE PLAY MODE' : 'MASTER CHEN PRESENTS',
-    freePlayMode ? 'UNLIMITED SPINJITZU · TORNADO OF CREATION' : 'TOURNAMENT OF ELEMENTS'
+    gauntletMode ? 'CHALLENGE PATH' : freePlayMode ? 'FREE PLAY MODE' : 'MASTER CHEN PRESENTS',
+    gauntletMode ? 'ELEMENTAL GAUNTLET' : freePlayMode ? 'UNLIMITED SPINJITZU · TORNADO OF CREATION' : 'TOURNAMENT OF ELEMENTS'
   );
 
   wireJoystick(game);
@@ -646,7 +697,7 @@ function updateHud(state: HudState) {
   screen?.classList.toggle('low-health', healthRatio > 0 && healthRatio <= 0.5);
   screen?.classList.toggle('critical-health', healthRatio > 0 && healthRatio <= 0.25);
   if (combo) combo.textContent = `${state.combo} HIT COMBO`;
-  if (wave) wave.textContent = state.bossName ? `BOSS · ${state.bossName}` : `WAVE ${state.wave}`;
+  if (wave) wave.textContent = gauntletMode ? `DUEL ${state.wave}${state.bossName ? ` · ${state.bossName}` : ''}` : state.bossName ? `BOSS · ${state.bossName}` : `WAVE ${state.wave}`;
   if (enemies) enemies.textContent = `${state.enemies} ENEMIES`;
   if (bossHealth && bossHealthFill && bossHealthCopy) {
     const visible = Boolean(state.bossName && state.bossMaxHealth);
@@ -663,7 +714,7 @@ function updateHud(state: HudState) {
   document.querySelector('#special-btn')?.classList.toggle('ready', state.special >= 100);
 
   if (state.wave > 0 && state.wave !== lastHudWave) {
-    showStageBanner(state.bossName ? 'ELEMENTAL MASTER' : 'TOURNAMENT STAGE', state.bossName ? state.bossName : `WAVE ${state.wave}`);
+    showStageBanner(gauntletMode ? 'ELEMENTAL DUEL' : state.bossName ? 'ELEMENTAL MASTER' : 'TOURNAMENT STAGE', state.bossName ? state.bossName : `${gauntletMode ? 'DUEL' : 'WAVE'} ${state.wave}`);
     lastHudWave = state.wave;
   } else if (lastHudEnemies > 0 && state.enemies === 0 && state.wave > 0) {
     showStageBanner('STAGE COMPLETE', `WAVE ${state.wave} CLEARED`);
@@ -764,8 +815,43 @@ function finalizeRun(runStuds: number, wave: number, fighterId: string) {
       <p class="xp-award">+${formatStuds(xpEarned)} FIGHTER XP · LEVEL ${afterLevel}${afterLevel > beforeLevel ? ' · TRUE POTENTIAL RISING!' : ''}</p>
       <div class="menu-actions"><button class="gold-button primary" id="retry-btn">RETRY</button><button class="gold-button" id="rewards-btn">DAILY REWARDS</button><button class="gold-button" id="menu-btn">MAIN MENU</button></div>
     </section>`;
-  document.querySelector('#retry-btn')?.addEventListener('click', freePlayMode ? startFreePlay : startTournament);
+  document.querySelector('#retry-btn')?.addEventListener('click', gauntletMode ? startGauntlet : freePlayMode ? startFreePlay : startTournament);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
+  document.querySelector('#menu-btn')?.addEventListener('click', showHome);
+}
+
+function finalizeGauntletVictory(runStuds: number, fights: number, fighterId: string) {
+  const beforeLevel = fighterLevel(fighterId);
+  const victoryBonus = 5000 + fights * 250;
+  const earnedStuds = Math.floor(runStuds) + victoryBonus;
+  const xpEarned = 2200 + fights * 180;
+  save.bankStuds += earnedStuds;
+  save.bestWave = Math.max(save.bestWave, fights);
+  save.bestRun = Math.max(save.bestRun, earnedStuds);
+  save.totalRuns += 1;
+  save.fighterXp[fighterId] = (save.fighterXp[fighterId] ?? 0) + xpEarned;
+  save.daily.runs += 1;
+  save.daily.studs += earnedStuds;
+  save.daily.bestWave = Math.max(save.daily.bestWave, fights);
+  persist();
+  const afterLevel = fighterLevel(fighterId);
+
+  const overlay = document.querySelector<HTMLElement>('#game-over');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  overlay.innerHTML = `
+    <section class="legacy-result-card gauntlet-victory-card">
+      <small>CHALLENGE PATH COMPLETE</small>
+      <h2>GAUNTLET CLEARED</h2>
+      <div class="result-score-grid">
+        <span><small>DUELS WON</small><b>${fights}</b></span>
+        <span><small>VICTORY BONUS</small><b>◉ ${formatStuds(victoryBonus)}</b></span>
+      </div>
+      <p class="xp-award">◉ ${formatStuds(earnedStuds)} TOTAL · +${formatStuds(xpEarned)} FIGHTER XP · LEVEL ${afterLevel}${afterLevel > beforeLevel ? ' · TRUE POTENTIAL RISING!' : ''}</p>
+      <div class="menu-actions"><button class="gold-button primary" id="retry-btn">RUN GAUNTLET AGAIN</button><button class="gold-button" id="fighters-btn">FIGHTERS</button><button class="gold-button" id="menu-btn">MAIN MENU</button></div>
+    </section>`;
+  document.querySelector('#retry-btn')?.addEventListener('click', startGauntlet);
+  document.querySelector('#fighters-btn')?.addEventListener('click', showRoster);
   document.querySelector('#menu-btn')?.addEventListener('click', showHome);
 }
 
