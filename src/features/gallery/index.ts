@@ -1,7 +1,5 @@
 import { ROSTER, getCharacterIdentity } from '../characters';
 
-const SAVE_KEY = 'ninja-tournament-fan-remake-v1';
-
 function readUnlocked() {
   // This build intentionally exposes the complete playable collection.
   return new Set(ROSTER.map((fighter) => fighter.id));
