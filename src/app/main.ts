@@ -412,7 +412,7 @@ function showDojo() {
         <button class="action-button jump" data-dojo-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
         <button class="action-button block" id="dojo-block" aria-label="Block"><span class="legacy-icon">⬟</span></button>
         <button class="action-button grab" data-dojo-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
-        <button class="action-button punch" data-dojo-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
+        <button class="action-button attack punch" data-dojo-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
         <button class="action-button kick" data-dojo-action="kick" aria-label="Kick"><span class="legacy-icon">➤</span></button>
       </div>
       <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · SPINJITZU ${formatKeyLabel(keys.special)}</div>
@@ -532,7 +532,7 @@ function startGame() {
         <button class="action-button jump" data-action="jump" aria-label="Jump"><span class="legacy-icon">⬆</span></button>
         <button class="action-button block" id="block-btn" aria-label="Block"><span class="legacy-icon">⬟</span></button>
         <button class="action-button grab" data-action="grab" aria-label="Grab"><span class="legacy-icon">✊</span></button>
-        <button class="action-button punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
+        <button class="action-button attack punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">✦</span></button>
         <button class="action-button kick" data-action="kick" aria-label="Kick"><span class="legacy-icon">➤</span></button>
       </div>
       <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)}</div>
