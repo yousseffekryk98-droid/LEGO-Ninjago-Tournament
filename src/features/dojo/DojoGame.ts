@@ -51,6 +51,12 @@ export class DojoGame {
   private specialTime = 0;
   private specialTick = 0;
   private actionCooldown = 0;
+  private attackBufferTime = 0;
+  private attackAnimationTime = 0;
+  private attackAnimationDuration = 0.28;
+  private attackMove: 'jab' | 'cross' | 'kick' = 'jab';
+  private attackMoveIndex = 0;
+  private visualElapsed = 0;
   private dummyFlash = 0;
   private completeSent = false;
 
@@ -143,6 +149,9 @@ export class DojoGame {
   }
 
   private keyDown = (event: KeyboardEvent) => {
+    if (['Space','KeyJ','KeyK','KeyL','KeyE','KeyQ','ShiftLeft','ShiftRight','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.code)) {
+      event.preventDefault();
+    }
     this.simulationTick(MAX_ACTION_RECONCILE_SECONDS);
     this.keyboard.add(event.code);
     if (!event.repeat && TIMED_KEYS.has(event.code)) {
@@ -178,11 +187,14 @@ export class DojoGame {
   private simulationTick = (maxCatchup = MAX_CATCHUP_SECONDS) => {
     if (!this.running) return;
     const now = performance.now();
-    this.simulationDebt += Math.max(0, (now - this.lastSimulationAt) / 1000);
+    const elapsed = Math.max(0, (now - this.lastSimulationAt) / 1000);
     this.lastSimulationAt = now;
 
-    let remaining = Math.min(maxCatchup, this.simulationDebt);
-    this.simulationDebt -= remaining;
+    // Never keep an old catch-up backlog. A long WebGL/main-thread stall used to
+    // replay movement and tutorial input after the player had already released it.
+    this.simulationDebt = Math.min(maxCatchup, this.simulationDebt + elapsed);
+    let remaining = this.simulationDebt;
+    this.simulationDebt = 0;
     while (remaining > 0.0001) {
       const step = Math.min(FIXED_STEP, remaining);
       this.update(step);
@@ -197,7 +209,14 @@ export class DojoGame {
   };
 
   private update(dt: number) {
+    this.visualElapsed += dt;
     this.actionCooldown = Math.max(0, this.actionCooldown - dt);
+    this.attackBufferTime = Math.max(0, this.attackBufferTime - dt);
+    this.attackAnimationTime = Math.max(0, this.attackAnimationTime - dt);
+    if (this.attackBufferTime > 0 && this.actionCooldown <= 0 && this.specialTime <= 0) {
+      this.attackBufferTime = 0;
+      this.attack();
+    }
     this.dummyFlash = Math.max(0, this.dummyFlash - dt);
     this.markHeldIntegrated(dt);
     this.dummy.traverse((object) => {
@@ -248,6 +267,7 @@ export class DojoGame {
     this.shadow.position.x = this.player.position.x;
     this.shadow.position.z = this.player.position.z;
     this.shadow.scale.setScalar(Math.max(0.6, 1 - this.player.position.y * 0.07));
+    this.updatePlayerPose(move);
   }
 
   private markHeldIntegrated(dt: number) {
@@ -322,8 +342,23 @@ export class DojoGame {
   }
 
   private attack() {
-    if (this.actionCooldown > 0 || this.specialTime > 0) return;
-    this.actionCooldown = 0.28;
+    if (this.specialTime > 0) return;
+    if (this.actionCooldown > 0) {
+      this.attackBufferTime = 0.22;
+      return;
+    }
+
+    const moves = [
+      { name: 'jab' as const, duration: 0.26 },
+      { name: 'cross' as const, duration: 0.29 },
+      { name: 'kick' as const, duration: 0.38 }
+    ];
+    const move = moves[this.attackMoveIndex % moves.length];
+    this.attackMoveIndex = (this.attackMoveIndex + 1) % moves.length;
+    this.attackMove = move.name;
+    this.actionCooldown = move.duration;
+    this.attackAnimationDuration = move.duration;
+    this.attackAnimationTime = move.duration;
     const distance = this.player.position.distanceTo(this.dummy.position);
     if (distance <= 2.55) {
       this.flashDummy();
@@ -334,6 +369,73 @@ export class DojoGame {
         this.callbacks.onStep('attack', 'Attack', 'Move close to the training dummy and land three attacks.', Math.min(1, this.attackHits / 3));
         if (this.attackHits >= 3) this.advance();
       }
+    }
+  }
+
+  private updatePlayerPose(move: THREE.Vector2) {
+    const leftArm = this.player.getObjectByName('leftArm');
+    const rightArm = this.player.getObjectByName('rightArm');
+    const leftLeg = this.player.getObjectByName('leftLeg');
+    const rightLeg = this.player.getObjectByName('rightLeg');
+    const torso = this.player.getObjectByName('torso');
+
+    const moving = Math.min(1, move.length());
+    const walk = Math.sin(this.visualElapsed * 11) * 0.42 * moving;
+    const progress = this.attackAnimationTime > 0
+      ? THREE.MathUtils.clamp(1 - this.attackAnimationTime / this.attackAnimationDuration, 0, 1)
+      : 0;
+    const pulse = progress > 0 ? Math.sin(Math.PI * progress) : 0;
+
+    if (leftLeg && rightLeg) {
+      leftLeg.rotation.x = walk;
+      rightLeg.rotation.x = -walk;
+      leftLeg.rotation.z = 0;
+      rightLeg.rotation.z = 0;
+      if (!this.grounded) {
+        leftLeg.rotation.x = -0.28;
+        rightLeg.rotation.x = 0.34;
+      } else if (pulse > 0 && this.attackMove === 'kick') {
+        rightLeg.rotation.x = -1.35 * pulse;
+        rightLeg.rotation.z = 0.18 * pulse;
+        leftLeg.rotation.x = 0.16 * pulse;
+      }
+    }
+
+    if (leftArm && rightArm) {
+      leftArm.rotation.x = -walk * 0.8;
+      rightArm.rotation.x = walk * 0.8;
+      leftArm.rotation.z = -0.22;
+      rightArm.rotation.z = 0.22;
+
+      if (this.input.block) {
+        leftArm.rotation.x = -1.05;
+        rightArm.rotation.x = -1.05;
+        leftArm.rotation.z = -0.56;
+        rightArm.rotation.z = 0.56;
+      } else if (pulse > 0 && this.attackMove === 'jab') {
+        rightArm.rotation.x = -1.5 * pulse;
+        rightArm.rotation.z = 0.22 + 0.38 * pulse;
+        leftArm.rotation.x = -0.65 * pulse;
+        leftArm.rotation.z = -0.48;
+      } else if (pulse > 0 && this.attackMove === 'cross') {
+        leftArm.rotation.x = -1.5 * pulse;
+        leftArm.rotation.z = -0.22 - 0.38 * pulse;
+        rightArm.rotation.x = -0.62 * pulse;
+        rightArm.rotation.z = 0.48;
+      } else if (pulse > 0 && this.attackMove === 'kick') {
+        leftArm.rotation.x = -0.78 * pulse;
+        rightArm.rotation.x = -0.78 * pulse;
+        leftArm.rotation.z = -0.48;
+        rightArm.rotation.z = 0.48;
+      } else if (!this.grounded) {
+        leftArm.rotation.x = -0.7;
+        rightArm.rotation.x = -0.7;
+      }
+    }
+
+    if (torso) {
+      torso.rotation.y = this.attackMove === 'cross' ? pulse * 0.3 : pulse * -0.18;
+      torso.rotation.z = this.attackMove === 'kick' ? pulse * 0.1 : 0;
     }
   }
 
