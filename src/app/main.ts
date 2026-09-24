@@ -9,6 +9,8 @@ import {
   findCharacter,
   getCharacterIdentity,
   getElementCombatTheme,
+  getCachedCharacterPortrait,
+  renderCharacterPortraits,
   type CharacterDef
 } from '../features/characters';
 import {
@@ -233,7 +235,10 @@ function showRoster() {
     const identity = getCharacterIdentity(fighter);
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
-        <button class="fighter-avatar preview-character-btn" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}"><span></span><i></i><small>3D</small></button>
+        <button class="fighter-avatar preview-character-btn" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
+          ${getCachedCharacterPortrait(fighter.id) ? `<img class="fighter-avatar-render" src="${getCachedCharacterPortrait(fighter.id)}" alt="" aria-hidden="true" />` : ''}
+          <span class="fighter-avatar-fallback"></span><i class="fighter-avatar-body"></i><small>3D</small>
+        </button>
         <div class="fighter-copy">
           <h3><span class="fighter-primary-name">${identity.name}</span> <small>LV ${progress.level}</small></h3>
           ${identity.variant ? `<span class="fighter-variant">${identity.variant}</span>` : ''}
@@ -286,6 +291,28 @@ function showRoster() {
   };
 
   setPreview(upgradedCharacter(findCharacter(save.selected)));
+
+  void renderCharacterPortraits(ROSTER).then((cache) => {
+    if (!document.querySelector('.roster-grid')) return;
+    document.querySelectorAll<HTMLButtonElement>('.fighter-avatar[data-preview]').forEach((button) => {
+      const fighterId = button.dataset.preview;
+      if (!fighterId) return;
+      const source = cache.get(fighterId);
+      if (!source) return;
+      let image = button.querySelector<HTMLImageElement>('.fighter-avatar-render');
+      if (!image) {
+        image = document.createElement('img');
+        image.className = 'fighter-avatar-render';
+        image.alt = '';
+        image.setAttribute('aria-hidden', 'true');
+        button.prepend(image);
+      }
+      image.src = source;
+      button.classList.add('has-render');
+    });
+  }).catch(() => {
+    // The CSS minifigure fallback remains visible if WebGL portrait rendering is unavailable.
+  });
 
   document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach((button) => {
     button.addEventListener('click', () => {
