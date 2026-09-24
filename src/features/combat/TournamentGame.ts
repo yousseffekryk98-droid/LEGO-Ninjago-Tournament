@@ -1185,14 +1185,15 @@ export class TournamentGame {
     mesh.userData.duelOpponentId = opponent.id;
     this.scene.add(mesh);
 
-    const maxHp = 120 + opponent.maxHealth * 28 + index * 14;
+    const difficultyStep = Math.min(index, 20);
+    const maxHp = 120 + opponent.maxHealth * 28 + difficultyStep * 14;
     return {
       mesh,
       kind: 'boss',
       hp: maxHp,
       maxHp,
-      speed: clamp(opponent.speed * 0.48 + index * 0.015, 2.2, 3.8),
-      damage: clamp(0.5 + opponent.damage / 58 + index * 0.012, 0.62, 1.45),
+      speed: clamp(opponent.speed * 0.48 + difficultyStep * 0.015, 2.2, 3.8),
+      damage: clamp(0.5 + opponent.damage / 58 + difficultyStep * 0.012, 0.62, 1.45),
       attackCooldown: 0.75 + Math.random() * 0.35,
       specialCooldown: 3.7 + Math.random() * 1.7,
       hiddenTime: 0,
