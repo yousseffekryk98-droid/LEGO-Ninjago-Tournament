@@ -65,7 +65,7 @@ test('all fighters are open and free play starts with unlimited Spinjitzu', asyn
   await expect(page.locator('#game-host canvas')).toBeVisible();
   await expect(page.locator('#special-btn')).toHaveAttribute('aria-label', 'SPINJITZU ∞');
   await expect(page.locator('#special-btn')).toHaveClass(/ready/);
-  await expect(page.locator('#special-meter')).toHaveCSS('width', '100%');
+  await expect(page.locator('#special-meter')).toHaveAttribute('style', /width:\s*100%/);
 });
 
 test('banked money is mirrored into the recovery save cache', async ({ page }) => {
