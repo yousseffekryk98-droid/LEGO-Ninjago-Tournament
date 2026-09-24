@@ -229,12 +229,14 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 .meter { width:64px; height:7px; overflow:hidden; border-radius:999px; background:#1b1621; border:1px solid #9e7832; }
 .meter i { display:block; width:0; height:100%; background:linear-gradient(90deg,#633c84,#d7ad45,#fff1a0); transition:width .08s linear; }
 
-.action-cluster { position:absolute; z-index:6; right:max(18px,env(safe-area-inset-right)); bottom:max(24px,env(safe-area-inset-bottom)); width:154px; height:148px; }
+.action-cluster { position:absolute; z-index:6; right:max(18px,env(safe-area-inset-right)); bottom:max(24px,env(safe-area-inset-bottom)); width:190px; height:170px; }
 .action-button { position:absolute; width:60px; height:60px; border-radius:50%; border:3px solid #bb8e32; background:linear-gradient(#4d405b,#2e2736); box-shadow:inset 0 0 0 3px #5d4d6c,0 4px 10px #0009; color:#e7ded0; font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900; touch-action:none; }
-.action-button.attack { right:0; bottom:0; color:#ffdf78; }
-.action-button.grab { left:0; bottom:0; }
-.action-button.jump { right:0; top:0; }
-.action-button.block { left:0; top:0; }
+.action-button.attack { right:26px; bottom:0; color:#ffdf78; }
+.action-button.punch { right:26px; bottom:0; color:#ffdf78; }
+.action-button.kick { left:65px; top:0; color:#f2bb58; }
+.action-button.grab { left:26px; bottom:0; }
+.action-button.jump { right:0; top:54px; }
+.action-button.block { left:0; top:54px; }
 .action-button.held { background:linear-gradient(#a67a2b,#614219); color:#fff4b9; }
 
 .game-over { position:absolute; z-index:20; inset:0; display:grid; place-items:center; background:rgba(10,8,14,.75); backdrop-filter:blur(8px); }
@@ -663,4 +665,47 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   .dojo-coach{top:6px;width:min(52vw,480px);padding:6px 18px 8px}
   .dojo-coach h2{font-size:22px}.dojo-coach p{font-size:9px}
   .dojo-fighter-label{top:62px}
+}
+
+
+/* Custom controls + five-button combat layout */
+.keyboard-hint-bar{position:absolute;z-index:5;left:50%;bottom:max(8px,env(safe-area-inset-bottom));max-width:56vw;padding:5px 10px;transform:translateX(-50%);border:1px solid rgba(208,164,58,.52);border-radius:999px;background:rgba(18,13,24,.72);color:#e8d49a;font:800 9px 'Barlow Condensed',sans-serif;letter-spacing:.05em;text-align:center;text-shadow:0 2px 4px #000;pointer-events:none;white-space:nowrap}
+.action-button.punch .legacy-icon,.action-button.kick .legacy-icon{font-size:25px}
+
+/* Fighter selection responsive pass */
+@media(max-width:900px){
+  .roster-grid{grid-template-columns:repeat(auto-fit,minmax(245px,1fr));padding:14px}
+  .character-showcase{margin-inline:14px}
+}
+@media(max-width:600px){
+  .character-showcase{min-height:0;margin:10px;padding:10px;grid-template-columns:1fr}
+  .character-preview-stage{height:220px}
+  .character-preview-copy{gap:5px}
+  .character-preview-copy h3{font-size:34px}
+  .preview-help{margin-top:5px;font-size:10px}
+  .roster-toolbar{margin-top:10px}
+  .roster-grid{padding:10px;gap:9px}
+  .fighter-card{min-height:0;padding:10px;grid-template-columns:52px minmax(0,1fr)}
+  .fighter-avatar{width:50px;height:56px}
+  .fighter-copy h3{font-size:18px}
+  .fighter-copy p{font-size:10px;margin-bottom:6px}
+  .stat-row{flex-wrap:wrap}
+  .keyboard-hint-bar{display:none}
+  .action-cluster{right:max(8px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));transform:scale(.84);transform-origin:bottom right}
+}
+@media(max-width:390px){
+  .legacy-selection-bar{padding-inline:8px}
+  .legacy-selection-bar h2{font-size:20px}
+  .character-preview-stage{height:190px}
+  .fighter-card{grid-template-columns:46px minmax(0,1fr);gap:8px}
+  .fighter-avatar{width:44px;height:52px}
+  .fighter-primary-name{font-size:1em}
+}
+@media(orientation:landscape) and (max-height:520px){
+  .panel-screen:has(.legacy-selection-bar) .character-showcase{grid-template-columns:minmax(190px,34%) 1fr;min-height:190px;margin:8px auto;max-width:96vw;padding:8px}
+  .panel-screen:has(.legacy-selection-bar) .character-preview-stage{height:180px}
+  .panel-screen:has(.legacy-selection-bar) .preview-help{display:none}
+  .panel-screen:has(.legacy-selection-bar) .roster-toolbar{margin-top:6px}
+  .panel-screen:has(.legacy-selection-bar) .roster-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px}
+  .action-cluster{transform:scale(.72);transform-origin:bottom right;right:6px;bottom:5px}
 }
