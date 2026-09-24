@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#120d18"/>
+      <stop offset="0.55" stop-color="#2a1538"/>
+      <stop offset="1" stop-color="#0f1822"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g opacity=".22">
+    <circle cx="950" cy="180" r="170" fill="none" stroke="#e24a34" stroke-width="18"/>
+    <circle cx="950" cy="180" r="120" fill="none" stroke="#79c8ff" stroke-width="12"/>
+    <circle cx="975" cy="420" r="150" fill="none" stroke="#68d391" stroke-width="16"/>
+    <circle cx="975" cy="420" r="98" fill="none" stroke="#d6aa3f" stroke-width="10"/>
+  </g>
+  <text x="76" y="120" fill="#d6aa3f" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800">OPEN-SOURCE FAN REMAKE</text>
+  <text x="76" y="220" fill="#f8f4e8" font-family="Arial, Helvetica, sans-serif" font-size="74" font-weight="900">NINJA TOURNAMENT</text>
+  <text x="76" y="292" fill="#f8f4e8" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800">3D BROWSER GAME</text>
+  <text x="76" y="385" fill="#79c8ff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800">51 FIGHTERS • ELEMENTAL COMBAT • SPINJITZU</text>
+  <text x="76" y="438" fill="#68d391" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800">UPGRADES • CHALLENGES • TOUCH • CONTROLLER</text>
+  <rect x="76" y="495" width="560" height="64" rx="16" fill="#3a2448"/>
+  <text x="106" y="538" fill="#f7d97a" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="800">github.com/yousseffekryk98-droid/LEGO-Ninjago-Tournament</text>
+  <text x="76" y="600" fill="#b9aec2" font-family="Arial, Helvetica, sans-serif" font-size="22">Unofficial clean-room fan project • Contributors welcome</text>
+</svg>
