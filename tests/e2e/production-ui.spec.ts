@@ -83,3 +83,34 @@ test('banked money is mirrored into the recovery save cache', async ({ page }) =
   expect(snapshots.cache.bankStuds).toBe(snapshots.primary.bankStuds);
   expect(snapshots.cache.unlocked).toHaveLength(51);
 });
+
+
+test('keyboard controls can be rebound and persist', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /KEYBOARD CONTROLS/i }).click();
+  await expect(page.getByRole('heading', { name: 'Keyboard Controls' })).toBeVisible();
+
+  const punch = page.locator('[data-control-action="punch"]');
+  await expect(punch).toHaveText('J');
+  await punch.click();
+  await page.keyboard.press('f');
+  await expect(page.locator('[data-control-action="punch"]')).toHaveText('F');
+
+  await page.getByRole('button', { name: 'DONE' }).click();
+  await page.reload();
+  await page.getByRole('button', { name: /KEYBOARD CONTROLS/i }).click();
+  await expect(page.locator('[data-control-action="punch"]')).toHaveText('F');
+
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('ninja-tournament-controls-v1') ?? '{}'));
+  expect(saved.punch).toBe('KeyF');
+  expect(saved.kick).toBe('KeyI');
+});
+
+test('mobile arena exposes separate punch and kick controls', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
+  await expect(page.getByRole('button', { name: 'Punch' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Kick' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Grab' })).toBeVisible();
+});
