@@ -126,6 +126,7 @@ let lastHudWave = 0;
 let lastHudEnemies = 0;
 let stageBannerTimer = 0;
 let freePlayMode = false;
+let bossRushMode = false;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function persist() {
@@ -174,6 +175,7 @@ function cleanupGame() {
 function showHome() {
   cleanupGame();
   freePlayMode = false;
+  bossRushMode = false;
   const selected = findCharacter(save.selected);
   const selectedIdentity = getCharacterIdentity(selected);
   const level = fighterLevel(selected.id);
@@ -197,6 +199,7 @@ function showHome() {
         </div>
         <div class="menu-actions">
           <button class="gold-button primary" id="play-btn">▶ ENTER TOURNAMENT</button>
+          <button class="gold-button boss-rush-button" id="boss-rush-btn">⚔ ELEMENTAL MASTER GAUNTLET</button>
           <button class="gold-button" id="fighters-btn">◉ FIGHTERS (${ROSTER.length})</button>
           <button class="gold-button" id="rewards-btn">✦ DAILY DRAW & CHALLENGES ${save.daily.draws > 0 ? `(${save.daily.draws})` : ''}</button>
           <button class="gold-button" id="dojo-btn">◇ PLAY DOJO TUTORIAL</button>
@@ -215,6 +218,7 @@ function showHome() {
     </main>`;
 
   document.querySelector('#play-btn')?.addEventListener('click', startTournament);
+  document.querySelector('#boss-rush-btn')?.addEventListener('click', startBossRush);
   document.querySelector('#fighters-btn')?.addEventListener('click', showRoster);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
   document.querySelector('#dojo-btn')?.addEventListener('click', showDojo);
@@ -523,11 +527,19 @@ function updateDojoStep(step: DojoStep, title: string, copy: string, progress: n
 
 function startTournament() {
   freePlayMode = false;
+  bossRushMode = false;
+  startGame();
+}
+
+function startBossRush() {
+  freePlayMode = false;
+  bossRushMode = true;
   startGame();
 }
 
 function startFreePlay() {
   freePlayMode = true;
+  bossRushMode = false;
   startGame();
 }
 
@@ -550,7 +562,7 @@ function startGame() {
       ? 'SPINJITZU'
       : baseFighter.special.replace('-', ' ').toUpperCase();
   app.innerHTML = `
-    <main class="game-screen ${freePlayMode ? 'freeplay-mode' : ''}">
+    <main class="game-screen ${freePlayMode ? 'freeplay-mode' : ''} ${bossRushMode ? 'boss-rush-mode' : ''}">
       <div id="game-host"></div>
       <div class="hud hud-left">
         <div class="portrait-ring" style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}">
@@ -564,7 +576,7 @@ function startGame() {
       </div>
       <div class="hud hud-center legacy-score-plate">
         <i class="production-hud-mark" aria-hidden="true"></i>
-        <small>TOURNAMENT</small><b id="wave-label">WAVE 0</b><span id="enemy-label">GET READY</span>
+        <small>${bossRushMode ? 'ELEMENTAL MASTER GAUNTLET' : 'TOURNAMENT'}</small><b id="wave-label">${bossRushMode ? 'CHALLENGER 0' : 'WAVE 0'}</b><span id="enemy-label">GET READY</span>
         <div id="boss-health" class="boss-health hidden"><span><i id="boss-health-fill"></i></span><em id="boss-health-copy"></em></div>
       </div>
       <div class="hud hud-right">
@@ -594,13 +606,17 @@ function startGame() {
     onHud: updateHud,
     onMessage: showArenaMessage,
     onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id)
-  });
+  }, { bossRush: bossRushMode });
   activeGame = game;
   game.setUnlimitedSpecial(freePlayMode);
   game.setCreationUltimateEnabled(freePlayMode);
   showStageBanner(
-    freePlayMode ? 'FREE PLAY MODE' : 'MASTER CHEN PRESENTS',
-    freePlayMode ? 'UNLIMITED SPINJITZU · TORNADO OF CREATION' : 'TOURNAMENT OF ELEMENTS'
+    freePlayMode ? 'FREE PLAY MODE' : bossRushMode ? 'MASTER CHEN PRESENTS' : 'MASTER CHEN PRESENTS',
+    freePlayMode
+      ? 'UNLIMITED SPINJITZU · TORNADO OF CREATION'
+      : bossRushMode
+        ? 'ELEMENTAL MASTER GAUNTLET'
+        : 'TOURNAMENT OF ELEMENTS'
   );
 
   wireJoystick(game);
@@ -664,8 +680,10 @@ function updateHud(state: HudState) {
   screen?.classList.toggle('low-health', healthRatio > 0 && healthRatio <= 0.5);
   screen?.classList.toggle('critical-health', healthRatio > 0 && healthRatio <= 0.25);
   if (combo) combo.textContent = `${state.combo} HIT COMBO`;
-  if (wave) wave.textContent = state.bossName ? `BOSS · ${state.bossName}` : `WAVE ${state.wave}`;
-  if (enemies) enemies.textContent = `${state.enemies} ENEMIES`;
+  if (wave) wave.textContent = state.bossName
+    ? bossRushMode ? `CHALLENGER ${state.wave} · ${state.bossName}` : `BOSS · ${state.bossName}`
+    : `WAVE ${state.wave}`;
+  if (enemies) enemies.textContent = bossRushMode && state.bossName ? 'ELEMENTAL MASTER' : `${state.enemies} ENEMIES`;
   if (bossHealth && bossHealthFill && bossHealthCopy) {
     const visible = Boolean(state.bossName && state.bossMaxHealth);
     bossHealth.classList.toggle('hidden', !visible);
@@ -689,7 +707,10 @@ function updateHud(state: HudState) {
   document.querySelector('#special-btn')?.classList.toggle('ready', state.special >= 100);
 
   if (state.wave > 0 && state.wave !== lastHudWave) {
-    showStageBanner(state.bossName ? 'ELEMENTAL MASTER' : 'TOURNAMENT STAGE', state.bossName ? state.bossName : `WAVE ${state.wave}`);
+    showStageBanner(
+      state.bossName ? bossRushMode ? `CHALLENGER ${state.wave}` : 'ELEMENTAL MASTER' : 'TOURNAMENT STAGE',
+      state.bossName ? state.bossName : `WAVE ${state.wave}`
+    );
     lastHudWave = state.wave;
   } else if (lastHudEnemies > 0 && state.enemies === 0 && state.wave > 0) {
     showStageBanner('STAGE COMPLETE', `WAVE ${state.wave} CLEARED`);
