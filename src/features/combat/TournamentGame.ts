@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getElementCombatTheme, type CharacterDef } from '../characters';
+import { getElementCombatTheme, ROSTER, type CharacterDef } from '../characters';
 import { createCharacterModel } from '../characters/model';
 import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 import { getKeyBindings, type KeyBindings } from '../controls';
@@ -16,6 +16,9 @@ export interface HudState {
   bossName?: string;
   bossHealth?: number;
   bossMaxHealth?: number;
+  bossColor?: number;
+  bossAccent?: number;
+  bossElement?: string;
 }
 
 export interface GameCallbacks {
@@ -41,6 +44,10 @@ interface Enemy {
   hiddenTime: number;
   knock: THREE.Vector3;
   bossName?: string;
+  bossCharacter?: CharacterDef;
+  bossSpinTime: number;
+  bossSpinHitCooldown: number;
+  specialCount: number;
   hitFlash: number;
 }
 
@@ -835,6 +842,7 @@ export class TournamentGame {
     for (const enemy of [...this.enemies]) {
       enemy.attackCooldown -= dt;
       enemy.specialCooldown -= dt;
+      enemy.bossSpinHitCooldown = Math.max(0, enemy.bossSpinHitCooldown - dt);
       enemy.hitFlash -= dt;
       if (enemy.hiddenTime > 0) {
         enemy.hiddenTime -= dt;
@@ -855,6 +863,37 @@ export class TournamentGame {
         continue;
       }
       enemy.mesh.rotation.z *= Math.pow(0.02, dt);
+
+      if (enemy.bossSpinTime > 0) {
+        enemy.bossSpinTime = Math.max(0, enemy.bossSpinTime - dt);
+        const toPlayer = playerPos.clone().sub(enemy.mesh.position).setY(0);
+        const distance = toPlayer.length();
+        enemy.mesh.rotation.y += dt * 24;
+        if (distance > 0.45) enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * 1.42 * dt);
+
+        const aura = enemy.mesh.getObjectByName('bossSpinjitzuAura') as THREE.Group | undefined;
+        if (aura) {
+          aura.visible = true;
+          aura.rotation.y += dt * 11;
+          aura.rotation.z -= dt * 7;
+          const pulse = 1 + Math.sin(this.elapsed * 24) * 0.08;
+          aura.scale.setScalar(pulse);
+        }
+
+        if (distance < 2.7 && enemy.bossSpinHitCooldown <= 0) {
+          this.damagePlayer(enemy.damage * 0.82);
+          enemy.bossSpinHitCooldown = 0.3;
+        }
+
+        if (enemy.bossSpinTime <= 0 && aura) aura.visible = false;
+        const spinPlanar = new THREE.Vector2(enemy.mesh.position.x, enemy.mesh.position.z);
+        if (spinPlanar.length() > ARENA_RADIUS + 0.25) {
+          spinPlanar.setLength(ARENA_RADIUS + 0.25);
+          enemy.mesh.position.x = spinPlanar.x;
+          enemy.mesh.position.z = spinPlanar.y;
+        }
+        continue;
+      }
 
       if (enemy.kind === 'boss' && enemy.specialCooldown <= 0) {
         this.performBossSpecial(enemy);
@@ -901,8 +940,14 @@ export class TournamentGame {
 
   private performBossSpecial(enemy: Enemy) {
     const name = enemy.bossName ?? '';
+    enemy.specialCount += 1;
     enemy.specialCooldown = 5 + Math.random() * 2.5;
     const toPlayer = this.player.position.clone().sub(enemy.mesh.position).setY(0);
+
+    if (enemy.bossCharacter && (enemy.bossCharacter.special === 'spinjitzu' || enemy.specialCount % 3 === 0)) {
+      this.startBossSpinjitzu(enemy);
+      return;
+    }
 
     if (name === 'Karlof') {
       this.spawnShockwave(enemy.mesh.position, 7.6, 1.35);
@@ -957,7 +1002,49 @@ export class TournamentGame {
       return;
     }
 
-    this.spawnShockwave(enemy.mesh.position, 6.5, 1.0);
+    const element = enemy.bossCharacter?.element ?? '';
+    const theme = getElementCombatTheme(element);
+    if (/Ice/i.test(element) && toPlayer.lengthSq() > 0.01) {
+      this.spawnEnemyProjectile(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.05, 0)), toPlayer.normalize().multiplyScalar(8.5), enemy.damage * 0.72, theme.color, 'freeze');
+      this.callbacks.onMessage(`${name}: ICE BLAST!`);
+      return;
+    }
+    if (/Fire|Lightning|Energy|Poison|Amber|Mind|Light|Shadow/i.test(element) && toPlayer.lengthSq() > 0.01) {
+      for (let i = -1; i <= 1; i++) {
+        const direction = toPlayer.clone().normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), i * 0.18).multiplyScalar(8.8);
+        this.spawnEnemyProjectile(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.05, 0)), direction, enemy.damage * 0.62, theme.color);
+      }
+      this.callbacks.onMessage(`${name}: ${element.toUpperCase()} BURST!`);
+      return;
+    }
+
+    this.spawnShockwave(enemy.mesh.position, /Earth|Metal/i.test(element) ? 8.2 : 6.5, 1.0);
+    this.callbacks.onMessage(`${name}: ELEMENTAL STRIKE!`);
+  }
+
+  private startBossSpinjitzu(enemy: Enemy) {
+    enemy.bossSpinTime = 1.7;
+    enemy.bossSpinHitCooldown = 0;
+    enemy.specialCooldown = 5.5 + Math.random() * 2;
+    let aura = enemy.mesh.getObjectByName('bossSpinjitzuAura') as THREE.Group | undefined;
+    if (!aura) {
+      aura = new THREE.Group();
+      aura.name = 'bossSpinjitzuAura';
+      const color = enemy.bossCharacter?.color ?? 0xd7a841;
+      for (let i = 0; i < 4; i++) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(0.62 + i * 0.18, 0.055 + i * 0.012, 8, 34),
+          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.72 - i * 0.1, depthWrite: false })
+        );
+        ring.position.y = 0.7 + i * 0.32;
+        ring.rotation.x = Math.PI / 2 + i * 0.16;
+        ring.rotation.z = i * 0.65;
+        aura.add(ring);
+      }
+      enemy.mesh.add(aura);
+    }
+    aura.visible = true;
+    this.callbacks.onMessage(`${enemy.bossName ?? 'Elemental Master'}: SPINJITZU!`);
   }
 
   private setEnemyOpacity(enemy: Enemy, opacity: number) {
@@ -1010,20 +1097,17 @@ export class TournamentGame {
     this.wave += 1;
     const isBossWave = this.wave % 5 === 0;
     if (isBossWave) {
-      const bosses = ['Karlof', 'Ash', 'Mr. Pale', 'Neuro', 'Griffin Turner', 'Master Chen', 'Ronin'];
-      const bossName = bosses[Math.floor((this.wave / 5 - 1) % bosses.length)];
-      this.enemies.push(this.createEnemy('boss', 0, -7.2, bossName));
-      const supportCount = Math.min(4, Math.floor(this.wave / 5));
-      for (let i = 0; i < supportCount; i++) {
-        const angle = (i / Math.max(1, supportCount)) * Math.PI * 2;
-        this.enemies.push(this.createEnemy(i % 2 ? 'ranged' : 'melee', Math.cos(angle) * 7.8, Math.sin(angle) * 7.8));
-      }
-      this.callbacks.onMessage(`BOSS WAVE ${this.wave}: ${bossName}`);
+      // The legacy tournament repeatedly pits the player against named Elemental Masters.
+      // Cycle through the full playable roster so every fighter can eventually become a boss.
+      const bossPool = ROSTER.filter((fighter) => fighter.id !== this.character.id);
+      const bossCharacter = bossPool[Math.floor((this.wave / 5 - 1) % bossPool.length)];
+      this.enemies.push(this.createEnemy('boss', 0, -13.5, bossCharacter.name, bossCharacter));
+      this.callbacks.onMessage(`ELEMENTAL MASTER: ${bossCharacter.name}`);
     } else {
-      const count = Math.min(12, 2 + this.wave);
+      const count = Math.min(14, 2 + this.wave);
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2 + Math.random() * 0.35;
-        const radius = 7.3 + Math.random() * 2.4;
+        const radius = 11 + Math.random() * 13.5;
         const roll = Math.random();
         const kind: EnemyKind = this.wave < 2 ? 'melee' : roll > 0.78 ? 'ranged' : roll > 0.56 ? 'heavy' : 'melee';
         this.enemies.push(this.createEnemy(kind, Math.cos(angle) * radius, Math.sin(angle) * radius));
@@ -1033,33 +1117,66 @@ export class TournamentGame {
     this.emitHud();
   }
 
-  private createEnemy(kind: EnemyKind, x: number, z: number, bossName?: string): Enemy {
+  private createEnemy(kind: EnemyKind, x: number, z: number, bossName?: string, bossCharacter?: CharacterDef): Enemy {
     const colors: Record<EnemyKind, [number, number]> = {
-      melee: [0x4b262c, 0x899097],
-      heavy: [0x30353b, 0xb84d36],
-      ranged: [0x27365b, 0xd3aa58],
+      melee: [0x5a263d, 0xc59645],
+      heavy: [0x353a3f, 0xc4483b],
+      ranged: [0x283b6a, 0xd6bd4d],
       boss: [0x7a261f, 0xd7a841]
     };
-    const scale = kind === 'boss' ? 1.28 : kind === 'heavy' ? 1.12 : 1;
-    const enemyArchetype = kind === 'ranged' ? 'nindroid' : 'villain';
-    const enemyWeapon = kind === 'heavy' ? 'scythe' : kind === 'ranged' ? 'staff' : 'katana';
-    const mesh = createGenericFighterModel(colors[kind][0], colors[kind][1], scale, enemyArchetype, enemyWeapon);
+    const scale = kind === 'boss' ? 1.32 : kind === 'heavy' ? 1.14 : 1;
+    let mesh: THREE.Group;
+
+    if (kind === 'boss' && bossCharacter) {
+      mesh = createCharacterModel(bossCharacter, scale);
+      mesh.userData.bossElement = bossCharacter.element;
+    } else {
+      const family = this.wave % 4;
+      if (family === 0) {
+        const serpentPrimary = kind === 'ranged' ? 0x46663a : kind === 'heavy' ? 0x5e365f : 0x6c435f;
+        const serpentAccent = kind === 'ranged' ? 0xd6ca55 : 0xd0a34a;
+        mesh = createGenericFighterModel(
+          serpentPrimary,
+          serpentAccent,
+          scale,
+          'serpentine',
+          kind === 'ranged' ? 'staff' : kind === 'heavy' ? 'spear' : 'katana'
+        );
+        mesh.userData.enemyFamily = 'Serpentine';
+      } else if (family === 2) {
+        mesh = createGenericFighterModel(colors[kind][0], colors[kind][1], scale, 'nindroid', kind === 'heavy' ? 'scythe' : 'staff');
+        mesh.userData.enemyFamily = 'Nindroid';
+      } else if (family === 3) {
+        mesh = createGenericFighterModel(0xd9d6ca, kind === 'heavy' ? 0x5d6871 : 0x846e55, scale, 'skeleton', kind === 'heavy' ? 'scythe' : 'katana');
+        mesh.userData.enemyFamily = 'Skulkin';
+      } else {
+        const enemyWeapon = kind === 'heavy' ? 'scythe' : kind === 'ranged' ? 'staff' : 'katana';
+        mesh = createGenericFighterModel(colors[kind][0], colors[kind][1], scale, 'villain', enemyWeapon);
+        mesh.userData.enemyFamily = 'Cultist';
+      }
+    }
+
     mesh.position.set(x, 0, z);
     this.scene.add(mesh);
     const waveScale = 1 + this.wave * 0.065;
-    const maxHp = (kind === 'boss' ? 230 : kind === 'heavy' ? 75 : 42) * waveScale;
+    const bossBaseHp = bossCharacter ? 190 + bossCharacter.maxHealth * 20 : 230;
+    const maxHp = (kind === 'boss' ? bossBaseHp : kind === 'heavy' ? 75 : 42) * waveScale;
     return {
       mesh,
       kind,
       hp: maxHp,
       maxHp,
-      speed: (kind === 'heavy' ? 2.1 : kind === 'ranged' ? 2.6 : kind === 'boss' ? 2.45 : 3.0) + Math.min(1.2, this.wave * 0.035),
-      damage: kind === 'boss' ? 1.15 : kind === 'heavy' ? 0.82 : 0.58,
+      speed: (kind === 'heavy' ? 2.1 : kind === 'ranged' ? 2.6 : kind === 'boss' ? Math.max(2.5, (bossCharacter?.speed ?? 5.5) * 0.48) : 3.0) + Math.min(1.2, this.wave * 0.035),
+      damage: kind === 'boss' ? Math.max(1.05, (bossCharacter?.damage ?? 22) / 19) : kind === 'heavy' ? 0.82 : 0.58,
       attackCooldown: 0.5 + Math.random(),
-      specialCooldown: kind === 'boss' ? 3.8 + Math.random() * 2 : 999,
+      specialCooldown: kind === 'boss' ? 3.5 + Math.random() * 1.8 : 999,
       hiddenTime: 0,
       knock: new THREE.Vector3(),
       bossName,
+      bossCharacter,
+      bossSpinTime: 0,
+      bossSpinHitCooldown: 0,
+      specialCount: 0,
       hitFlash: 0
     };
   }
@@ -1585,7 +1702,7 @@ export class TournamentGame {
 
     const floor = new THREE.Mesh(
       new THREE.CylinderGeometry(31.5, 31.5, 0.55, 112),
-      new THREE.MeshStandardMaterial({ color: 0x4d535b, roughness: 0.93, metalness: 0.02 })
+      new THREE.MeshStandardMaterial({ color: 0x505b66, roughness: 0.9, metalness: 0.015 })
     );
     floor.receiveShadow = true;
     floor.position.y = -0.3;
@@ -1593,7 +1710,7 @@ export class TournamentGame {
 
     const inner = new THREE.Mesh(
       new THREE.CylinderGeometry(26.5, 26.5, 0.04, 112),
-      new THREE.MeshStandardMaterial({ color: 0x3f464d, roughness: 0.88 })
+      new THREE.MeshStandardMaterial({ color: 0x66727d, roughness: 0.86 })
     );
     inner.position.y = 0.01;
     inner.receiveShadow = true;
@@ -1601,12 +1718,13 @@ export class TournamentGame {
 
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(25.7, 26.4, 112),
-      new THREE.MeshBasicMaterial({ color: 0x242b31, transparent: true, opacity: 0.72, side: THREE.DoubleSide })
+      new THREE.MeshBasicMaterial({ color: 0x252a30, transparent: true, opacity: 0.9, side: THREE.DoubleSide })
     );
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.04;
     this.scene.add(ring);
     this.buildCenterSigil();
+    this.buildLegacyFloorMarkings();
 
     for (let i = 0; i < 24; i++) {
       const angle = (i / 24) * Math.PI * 2;
@@ -1662,6 +1780,73 @@ export class TournamentGame {
     }
 
     this.buildTournamentBackdrop();
+  }
+
+  private buildLegacyFloorMarkings() {
+    const darkInk = new THREE.MeshBasicMaterial({
+      color: 0x2d3339,
+      transparent: true,
+      opacity: 0.56,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const fineInk = new THREE.MeshBasicMaterial({
+      color: 0x343b42,
+      transparent: true,
+      opacity: 0.34,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    // Concentric tournament rings, based on the cool grey engraved floor seen in legacy footage.
+    for (const radius of [6.2, 9.8, 13.6, 17.8, 22.2, 25.0]) {
+      const circle = new THREE.Mesh(new THREE.RingGeometry(radius, radius + 0.12, 96), radius > 17 ? darkInk : fineInk);
+      circle.rotation.x = -Math.PI / 2;
+      circle.position.y = 0.078;
+      this.scene.add(circle);
+    }
+
+    // Stone slab seams clipped to the circular floor instead of a square grid.
+    const floorRadius = 25.7;
+    for (let step = -8; step <= 8; step++) {
+      const offset = step * 2.85;
+      const halfLength = Math.sqrt(Math.max(0, floorRadius * floorRadius - offset * offset));
+      const horizontal = new THREE.Mesh(new THREE.BoxGeometry(halfLength * 2, 0.014, 0.055), fineInk);
+      horizontal.position.set(0, 0.079, offset);
+      const vertical = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.014, halfLength * 2), fineInk);
+      vertical.position.set(offset, 0.079, 0);
+      this.scene.add(horizontal, vertical);
+    }
+
+    // Repeated dark glyph blocks create the strong maze-like ring language of Chen's arena.
+    for (let i = 0; i < 36; i++) {
+      const angle = (i / 36) * Math.PI * 2;
+      const radius = i % 2 === 0 ? 18.9 : 20.3;
+      const glyph = new THREE.Mesh(new THREE.BoxGeometry(i % 3 === 0 ? 1.65 : 1.05, 0.018, 0.26), darkInk);
+      glyph.position.set(Math.cos(angle) * radius, 0.084, Math.sin(angle) * radius);
+      glyph.rotation.y = -angle + (i % 4 === 0 ? 0.62 : -0.18);
+      this.scene.add(glyph);
+    }
+
+    // A clean-room paired serpent motif gives the centre a recognizable tournament emblem.
+    const makeSerpent = (mirror: number) => {
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(mirror * 1.2, 0.092, -4.5),
+        new THREE.Vector3(mirror * 3.4, 0.092, -2.4),
+        new THREE.Vector3(mirror * 2.1, 0.092, 0.1),
+        new THREE.Vector3(mirror * 4.3, 0.092, 2.3),
+        new THREE.Vector3(mirror * 1.6, 0.092, 4.7)
+      ]);
+      const serpent = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.12, 8, false), darkInk);
+      this.scene.add(serpent);
+      const head = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.95, 6), darkInk);
+      head.rotation.x = Math.PI / 2;
+      head.rotation.z = mirror > 0 ? -0.48 : 0.48;
+      head.position.set(mirror * 1.72, 0.1, 5.05);
+      this.scene.add(head);
+    };
+    makeSerpent(-1);
+    makeSerpent(1);
   }
 
   private buildTournamentBackdrop() {
@@ -1974,7 +2159,10 @@ export class TournamentGame {
       enemies: this.enemies.length,
       bossName: boss?.bossName,
       bossHealth: boss ? Math.max(0, boss.hp) : undefined,
-      bossMaxHealth: boss?.maxHp
+      bossMaxHealth: boss?.maxHp,
+      bossColor: boss?.bossCharacter?.color,
+      bossAccent: boss?.bossCharacter?.accent,
+      bossElement: boss?.bossCharacter?.element
     });
   }
 }
