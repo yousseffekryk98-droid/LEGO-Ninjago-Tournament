@@ -26,6 +26,7 @@ export interface GameCallbacks {
 
 type AttackAction = 'attack' | 'punch' | 'kick';
 type Action = AttackAction | 'jump' | 'grab' | 'special' | 'ultimate';
+type CameraMode = 'classic' | 'overhead';
 type EnemyKind = 'melee' | 'heavy' | 'ranged' | 'boss';
 type ProjectileEffect = 'damage' | 'freeze';
 
@@ -86,13 +87,17 @@ interface HealthPickup {
   age: number;
 }
 
-const ARENA_RADIUS = 14.4;
+const ARENA_RADIUS = 28;
+const ARENA_FLOOR_RADIUS = 31.5;
+const GONG_X = 28.8;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export class TournamentGame {
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+  private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 180);
   private cameraBasePosition = new THREE.Vector3(17.2, 14.8, 19.2);
+  private cameraMode: CameraMode = 'classic';
+  private cameraFocus = new THREE.Vector3(0, 0.85, 2.15);
   private cameraShakeTime = 0;
   private cameraShakeStrength = 0;
   private hitStopTime = 0;
@@ -176,10 +181,11 @@ export class TournamentGame {
     this.playerShadow.position.y = 0.015;
     this.scene.add(this.playerShadow);
 
-    // The original mobile game used a readable diagonal arena view rather than
-    // a near top-down camera. Keep the full ring visible while lowering the eye.
-    this.camera.position.copy(this.cameraBasePosition);
-    this.camera.lookAt(0, 0.85, -0.35);
+    // Keep the original diagonal view by default, but make it a true player-follow
+    // camera so the enlarged arena can extend well beyond a single screen.
+    this.cameraFocus.set(this.player.position.x, 0.85, this.player.position.z - 0.35);
+    this.camera.position.copy(this.cameraFocus).add(this.cameraBasePosition);
+    this.camera.lookAt(this.cameraFocus);
 
     window.addEventListener('resize', this.resize);
     window.addEventListener('keydown', this.keyDown);
@@ -216,6 +222,12 @@ export class TournamentGame {
       this.special = 100;
       this.emitHud();
     }
+  }
+
+  toggleCameraView() {
+    this.cameraMode = this.cameraMode === 'classic' ? 'overhead' : 'classic';
+    this.callbacks.onMessage(this.cameraMode === 'overhead' ? 'Overhead tactical view' : 'Classic tournament view');
+    return this.cameraMode;
   }
 
   dodge(x = 0, y = 0) {
@@ -287,6 +299,10 @@ export class TournamentGame {
     if (event.code === this.keyBindings.ultimate) this.action('ultimate');
     if (event.code === this.keyBindings.dodge) this.dodge(this.input.x, this.input.y);
     if (event.code === this.keyBindings.block) this.input.block = true;
+    if (event.code === 'KeyV') {
+      event.preventDefault();
+      this.toggleCameraView();
+    }
   };
 
   private keyUp = (event: KeyboardEvent) => {
@@ -315,7 +331,17 @@ export class TournamentGame {
   };
 
   private updateCameraFeedback(dt: number) {
-    this.camera.position.copy(this.cameraBasePosition);
+    const focusTarget = new THREE.Vector3(this.player.position.x, 0.85, this.player.position.z - 0.35);
+    const followAlpha = dt <= 0 ? 1 : 1 - Math.exp(-dt * 7.5);
+    this.cameraFocus.lerp(focusTarget, followAlpha);
+
+    const desired = this.cameraMode === 'overhead'
+      ? this.cameraFocus.clone().add(new THREE.Vector3(0.01, 31.5, 0.01))
+      : this.cameraFocus.clone().add(this.cameraBasePosition);
+    const cameraAlpha = dt <= 0 ? 1 : 1 - Math.exp(-dt * 8.5);
+    this.camera.position.lerp(desired, cameraAlpha);
+    this.camera.up.set(0, this.cameraMode === 'overhead' ? 0 : 1, this.cameraMode === 'overhead' ? -1 : 0);
+
     if (this.cameraShakeTime > 0) {
       this.cameraShakeTime = Math.max(0, this.cameraShakeTime - dt);
       const fade = Math.min(1, this.cameraShakeTime / 0.1);
@@ -326,7 +352,7 @@ export class TournamentGame {
     } else {
       this.cameraShakeStrength = 0;
     }
-    this.camera.lookAt(0, 0.85, -0.35);
+    this.camera.lookAt(this.cameraFocus);
   }
 
   private addImpactFeedback(strength: number, freezeSeconds: number) {
@@ -887,7 +913,7 @@ export class TournamentGame {
         enemy.mesh.position.z = planar.y;
       }
 
-      if (Math.abs(enemy.mesh.position.x) > 13.15 && Math.abs(enemy.mesh.position.z) < 1.95 && enemy.knock.length() > 1.5) {
+      if (Math.abs(enemy.mesh.position.x) > GONG_X - 1.05 && Math.abs(enemy.mesh.position.z) < 1.95 && enemy.knock.length() > 1.5) {
         this.defeatEnemy(enemy);
         this.callbacks.onMessage('GONG KO! Instant arena knockout.');
       }
@@ -994,11 +1020,20 @@ export class TournamentGame {
         }
         projectile.life = 0;
       }
-      if (projectile.life <= 0 || projectile.mesh.position.length() > 32) {
+      if (projectile.life <= 0 || projectile.mesh.position.length() > ARENA_FLOOR_RADIUS + 20) {
         this.scene.remove(projectile.mesh);
         this.projectiles.splice(this.projectiles.indexOf(projectile), 1);
       }
     }
+  }
+
+  private spawnPointNearPlayer(radius: number, angle = Math.random() * Math.PI * 2) {
+    const point = new THREE.Vector2(
+      this.player.position.x + Math.cos(angle) * radius,
+      this.player.position.z + Math.sin(angle) * radius
+    );
+    if (point.length() > ARENA_RADIUS - 1.4) point.setLength(ARENA_RADIUS - 1.4);
+    return point;
   }
 
   private spawnWave() {
@@ -1007,21 +1042,24 @@ export class TournamentGame {
     if (isBossWave) {
       const bosses = ['Karlof', 'Ash', 'Mr. Pale', 'Neuro', 'Griffin Turner', 'Master Chen', 'Ronin'];
       const bossName = bosses[Math.floor((this.wave / 5 - 1) % bosses.length)];
-      this.enemies.push(this.createEnemy('boss', 0, -7.2, bossName));
+      const bossPoint = this.spawnPointNearPlayer(10.5, Math.PI + Math.random() * 0.5 - 0.25);
+      this.enemies.push(this.createEnemy('boss', bossPoint.x, bossPoint.y, bossName));
       const supportCount = Math.min(4, Math.floor(this.wave / 5));
       for (let i = 0; i < supportCount; i++) {
         const angle = (i / Math.max(1, supportCount)) * Math.PI * 2;
-        this.enemies.push(this.createEnemy(i % 2 ? 'ranged' : 'melee', Math.cos(angle) * 7.8, Math.sin(angle) * 7.8));
+        const point = this.spawnPointNearPlayer(8.5 + (i % 2) * 1.1, angle);
+        this.enemies.push(this.createEnemy(i % 2 ? 'ranged' : 'melee', point.x, point.y));
       }
       this.callbacks.onMessage(`BOSS WAVE ${this.wave}: ${bossName}`);
     } else {
       const count = Math.min(12, 2 + this.wave);
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2 + Math.random() * 0.35;
-        const radius = 7.3 + Math.random() * 2.4;
+        const radius = 8.3 + Math.random() * 3.7;
+        const point = this.spawnPointNearPlayer(radius, angle);
         const roll = Math.random();
         const kind: EnemyKind = this.wave < 2 ? 'melee' : roll > 0.78 ? 'ranged' : roll > 0.56 ? 'heavy' : 'melee';
-        this.enemies.push(this.createEnemy(kind, Math.cos(angle) * radius, Math.sin(angle) * radius));
+        this.enemies.push(this.createEnemy(kind, point.x, point.y));
       }
       this.callbacks.onMessage(`Wave ${this.wave}`);
     }
@@ -1133,9 +1171,10 @@ export class TournamentGame {
     dragon.add(body, head, muzzle, tail, leftWing, rightWing, leftEye, rightEye);
     dragon.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
 
-    const startX = side * 17;
-    const endX = -side * 17;
-    dragon.position.set(startX, 5.4, -5.5 + Math.random() * 11);
+    const startX = side * (ARENA_FLOOR_RADIUS + 2.5);
+    const endX = -side * (ARENA_FLOOR_RADIUS + 2.5);
+    const flyZ = clamp(this.player.position.z + (Math.random() - 0.5) * 10, -ARENA_RADIUS + 3, ARENA_RADIUS - 3);
+    dragon.position.set(startX, 5.4, flyZ);
     dragon.rotation.y = side > 0 ? Math.PI : 0;
     this.scene.add(dragon);
     this.callbacks.onMessage('Titanium Dragon incoming — watch for the freezing ice ball!');
@@ -1193,9 +1232,10 @@ export class TournamentGame {
     }
     crusher.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
 
-    const startX = side * 17;
-    const stopX = side * 9.2;
-    crusher.position.set(startX, 0, -1.8 + Math.random() * 3.6);
+    const startX = side * (ARENA_FLOOR_RADIUS + 2.5);
+    const stopX = clamp(this.player.position.x + side * 8.5, -ARENA_RADIUS + 4, ARENA_RADIUS - 4);
+    const laneZ = clamp(this.player.position.z + (Math.random() - 0.5) * 5, -ARENA_RADIUS + 4, ARENA_RADIUS - 4);
+    crusher.position.set(startX, 0, laneZ);
     crusher.rotation.y = side > 0 ? 0 : Math.PI;
     this.scene.add(crusher);
     this.callbacks.onMessage('Condrai Crusher incoming — reinforcements on board!');
@@ -1216,8 +1256,8 @@ export class TournamentGame {
         deployed = true;
         const count = Math.min(3, 13 - this.enemies.length);
         for (let i = 0; i < count; i++) {
-          const spawnX = side * 8.5;
-          const spawnZ = crusher.position.z + (i - 1) * 1.5;
+          const spawnX = clamp(stopX - side * 0.9, -ARENA_RADIUS + 2, ARENA_RADIUS - 2);
+          const spawnZ = clamp(crusher.position.z + (i - 1) * 1.5, -ARENA_RADIUS + 2, ARENA_RADIUS - 2);
           const enemy = this.createEnemy(i === 2 ? 'heavy' : 'melee', spawnX, spawnZ);
           enemy.mesh.userData.faction = 'anacondrai';
           this.enemies.push(enemy);
@@ -1579,7 +1619,7 @@ export class TournamentGame {
     this.scene.add(rim);
 
     const floor = new THREE.Mesh(
-      new THREE.CylinderGeometry(15.8, 15.8, 0.55, 72),
+      new THREE.CylinderGeometry(ARENA_FLOOR_RADIUS, ARENA_FLOOR_RADIUS, 0.55, 96),
       new THREE.MeshStandardMaterial({ color: 0x4d535b, roughness: 0.93, metalness: 0.02 })
     );
     floor.receiveShadow = true;
@@ -1587,7 +1627,7 @@ export class TournamentGame {
     this.scene.add(floor);
 
     const inner = new THREE.Mesh(
-      new THREE.CylinderGeometry(11.4, 11.4, 0.04, 72),
+      new THREE.CylinderGeometry(27.2, 27.2, 0.04, 96),
       new THREE.MeshStandardMaterial({ color: 0x3f464d, roughness: 0.88 })
     );
     inner.position.y = 0.01;
@@ -1595,7 +1635,7 @@ export class TournamentGame {
     this.scene.add(inner);
 
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(10.9, 11.3, 72),
+      new THREE.RingGeometry(26.5, 27.05, 96),
       new THREE.MeshBasicMaterial({ color: 0x242b31, transparent: true, opacity: 0.72, side: THREE.DoubleSide })
     );
     ring.rotation.x = -Math.PI / 2;
@@ -1603,9 +1643,9 @@ export class TournamentGame {
     this.scene.add(ring);
     this.buildCenterSigil();
 
-    for (let i = 0; i < 24; i++) {
-      const angle = (i / 24) * Math.PI * 2;
-      const radius = i % 2 ? 12.7 : 13.8;
+    for (let i = 0; i < 40; i++) {
+      const angle = (i / 40) * Math.PI * 2;
+      const radius = i % 2 ? 28.6 : 30.0;
       const tile = new THREE.Mesh(
         new THREE.BoxGeometry(2.2, 0.08, 1.25),
         new THREE.MeshStandardMaterial({ color: i % 3 === 0 ? 0x555c63 : 0x474e55, roughness: 0.95 })
@@ -1617,11 +1657,11 @@ export class TournamentGame {
     }
 
     const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x34383e, roughness: 0.96 });
-    for (let i = 0; i < 18; i++) {
-      const angle = (i / 18) * Math.PI * 2;
+    for (let i = 0; i < 30; i++) {
+      const angle = (i / 30) * Math.PI * 2;
       if (Math.abs(Math.cos(angle)) > 0.9 && Math.abs(Math.sin(angle)) < 0.32) continue;
       const wall = new THREE.Mesh(new THREE.BoxGeometry(4.6, 2.5 + Math.random() * 1.1, 0.65), wallMaterial);
-      wall.position.set(Math.cos(angle) * 16.7, 1.1, Math.sin(angle) * 16.7);
+      wall.position.set(Math.cos(angle) * 32.45, 1.1, Math.sin(angle) * 32.45);
       wall.rotation.y = -angle + Math.PI / 2;
       wall.castShadow = true;
       wall.receiveShadow = true;
@@ -1629,17 +1669,17 @@ export class TournamentGame {
     }
 
     this.buildArenaGate();
-    this.buildSerpentPillar(-12.1, -11.5, 0.28);
-    this.buildSerpentPillar(12.1, -11.5, -0.28);
-    this.buildSerpentPillar(-12.8, 10.4, 0.2);
-    this.buildSerpentPillar(12.8, 10.4, -0.2);
+    this.buildSerpentPillar(-25.2, -22.2, 0.28);
+    this.buildSerpentPillar(25.2, -22.2, -0.28);
+    this.buildSerpentPillar(-26.0, 21.2, 0.2);
+    this.buildSerpentPillar(26.0, 21.2, -0.2);
 
-    this.buildGong(-14.2, 0);
-    this.buildGong(14.2, 0);
+    this.buildGong(-GONG_X, 0);
+    this.buildGong(GONG_X, 0);
     this.buildSpikeTrap(-4.4, -4.2);
     this.buildSpikeTrap(4.6, 4.0);
 
-    for (const z of [-8.4, 8.4]) {
+    for (const z of [-19.4, 19.4]) {
       const brazier = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x5b3420, roughness: 0.8 }));
       brazier.position.set(0, 0.4, z);
       brazier.castShadow = true;
@@ -1674,7 +1714,7 @@ export class TournamentGame {
           new THREE.BoxGeometry(4.8 + level * 0.55, 0.55 + level * 0.16, 8.0),
           level % 2 ? darkStone : stone
         );
-        stand.position.set(side * (17.2 + level * 0.5), 0.25 + level * 0.48, 0.6);
+        stand.position.set(side * (31.6 + level * 0.5), 0.25 + level * 0.48, 0.6);
         stand.castShadow = true;
         stand.receiveShadow = true;
         this.scene.add(stand);
@@ -1693,7 +1733,7 @@ export class TournamentGame {
           head.position.y = 0.72;
           spectator.add(body, head);
           spectator.position.set(
-            side * (15.7 + row * 0.68),
+            side * (30.0 + row * 0.68),
             1.0 + row * 0.55,
             -4.4 + i * 1.08 + (row % 2) * 0.35
           );
@@ -1705,10 +1745,10 @@ export class TournamentGame {
 
     // Tournament banners echo the red/purple/gold architecture in reference footage.
     const bannerPoints: Array<[number, number, number, THREE.Material]> = [
-      [-15.0, 4.0, -8.4, red],
-      [15.0, 4.0, -8.4, purple],
-      [-15.5, 4.1, 7.7, purple],
-      [15.5, 4.1, 7.7, red]
+      [-28.8, 4.0, -15.4, red],
+      [28.8, 4.0, -15.4, purple],
+      [-29.2, 4.1, 15.0, purple],
+      [29.2, 4.1, 15.0, red]
     ];
     for (const [x, y, z, bannerMaterial] of bannerPoints) {
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.8, 10), timber);
@@ -1728,18 +1768,18 @@ export class TournamentGame {
 
     // Chen's elevated viewing throne above the far gate.
     const balcony = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.42, 2.4), darkStone);
-    balcony.position.set(0, 6.55, -15.75);
+    balcony.position.set(0, 6.55, -30.25);
     balcony.castShadow = true;
     balcony.receiveShadow = true;
     this.scene.add(balcony);
     for (const x of [-2.25, -1.5, 1.5, 2.25]) {
       const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 1.0, 10), gold);
-      rail.position.set(x, 7.02, -14.92);
+      rail.position.set(x, 7.02, -29.42);
       rail.castShadow = true;
       this.scene.add(rail);
     }
     const throneBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.05, 0.38), red);
-    throneBack.position.set(0, 7.45, -15.62);
+    throneBack.position.set(0, 7.45, -30.12);
     const throneSeat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.35, 1.05), gold);
     throneSeat.position.set(0, 6.76, -15.28);
     const crest = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.09, 8, 28), gold);
@@ -1832,7 +1872,7 @@ export class TournamentGame {
     const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x661e24, roughness: 0.72, metalness: 0.06 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xb8872c, roughness: 0.38, metalness: 0.52 });
 
-    const z = -16.05;
+    const z = -30.55;
     const leftTower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 5.4, 2.1), stone);
     leftTower.position.set(-4.05, 2.4, z);
     const rightTower = leftTower.clone();
