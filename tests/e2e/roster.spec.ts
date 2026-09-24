@@ -47,6 +47,8 @@ test('every roster fighter builds a stable 3d model with animation parts', () =>
     expect(model.getObjectByName('head'), `${fighter.id} missing head`).toBeTruthy();
     expect(model.getObjectByName('leftArm'), `${fighter.id} missing leftArm`).toBeTruthy();
     expect(model.getObjectByName('rightArm'), `${fighter.id} missing rightArm`).toBeTruthy();
+    expect(model.getObjectByName('headStud'), `${fighter.id} missing LEGO head stud`).toBeTruthy();
+    expect(model.getObjectByName('weaponRig'), `${fighter.id} missing animated weapon rig`).toBeTruthy();
     expect(model.userData.modelProfile, `${fighter.id} missing model profile`).toBeTruthy();
   }
 

@@ -96,7 +96,7 @@ The arena remains original geometry, but now follows the footage's visual langua
 - prominent stud and multiplier HUD;
 - richer Spinjitzu light/debris/tornado presentation.
 
-Blender-exported GLB models can be introduced later through the existing character model factory, but this pass intentionally stays dependency-light and clean-room.
+Blender-exported GLB models can be introduced later through the existing character model factory, but the default runtime now uses clean-room LEGO-style procedural geometry with glossy plastic clearcoat, articulated arm rigs and C-hands, face printing, torso/belt printing, animated weapon rigs, head/neck studs, and heavier ZX/DX armor detail.
 
 ## Roster provenance
 
