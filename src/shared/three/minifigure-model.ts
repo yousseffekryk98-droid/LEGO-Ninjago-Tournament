@@ -87,6 +87,7 @@ function addArm(
   group: THREE.Group,
   name: 'leftArm' | 'rightArm',
   primary: THREE.Material,
+  accent: THREE.Material,
   hand: THREE.Material,
   side: -1 | 1
 ) {
@@ -111,6 +112,20 @@ function addArm(
   wrist.rotation.z = side * 0.2;
   wrist.castShadow = true;
   rig.add(wrist);
+
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.125, 0.15, 12), accent);
+  cuff.name = `${name}Cuff`;
+  cuff.position.set(side * 0.105, -0.53, 0.01);
+  cuff.rotation.z = side * 0.11;
+  cuff.castShadow = true;
+  rig.add(cuff);
+
+  const wrap = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.055, 0.22), accent);
+  wrap.name = `${name}Wrap`;
+  wrap.position.set(side * 0.085, -0.42, 0.015);
+  wrap.rotation.z = side * 0.08;
+  wrap.castShadow = true;
+  rig.add(wrap);
 
   const hook = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.043, 8, 20, Math.PI * 1.55), hand);
   hook.name = name === 'leftArm' ? 'leftHand' : 'rightHand';
@@ -242,8 +257,19 @@ function addExtraArms(group: THREE.Group, primary: THREE.Material, hand: THREE.M
 function addHeadgear(group: THREE.Group, profile: FighterModelProfile, primary: THREE.Material, accent: THREE.Material) {
   if (profile.hood) {
     addMesh(group, 'hoodTop', new THREE.CylinderGeometry(0.43, 0.39, 0.34, 20), primary, [0, 2.3, -0.005]);
+    const crown = addMesh(
+      group,
+      'hoodCrown',
+      new THREE.SphereGeometry(0.43, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
+      primary,
+      [0, 2.38, -0.005]
+    );
+    crown.scale.y = 0.72;
     addMesh(group, 'hoodBack', new THREE.BoxGeometry(0.72, 0.46, 0.18), primary, [0, 2.1, -0.25]);
     addMesh(group, 'hoodBrow', new THREE.BoxGeometry(0.68, 0.11, 0.12), primary, [0, 2.18, 0.3]);
+    addMesh(group, 'hoodCheekLeft', new THREE.BoxGeometry(0.16, 0.3, 0.16), primary, [-0.31, 2.03, 0.18], [0, 0, -0.12]);
+    addMesh(group, 'hoodCheekRight', new THREE.BoxGeometry(0.16, 0.3, 0.16), primary, [0.31, 2.03, 0.18], [0, 0, 0.12]);
+    addMesh(group, 'hoodTrim', new THREE.BoxGeometry(0.5, 0.045, 0.035), accent, [0, 2.205, 0.355]);
     addMesh(group, 'hoodTieLeft', new THREE.BoxGeometry(0.12, 0.38, 0.09), primary, [-0.12, 1.93, -0.36], [0.18, 0, -0.22]);
     addMesh(group, 'hoodTieRight', new THREE.BoxGeometry(0.12, 0.32, 0.09), primary, [0.12, 1.96, -0.36], [-0.18, 0, 0.22]);
   }
@@ -339,13 +365,17 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
     addMesh(group, 'rightLeg', new THREE.BoxGeometry(0.32, 0.72, 0.42), primary, [0.23, 0.45, 0]);
     addMesh(group, 'leftFoot', new THREE.BoxGeometry(0.34, 0.18, 0.52), primary, [-0.23, 0.12, 0.05]);
     addMesh(group, 'rightFoot', new THREE.BoxGeometry(0.34, 0.18, 0.52), primary, [0.23, 0.12, 0.05]);
+    addMesh(group, 'leftBootSole', new THREE.BoxGeometry(0.35, 0.055, 0.54), dark, [-0.23, 0.035, 0.06]);
+    addMesh(group, 'rightBootSole', new THREE.BoxGeometry(0.35, 0.055, 0.54), dark, [0.23, 0.035, 0.06]);
+    addMesh(group, 'leftKneeWrap', new THREE.BoxGeometry(0.25, 0.07, 0.035), accent, [-0.23, 0.56, 0.225], [0, 0, -0.05]);
+    addMesh(group, 'rightKneeWrap', new THREE.BoxGeometry(0.25, 0.07, 0.035), accent, [0.23, 0.56, 0.225], [0, 0, 0.05]);
     addMesh(group, 'hips', new THREE.BoxGeometry(0.76, 0.2, 0.44), accent, [0, 0.79, 0]);
   } else {
     addSerpentineTail(group, primary, accent);
   }
 
-  addArm(group, 'leftArm', primary, skin, -1);
-  addArm(group, 'rightArm', primary, skin, 1);
+  addArm(group, 'leftArm', primary, accent, skin, -1);
+  addArm(group, 'rightArm', primary, accent, skin, 1);
   addMesh(group, 'leftShoulderStud', new THREE.CylinderGeometry(0.15, 0.15, 0.18, 12), primary, [-0.5, 1.58, 0], [0, 0, Math.PI / 2]);
   addMesh(group, 'rightShoulderStud', new THREE.CylinderGeometry(0.15, 0.15, 0.18, 12), primary, [0.5, 1.58, 0], [0, 0, Math.PI / 2]);
 
@@ -367,6 +397,7 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
   if (profile.hood) {
     addMesh(group, 'mask', new THREE.BoxGeometry(0.72, 0.24, 0.53), primary, [0, 2.0, 0.01]);
     addMesh(group, 'maskFold', new THREE.BoxGeometry(0.54, 0.055, 0.04), accent, [0, 1.96, 0.295], [0, 0, -0.05]);
+    addMesh(group, 'maskLowerFold', new THREE.BoxGeometry(0.46, 0.04, 0.035), dark, [0, 1.91, 0.292], [0, 0, 0.04]);
     addMesh(group, 'eyeBand', new THREE.BoxGeometry(0.73, 0.12, 0.54), dark, [0, 2.1, 0.01]);
   }
 
