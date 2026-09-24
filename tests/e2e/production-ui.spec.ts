@@ -204,3 +204,27 @@ test('selected fighter element appears on the kick action', async ({ page }) => 
   await expect(kick).toContainText('🔥');
   await expect(kick).toContainText('Fire');
 });
+
+
+test('elemental master gauntlet starts with a roster fighter boss', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /ELEMENTAL MASTER GAUNTLET/i }).click();
+
+  await expect(page.locator('#game-host canvas')).toBeVisible();
+  await expect(page.locator('.game-screen')).toHaveClass(/boss-rush-mode/);
+  await expect(page.locator('#wave-label')).toContainText('CHALLENGER 1', { timeout: 6000 });
+  await expect(page.locator('#enemy-label')).toHaveText('ELEMENTAL MASTER');
+  await expect(page.locator('#boss-portrait')).toBeVisible();
+  await expect(page.locator('#boss-portrait-name')).not.toHaveText('ELEMENTAL MASTER');
+  await expect(page.locator('#boss-health')).toBeVisible();
+});
+
+test('fighter cards upgrade from CSS fallbacks to rendered 3D portraits when WebGL is available', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /FIGHTERS/i }).click();
+  await expect(page.locator('.fighter-card')).toHaveCount(51);
+
+  const firstPortrait = page.locator('.fighter-avatar-render').first();
+  await expect(firstPortrait).toBeAttached({ timeout: 6000 });
+  await expect(firstPortrait).toHaveAttribute('src', /^data:image\/png;base64,/);
+});
