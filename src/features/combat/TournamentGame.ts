@@ -139,8 +139,8 @@ export class TournamentGame {
     this.renderer.toneMappingExposure = 1.08;
     this.host.appendChild(this.renderer.domElement);
 
-    this.scene.background = new THREE.Color(0x151520);
-    this.scene.fog = new THREE.FogExp2(0x151520, 0.024);
+    this.scene.background = new THREE.Color(0x251a22);
+    this.scene.fog = new THREE.FogExp2(0x251a22, 0.019);
     this.buildArena();
 
     this.player = createCharacterModel(character, 1);
@@ -153,8 +153,10 @@ export class TournamentGame {
     this.playerShadow.position.y = 0.015;
     this.scene.add(this.playerShadow);
 
-    this.camera.position.set(12.5, 15.5, 12.5);
-    this.camera.lookAt(0, 0.7, 0);
+    // The original mobile game used a readable diagonal arena view rather than
+    // a near top-down camera. Keep the full ring visible while lowering the eye.
+    this.camera.position.set(13.4, 12.4, 15.2);
+    this.camera.lookAt(0, 0.85, -0.35);
 
     window.addEventListener('resize', this.resize);
     window.addEventListener('keydown', this.keyDown);
@@ -1190,6 +1192,121 @@ export class TournamentGame {
       const flame = new THREE.PointLight(0xff7a2d, 4.8, 8.5, 2);
       flame.position.set(0, 1.5, z);
       this.scene.add(flame);
+    }
+
+    this.buildTournamentBackdrop();
+  }
+
+  private buildTournamentBackdrop() {
+    const stone = new THREE.MeshStandardMaterial({ color: 0x353238, roughness: 0.96 });
+    const darkStone = new THREE.MeshStandardMaterial({ color: 0x242328, roughness: 0.98 });
+    const timber = new THREE.MeshStandardMaterial({ color: 0x4b2a20, roughness: 0.86 });
+    const red = new THREE.MeshStandardMaterial({ color: 0x78252e, roughness: 0.72 });
+    const purple = new THREE.MeshStandardMaterial({ color: 0x563365, roughness: 0.76 });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xb8892e, roughness: 0.38, metalness: 0.48 });
+
+    // Low stepped spectator terraces outside the playable ring.
+    for (const side of [-1, 1] as const) {
+      for (let level = 0; level < 3; level++) {
+        const stand = new THREE.Mesh(
+          new THREE.BoxGeometry(4.8 + level * 0.55, 0.55 + level * 0.16, 8.0),
+          level % 2 ? darkStone : stone
+        );
+        stand.position.set(side * (14.1 + level * 0.45), 0.25 + level * 0.48, 0.6);
+        stand.castShadow = true;
+        stand.receiveShadow = true;
+        this.scene.add(stand);
+      }
+    }
+
+    // Abstract minifigure-sized crowd silhouettes: cheap geometry, strong depth.
+    const crowdMaterial = new THREE.MeshStandardMaterial({ color: 0x18171b, roughness: 1 });
+    for (const side of [-1, 1] as const) {
+      for (let row = 0; row < 3; row++) {
+        for (let i = 0; i < 9; i++) {
+          const spectator = new THREE.Group();
+          const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.48, 0.26), crowdMaterial);
+          body.position.y = 0.37;
+          const head = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.22, 10), crowdMaterial);
+          head.position.y = 0.72;
+          spectator.add(body, head);
+          spectator.position.set(
+            side * (12.5 + row * 0.62),
+            1.0 + row * 0.55,
+            -4.4 + i * 1.08 + (row % 2) * 0.35
+          );
+          spectator.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+          this.scene.add(spectator);
+        }
+      }
+    }
+
+    // Tournament banners echo the red/purple/gold architecture in reference footage.
+    const bannerPoints: Array<[number, number, number, THREE.Material]> = [
+      [-11.7, 4.0, -6.4, red],
+      [11.7, 4.0, -6.4, purple],
+      [-12.2, 4.1, 5.8, purple],
+      [12.2, 4.1, 5.8, red]
+    ];
+    for (const [x, y, z, bannerMaterial] of bannerPoints) {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.8, 10), timber);
+      pole.position.set(x, y - 0.2, z);
+      const banner = new THREE.Mesh(new THREE.BoxGeometry(1.35, 2.8, 0.08), bannerMaterial);
+      banner.position.set(x, y, z);
+      const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.65, 10), gold);
+      topBar.rotation.z = Math.PI / 2;
+      topBar.position.set(x, y + 1.45, z);
+      const medallion = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.065, 8, 24), gold);
+      medallion.position.set(x, y + 0.25, z + 0.08);
+      for (const object of [pole, banner, topBar, medallion]) {
+        object.castShadow = true;
+        this.scene.add(object);
+      }
+    }
+
+    // Chen's elevated viewing throne above the far gate.
+    const balcony = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.42, 2.4), darkStone);
+    balcony.position.set(0, 6.55, -12.25);
+    balcony.castShadow = true;
+    balcony.receiveShadow = true;
+    this.scene.add(balcony);
+    for (const x of [-2.25, -1.5, 1.5, 2.25]) {
+      const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 1.0, 10), gold);
+      rail.position.set(x, 7.02, -11.42);
+      rail.castShadow = true;
+      this.scene.add(rail);
+    }
+    const throneBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.05, 0.38), red);
+    throneBack.position.set(0, 7.45, -12.12);
+    const throneSeat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.35, 1.05), gold);
+    throneSeat.position.set(0, 6.76, -11.78);
+    const crest = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.09, 8, 28), gold);
+    crest.position.set(0, 8.08, -11.88);
+    for (const object of [throneBack, throneSeat, crest]) {
+      object.castShadow = true;
+      this.scene.add(object);
+    }
+
+    // More readable stone slab seams across the arena, without textures.
+    const seam = new THREE.MeshBasicMaterial({
+      color: 0x25282d,
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false
+    });
+    for (let ringIndex = 0; ringIndex < 4; ringIndex++) {
+      const radius = 5.8 + ringIndex * 1.55;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(radius, radius + 0.055, 72), seam);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.072;
+      this.scene.add(ring);
+    }
+    for (let i = 0; i < 18; i++) {
+      const angle = (i / 18) * Math.PI * 2;
+      const seamBar = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.018, 5.0), seam);
+      seamBar.position.set(Math.cos(angle) * 7.6, 0.074, Math.sin(angle) * 7.6);
+      seamBar.rotation.y = -angle;
+      this.scene.add(seamBar);
     }
   }
 

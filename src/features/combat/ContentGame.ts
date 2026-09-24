@@ -36,6 +36,12 @@ interface RuntimeInternals {
   special: number;
   wave: number;
   elapsed: number;
+  attackCooldown: number;
+  input: { x: number; y: number; block: boolean };
+  grounded: boolean;
+  jumpVelocity: number;
+  dodgeTime: number;
+  spinTime: number;
   getMultiplier: () => number;
   emitHud: () => void;
   hitEnemy: (enemy: RuntimeEnemy, damage: number, knockback: number, force?: boolean) => void;
@@ -104,9 +110,12 @@ export class TournamentGame extends StableContentGame {
   private missiles: JetMissile[] = [];
   private nextMissileRunAt = 23 + Math.random() * 8;
   private playerAura: THREE.Mesh | null = null;
+  private lastPlayerPosition = new THREE.Vector3();
+  private visualMoveAmount = 0;
 
   constructor(host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks) {
     super(host, character, callbacks);
+    this.lastPlayerPosition.copy(this.productionRuntime().player.position).setY(0);
     this.spawnTrainingProps();
     this.createPlayerAura();
     this.productionLoop();
@@ -194,15 +203,70 @@ export class TournamentGame extends StableContentGame {
       this.playerAura.rotation.z += 0.008 + charge * 0.02;
     }
 
-    // Procedural minifigure motion: subtle arm/torso movement without imported
-    // animation assets. The base fighter is intentionally block-built, so these
-    // rotations remain safe across every clean-room character variant.
+    const planar = new THREE.Vector3(state.player.position.x, 0, state.player.position.z);
+    const moved = planar.distanceTo(this.lastPlayerPosition);
+    this.lastPlayerPosition.copy(planar);
+    this.visualMoveAmount = THREE.MathUtils.lerp(this.visualMoveAmount, Math.min(1, moved * 28), 0.2);
+
     const leftArm = state.player.getObjectByName('leftArm');
     const rightArm = state.player.getObjectByName('rightArm');
+    const leftLeg = state.player.getObjectByName('leftLeg');
+    const rightLeg = state.player.getObjectByName('rightLeg');
+    const torso = state.player.getObjectByName('torso');
+    const head = state.player.getObjectByName('head');
+    const weaponRig = state.player.getObjectByName('weaponRig');
+
+    const runSwing = Math.sin(state.elapsed * 11) * 0.48 * this.visualMoveAmount;
+    const attackPulse = state.attackCooldown > 0
+      ? Math.sin(Math.min(Math.PI, Math.max(0, (0.55 - state.attackCooldown) * 8.2)))
+      : 0;
+
+    if (leftLeg && rightLeg) {
+      leftLeg.rotation.x = runSwing;
+      rightLeg.rotation.x = -runSwing;
+      if (!state.grounded) {
+        leftLeg.rotation.x = -0.28;
+        rightLeg.rotation.x = 0.34;
+      }
+    }
+
     if (leftArm && rightArm) {
-      const swing = Math.sin(state.elapsed * 8) * 0.12;
-      leftArm.rotation.x = swing;
-      rightArm.rotation.x = -swing;
+      leftArm.rotation.x = -runSwing * 0.82;
+      rightArm.rotation.x = runSwing * 0.82;
+      leftArm.rotation.z = -0.22;
+      rightArm.rotation.z = 0.22;
+
+      if (state.input.block) {
+        leftArm.rotation.x = -1.05;
+        rightArm.rotation.x = -1.05;
+        leftArm.rotation.z = -0.58;
+        rightArm.rotation.z = 0.58;
+      } else if (attackPulse > 0.01) {
+        rightArm.rotation.x = -1.4 * attackPulse;
+        rightArm.rotation.z = 0.22 + attackPulse * 0.62;
+        leftArm.rotation.x = 0.36 * attackPulse;
+      } else if (!state.grounded) {
+        leftArm.rotation.x = -0.72;
+        rightArm.rotation.x = -0.72;
+        leftArm.rotation.z = -0.45;
+        rightArm.rotation.z = 0.45;
+      }
+    }
+
+    if (torso) {
+      torso.rotation.y = attackPulse * -0.24;
+      torso.rotation.z = state.dodgeTime > 0 ? -0.18 : runSwing * 0.05;
+    }
+    if (head) head.rotation.y = attackPulse * 0.12;
+    if (weaponRig) {
+      weaponRig.rotation.z = attackPulse * -0.42;
+      weaponRig.rotation.x = attackPulse * -0.18;
+    }
+
+    if (state.spinTime > 0) {
+      if (leftArm) leftArm.rotation.x = -0.35;
+      if (rightArm) rightArm.rotation.x = 0.35;
+      if (weaponRig) weaponRig.rotation.z = 0;
     }
   }
 

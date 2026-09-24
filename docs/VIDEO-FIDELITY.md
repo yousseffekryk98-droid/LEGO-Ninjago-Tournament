@@ -81,6 +81,10 @@ Characters demonstrably shown being controlled in legacy gameplay showcase video
 The arena remains original geometry, but now follows the footage's visual language more closely:
 
 - circular layered stone combat floor;
+- lower diagonal/isometric camera tuned closer to the legacy mobile framing;
+- spectator terraces, crowd silhouettes, tournament banners and an elevated Chen viewing throne;
+- denser procedural stone slab seams for the arena floor;
+- authored run, attack, block, jump and dodge poses for procedural minifigures;
 - central radial/sigil markings;
 - large stone-and-red tournament gate;
 - gold architectural accents;
