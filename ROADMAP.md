@@ -1,25 +1,31 @@
 # Roadmap
 
-This roadmap is directional. Contributions are welcome through issues and pull requests.
+This roadmap tracks work after the current browser release candidate. Contributions are welcome through issues and pull requests.
 
-## Near term
+## Release-candidate status
 
-- finish release validation on the current main branch
-- continue fighter model and animation polish
-- improve elemental combat feedback and balancing
-- expand enemy variety, arena events, and boss encounters
-- improve mobile/laptop responsiveness and controller accessibility
-- add more automated gameplay and visual-regression coverage
-- improve loading, fallback graphics, and low-end-device performance
+The core browser game and requested launch systems are implemented on `main`:
 
-## Gameplay
+- 51 playable fighters with persistent progression and upgrades
+- Tournament, Free Play, Challenge, Dojo and Temple Gallery flows
+- elemental combat, Spinjitzu and Tornado of Creation
+- physical stud and half/full-heart pickups
+- escalating waves, bosses, arena events and legacy-inspired hazards
+- keyboard, remappable controls, controller and mobile touch support
+- laptop fighter-selection scrolling and responsive gameplay controls
+- SEO/discovery pages, sitemap, robots, structured metadata and repository links
+- automated release tests covering roster boot, persistence, responsive controls, upgrades and representative gameplay
 
-- richer combo chains and elemental interactions
-- additional original challenge modes
-- deeper fighter progression and upgrade choices
-- more health/power-up drop balancing
-- additional clean-room arena props and hazards
-- improved team ultimate presentation
+Final acceptance still requires testing the deployed build on real target devices/browsers. That is release verification rather than missing core gameplay.
+
+## Post-launch polish
+
+- continue fighter model, animation and arena art polish using original or properly licensed assets
+- tune elemental combat, enemy difficulty, health drops and upgrade economy from player feedback
+- improve low-end-device performance and loading fallbacks
+- expand visual-regression and long-session automated coverage
+- improve accessibility and controller ergonomics
+- add additional original challenge content and arena variations
 
 ## Open-source/community
 
