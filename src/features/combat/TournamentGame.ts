@@ -336,7 +336,7 @@ export class TournamentGame {
     this.cameraFocus.lerp(focusTarget, followAlpha);
 
     const desired = this.cameraMode === 'overhead'
-      ? this.cameraFocus.clone().add(new THREE.Vector3(0.01, 31.5, 0.01))
+      ? this.cameraFocus.clone().add(new THREE.Vector3(0.01, 36, 0.01))
       : this.cameraFocus.clone().add(this.cameraBasePosition);
     const cameraAlpha = dt <= 0 ? 1 : 1 - Math.exp(-dt * 8.5);
     this.camera.position.lerp(desired, cameraAlpha);
@@ -1607,10 +1607,10 @@ export class TournamentGame {
     key.position.set(-8, 14, 9);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.left = -15;
-    key.shadow.camera.right = 15;
-    key.shadow.camera.top = 15;
-    key.shadow.camera.bottom = -15;
+    key.shadow.camera.left = -38;
+    key.shadow.camera.right = 38;
+    key.shadow.camera.top = 38;
+    key.shadow.camera.bottom = -38;
     key.shadow.bias = -0.00045;
     this.scene.add(key);
 
@@ -1781,9 +1781,9 @@ export class TournamentGame {
     const throneBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.05, 0.38), red);
     throneBack.position.set(0, 7.45, -30.12);
     const throneSeat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.35, 1.05), gold);
-    throneSeat.position.set(0, 6.76, -15.28);
+    throneSeat.position.set(0, 6.76, -29.78);
     const crest = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.09, 8, 28), gold);
-    crest.position.set(0, 8.08, -15.38);
+    crest.position.set(0, 8.08, -29.88);
     for (const object of [throneBack, throneSeat, crest]) {
       object.castShadow = true;
       this.scene.add(object);
@@ -1791,14 +1791,14 @@ export class TournamentGame {
 
     const chen = createGenericFighterModel(0x7b2631, 0xd3a84c, 0.78, 'villain', 'staff');
     chen.name = 'chenThroneSpectator';
-    chen.position.set(0, 6.92, -15.02);
+    chen.position.set(0, 6.92, -29.52);
     chen.rotation.y = 0;
     this.scene.add(chen);
 
     for (const side of [-1, 1] as const) {
       const guard = createGenericFighterModel(0x342535, 0xb8892e, 0.7, 'villain', 'katana');
       guard.name = side < 0 ? 'chenGuardLeft' : 'chenGuardRight';
-      guard.position.set(side * 1.65, 6.84, -15.12);
+      guard.position.set(side * 1.65, 6.84, -29.62);
       guard.rotation.y = 0;
       this.scene.add(guard);
     }
