@@ -11,6 +11,14 @@ import {
   getElementCombatTheme,
   type CharacterDef
 } from '../features/characters';
+import {
+  LEVEL_THRESHOLDS,
+  applyFighterXp,
+  fighterLevelFromXp,
+  fighterUpgradeCostFromXp,
+  nextUpgradeCopyFromXp,
+  xpProgressFromXp
+} from '../features/progression';
 
 interface DailyState {
   date: string;
@@ -42,7 +50,6 @@ interface DodgeController {
 
 const STORAGE_KEY = 'ninja-tournament-fan-remake-v1';
 const SAVE_CACHE_KEY = `${STORAGE_KEY}:cache`;
-const LEVEL_THRESHOLDS = [0, 800, 2200, 4500, 8000];
 
 function localDateKey() {
   const now = new Date();
@@ -134,53 +141,23 @@ function formatStuds(value: number) {
 }
 
 function fighterLevel(id: string) {
-  const xp = Math.max(0, save.fighterXp[id] ?? 0);
-  let level = 1;
-  for (let i = 1; i < LEVEL_THRESHOLDS.length; i++) {
-    if (xp >= LEVEL_THRESHOLDS[i]) level = i + 1;
-  }
-  return Math.min(5, level);
+  return fighterLevelFromXp(save.fighterXp[id] ?? 0);
 }
 
 function xpProgress(id: string) {
-  const xp = Math.max(0, save.fighterXp[id] ?? 0);
-  const level = fighterLevel(id);
-  if (level >= 5) return { xp, level, current: 1, target: 1, percent: 100 };
-  const floor = LEVEL_THRESHOLDS[level - 1];
-  const target = LEVEL_THRESHOLDS[level];
-  const current = xp - floor;
-  return { xp, level, current, target: target - floor, percent: Math.max(0, Math.min(100, current / (target - floor) * 100)) };
+  return xpProgressFromXp(save.fighterXp[id] ?? 0);
 }
 
 function fighterUpgradeCost(id: string) {
-  const level = fighterLevel(id);
-  if (level >= 5) return 0;
-  const xp = Math.max(0, save.fighterXp[id] ?? 0);
-  const floor = LEVEL_THRESHOLDS[level - 1];
-  const target = LEVEL_THRESHOLDS[level];
-  const remainingRatio = Math.max(0.05, Math.min(1, (target - xp) / Math.max(1, target - floor)));
-  const fullLevelCosts = [1800, 3200, 5200, 8000];
-  return Math.max(500, Math.ceil((fullLevelCosts[level - 1] * remainingRatio) / 100) * 100);
+  return fighterUpgradeCostFromXp(save.fighterXp[id] ?? 0);
 }
 
 function nextUpgradeCopy(id: string) {
-  const level = fighterLevel(id);
-  if (level >= 5) return 'MAX POTENTIAL · +2 MAX HEARTS';
-  const next = level + 1;
-  const heart = next === 3 || next === 5 ? ' · +1 MAX ♥' : '';
-  return 'NEXT LV ' + next + ': +7% DMG · +0.12 SPD' + heart;
+  return nextUpgradeCopyFromXp(save.fighterXp[id] ?? 0);
 }
 
 function upgradedCharacter(base: CharacterDef): CharacterDef {
-  const level = fighterLevel(base.id);
-  const bonus = level - 1;
-  return {
-    ...base,
-    speed: base.speed + bonus * 0.12,
-    damage: Math.round(base.damage * (1 + bonus * 0.07)),
-    maxHealth: base.maxHealth + (level >= 3 ? 1 : 0) + (level >= 5 ? 1 : 0),
-    potentialLevel: level
-  };
+  return applyFighterXp(base, save.fighterXp[base.id] ?? 0);
 }
 
 function cleanupGame() {
