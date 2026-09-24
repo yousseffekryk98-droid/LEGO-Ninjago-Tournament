@@ -25,7 +25,7 @@ export interface GameCallbacks {
 }
 
 type AttackAction = 'attack' | 'punch' | 'kick';
-type Action = AttackAction | 'jump' | 'grab' | 'special';
+type Action = AttackAction | 'jump' | 'grab' | 'special' | 'ultimate';
 type EnemyKind = 'melee' | 'heavy' | 'ranged' | 'boss';
 type ProjectileEffect = 'damage' | 'freeze';
 
@@ -274,6 +274,7 @@ export class TournamentGame {
     if (event.code === this.keyBindings.jump) this.action('jump');
     if (event.code === this.keyBindings.grab) this.action('grab');
     if (event.code === this.keyBindings.special) this.action('special');
+    if (event.code === this.keyBindings.ultimate) this.action('ultimate');
     if (event.code === this.keyBindings.dodge) this.dodge(this.input.x, this.input.y);
     if (event.code === this.keyBindings.block) this.input.block = true;
   };
