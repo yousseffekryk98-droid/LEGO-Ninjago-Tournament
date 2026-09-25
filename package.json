@@ -16,7 +16,8 @@
     "android:run": "npm run android:sync && cap run android",
     "generate:assets": "node scripts/generate-authored-assets.mjs",
     "predev": "npm run generate:assets",
-    "prebuild": "npm run generate:assets"
+    "prebuild": "npm run generate:assets",
+    "pretest:e2e": "npm run generate:assets"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",

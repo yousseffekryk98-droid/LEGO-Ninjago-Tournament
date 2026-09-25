@@ -8,6 +8,7 @@ This fan remake keeps shipped game art clean-room or openly licensed. Do not cop
 - `src/features/characters/portraits.ts` — original Three.js renders made from the project's procedural fighter geometry.
 - `public/icons/minifigure-silhouette.svg` — original clean-room block-toy/minifigure silhouette. Covered by this repository's MIT license.
 - Procedural Three.js fighter geometry in `src/shared/three/minifigure-model.ts` — original project geometry.
+- `scripts/generate-authored-assets.mjs` — original clean-room source that generates the local Chen center-pillar GLB used by the arena GLB pipeline. The generated binary is intentionally not committed.
 
 ## Open-license references approved for future additions
 
