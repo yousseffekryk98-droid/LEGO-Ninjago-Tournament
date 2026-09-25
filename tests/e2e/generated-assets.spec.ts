@@ -166,3 +166,52 @@ test('high-fidelity hero GLBs include faces hair and outfit-specific detail', as
     );
   }
 });
+
+
+test('historical fighter design library preserves distinct GLB generations', async () => {
+  const coreIds = [
+    'lloyd-tournament',
+    'kai-tournament',
+    'jay-tournament',
+    'cole-tournament',
+    'zane-techno',
+    'zane-zx',
+    'nya',
+    'master-garmadon',
+    'master-chen',
+    'skylor'
+  ];
+  const requiredParts = ['torso', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
+
+  for (const id of coreIds) {
+    for (const version of ['authored-v1', 'authored-v2']) {
+      const file = await readFile(resolve(\`public/assets/models/fighters/variants/\${id}/\${version}.glb\`));
+      expect(file.byteLength, \`\${id} \${version}\`).toBeGreaterThan(7_000);
+      expect(file.readUInt32LE(0), \`\${id} \${version}\`).toBe(0x46546c67);
+      expect(file.readUInt32LE(4), \`\${id} \${version}\`).toBe(2);
+      const jsonLength = file.readUInt32LE(12);
+      const json = JSON.parse(file.subarray(20, 20 + jsonLength).toString('utf8').trim());
+      const names = new Set(json.nodes.map((node: { name?: string }) => node.name));
+      for (const part of requiredParts) {
+        expect(names.has(part), \`\${id} \${version} missing \${part}\`).toBeTruthy();
+      }
+    }
+  }
+
+  const detailed = await readFile(resolve('public/assets/models/fighters/variants/lloyd-tournament/lloyd-detailed.glb'));
+  const exact = await readFile(resolve('public/assets/models/fighters/variants/lloyd-tournament/lloyd-exact.glb'));
+  expect(detailed.byteLength).toBeGreaterThan(40_000);
+  expect(exact.byteLength).toBeGreaterThan(100_000);
+
+  const detailedJsonLength = detailed.readUInt32LE(12);
+  const detailedJson = JSON.parse(detailed.subarray(20, 20 + detailedJsonLength).toString('utf8').trim());
+  const detailedNames = new Set(detailedJson.nodes.map((node: { name?: string }) => node.name));
+  expect(detailedNames.has('hairLock0')).toBeTruthy();
+  expect(detailedNames.has('energyBlade')).toBeTruthy();
+
+  const exactJsonLength = exact.readUInt32LE(12);
+  const exactJson = JSON.parse(exact.subarray(20, 20 + exactJsonLength).toString('utf8').trim());
+  const exactNames = new Set(exactJson.nodes.map((node: { name?: string }) => node.name));
+  expect(exactNames.has('hairMould61183')).toBeTruthy();
+  expect(exactNames.has('bandanaMould15619')).toBeTruthy();
+});
