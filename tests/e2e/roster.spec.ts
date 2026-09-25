@@ -16,29 +16,58 @@ import {
 } from '../../src/features/characters';
 import { applyFighterXp, fighterLevelFromXp } from '../../src/features/progression';
 
-test('every fighter exposes a selectable design and historical core generations are preserved', () => {
+test('every fighter exposes the complete chronological design timeline available to it', () => {
   for (const fighter of ROSTER) {
-    expect(getCharacterDesigns(fighter.id).length, \`\${fighter.id} should have a design choice\`).toBeGreaterThanOrEqual(1);
+    expect(getCharacterDesigns(fighter.id).length, `${fighter.id} should have historical designs`).toBeGreaterThanOrEqual(9);
   }
 
-  expect(getCharacterDesigns('lloyd-tournament').map((design) => design.id)).toEqual([
-    'procedural',
-    'authored-v1',
-    'authored-v2',
-    'lloyd-detailed',
-    'lloyd-exact'
+  expect(getCharacterDesigns('tox').map((design) => design.id)).toEqual([
+    'commit-998d2fce',
+    'commit-819add38',
+    'commit-b9eb6bfc',
+    'commit-d1e20ac2',
+    'commit-d11705e6',
+    'commit-cae32dc0',
+    'commit-3dfe70cb',
+    'commit-8c67c327',
+    'commit-67a0ba97'
   ]);
-  expect(getDefaultCharacterDesignId('lloyd-tournament')).toBe('lloyd-detailed');
+  expect(getDefaultCharacterDesignId('tox')).toBe('commit-67a0ba97');
 
   expect(getCharacterDesigns('kai-tournament').map((design) => design.id)).toEqual([
-    'procedural',
-    'authored-v1',
-    'authored-v2'
+    'commit-998d2fce',
+    'commit-819add38',
+    'commit-b9eb6bfc',
+    'commit-d1e20ac2',
+    'commit-d11705e6',
+    'commit-cae32dc0',
+    'commit-3dfe70cb',
+    'commit-8c67c327',
+    'commit-67a0ba97',
+    'commit-0170de08',
+    'commit-0bfc3094'
   ]);
-  expect(getDefaultCharacterDesignId('kai-tournament')).toBe('authored-v2');
+  expect(getDefaultCharacterDesignId('kai-tournament')).toBe('commit-0bfc3094');
 
-  expect(getCharacterDesigns('tox').map((design) => design.id)).toEqual(['procedural']);
-  expect(getDefaultCharacterDesignId('tox')).toBe('procedural');
+  expect(getCharacterDesigns('lloyd-tournament').map((design) => design.id)).toEqual([
+    'commit-998d2fce',
+    'commit-819add38',
+    'commit-b9eb6bfc',
+    'commit-d1e20ac2',
+    'commit-d11705e6',
+    'commit-cae32dc0',
+    'commit-3dfe70cb',
+    'commit-8c67c327',
+    'commit-67a0ba97',
+    'commit-0170de08',
+    'commit-0bfc3094',
+    'commit-425c89d4',
+    'commit-6860d027',
+    'commit-70f95ff9',
+    'commit-05b7ce43',
+    'commit-961edd9b'
+  ]);
+  expect(getDefaultCharacterDesignId('lloyd-tournament')).toBe('commit-425c89d4');
 });
 
 test('roster data is complete, unique, and playable', () => {
