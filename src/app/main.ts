@@ -383,7 +383,9 @@ function showRoster() {
         <div class="fighter-copy">
           <h3><span class="fighter-primary-name">${identity.name}</span> <small>LV ${progress.level}</small></h3>
           ${identity.variant ? `<span class="fighter-variant">${identity.variant}</span>` : ''}
-          <p>${fighter.element} · ${fighter.style} · ${fighter.special.replace('-', ' ')}</p>
+          <p>${fighter.power ?? fighter.element} · ${fighter.style} · ${fighter.specialAttack ?? fighter.special.replace('-', ' ')}</p>
+          <small class="fighter-ability-line">NORMAL ${fighter.normalAttack ?? 'Ninja Combo'} · SPIN ${fighter.spinjitzu ?? 'Spinjitzu'} · ULT ${fighter.ultimateSpinjitzu ?? 'Ultimate'} · PASSIVE ${fighter.passive ?? 'Battle Focus'}</small>
+          ${fighter.sourceEra ? `<small class="fighter-source-line">${fighter.sourceEra}${fighter.sourceGroup ? ` · ${fighter.sourceGroup}` : ''}</small>` : ''}
           <div class="stat-row"><span>SPD ${upgraded.speed.toFixed(1)}</span><span>DMG ${upgraded.damage}</span><span>♥ ${upgraded.maxHealth}</span></div>
           ${unlocked ? `<div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'MAX POTENTIAL' : `${progress.current}/${progress.target} XP`}</em><small class="upgrade-copy">${nextUpgradeCopy(fighter.id)}</small>` : ''}
         </div>
@@ -422,7 +424,7 @@ function showRoster() {
     const identity = getCharacterIdentity(fighter);
     previewName.textContent = identity.name;
     previewVariant.textContent = identity.variant ?? 'BASE';
-    previewMeta.textContent = `${fighter.element} · ${fighter.style.toUpperCase()} · ${fighter.special.replace('-', ' ').toUpperCase()}`;
+    previewMeta.textContent = `${fighter.power ?? fighter.element} · ${fighter.style.toUpperCase()} · ${fighter.specialAttack ?? fighter.special.replace('-', ' ').toUpperCase()} · ULT: ${fighter.ultimateSpinjitzu ?? 'Ultimate'} · PASSIVE: ${fighter.passive ?? 'Battle Focus'}`;
     if (activeCharacterPreview) activeCharacterPreview.setCharacter(fighter);
     else activeCharacterPreview = new CharacterPreview(previewHost, fighter);
 
@@ -433,26 +435,38 @@ function showRoster() {
 
   setPreview(upgradedCharacter(findCharacter(save.selected)));
 
-  void renderCharacterPortraits(ROSTER).then((cache) => {
-    if (!document.querySelector('.roster-grid')) return;
-    document.querySelectorAll<HTMLButtonElement>('.fighter-avatar[data-preview]').forEach((button) => {
+  // Hundreds of fighters are now playable. Render portraits lazily as cards enter
+  // the viewport so opening the roster never tries to create every WebGL portrait at once.
+  const portraitObserver = new IntersectionObserver((entries, observer) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      const button = entry.target as HTMLButtonElement;
       const fighterId = button.dataset.preview;
-      if (!fighterId) return;
-      const source = cache.get(fighterId);
-      if (!source) return;
-      let image = button.querySelector<HTMLImageElement>('.fighter-avatar-render');
-      if (!image) {
-        image = document.createElement('img');
-        image.className = 'fighter-avatar-render';
-        image.alt = '';
-        image.setAttribute('aria-hidden', 'true');
-        button.prepend(image);
-      }
-      image.src = source;
-      button.classList.add('has-render');
-    });
-  }).catch(() => {
-    // The CSS minifigure fallback remains visible if WebGL portrait rendering is unavailable.
+      if (!fighterId) continue;
+      observer.unobserve(button);
+      const fighter = findCharacter(fighterId);
+      void renderCharacterPortraits([fighter]).then((cache) => {
+        if (!button.isConnected) return;
+        const source = cache.get(fighterId);
+        if (!source) return;
+        let image = button.querySelector<HTMLImageElement>('.fighter-avatar-render');
+        if (!image) {
+          image = document.createElement('img');
+          image.className = 'fighter-avatar-render';
+          image.alt = '';
+          image.setAttribute('aria-hidden', 'true');
+          button.prepend(image);
+        }
+        image.src = source;
+        button.classList.add('has-render');
+      }).catch(() => {
+        // Generated SVG stays visible if WebGL portrait rendering is unavailable.
+      });
+    }
+  }, { rootMargin: '240px 0px' });
+
+  document.querySelectorAll<HTMLButtonElement>('.fighter-avatar[data-preview]').forEach((button) => {
+    portraitObserver.observe(button);
   });
 
   document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach((button) => {
@@ -598,7 +612,7 @@ function showDojo() {
         <button class="action-button block" id="dojo-block" aria-label="Block"><span class="legacy-icon">${legacyActionIcon('block')}</span></button>
         <button class="action-button grab" data-dojo-action="grab" aria-label="Grab"><span class="legacy-icon">${legacyActionIcon('grab')}</span></button>
         <button class="action-button attack punch" data-dojo-action="punch" aria-label="Punch"><span class="legacy-icon">${legacyActionIcon('punch')}</span></button>
-        <button class="action-button kick elemental-kick" data-dojo-action="kick" aria-label="${baseFighter.element} elemental kick" title="${baseFighter.element} kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${legacyActionIcon('kick')}</span><span class="element-badge" aria-hidden="true">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
+        <button class="action-button kick elemental-kick" data-dojo-action="kick" aria-label="${baseFighter.power ?? baseFighter.element} power kick" title="${baseFighter.power ?? baseFighter.element} power kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${legacyActionIcon('kick')}</span><span class="element-badge" aria-hidden="true">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
       </div>
       <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · SPINJITZU ${formatKeyLabel(keys.special)}</div>
       <div class="dodge-hint">SWIPE DOJO TO DODGE · ${formatKeyLabel(keys.dodge)} ON DESKTOP</div>
@@ -695,9 +709,7 @@ function startGame() {
   const elementAccent = `#${elementTheme.accent.toString(16).padStart(6, '0')}`;
   const specialLabel = freePlayMode
     ? 'SPINJITZU ∞'
-    : baseFighter.special === 'spinjitzu'
-      ? 'SPINJITZU'
-      : baseFighter.special.replace('-', ' ').toUpperCase();
+    : (baseFighter.specialAttack ?? (baseFighter.special === 'spinjitzu' ? baseFighter.spinjitzu ?? 'Spinjitzu' : baseFighter.special.replace('-', ' '))).toUpperCase();
   app.innerHTML = `
     <main class="game-screen ${freePlayMode ? 'freeplay-mode' : ''} ${bossRushMode ? 'boss-rush-mode' : ''}">
       <div id="game-host"></div>
@@ -707,7 +719,7 @@ function startGame() {
           <span class="portrait-element" aria-hidden="true">${elementTheme.icon}</span>
         </div>
         <div class="player-hud-copy">
-          <b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small>
+          <b>${identity.name}</b><small>${identity.variant ?? baseFighter.power ?? baseFighter.element}</small>
           <div id="hearts" class="hearts"></div>
           <div id="studs" class="studs"><span class="stud-icon" aria-hidden="true"></span><span class="stud-copy"><b id="stud-count">0</b><small>RUN STUDS · BANK ${formatStuds(save.bankStuds)} · LV ${fighterLevel(baseFighter.id)}</small></span></div>
         </div>
@@ -735,7 +747,7 @@ function startGame() {
         <button class="action-button attack punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">${legacyActionIcon('punch')}</span></button>
         <button class="action-button kick elemental-kick" data-action="kick" aria-label="${baseFighter.element} elemental kick" title="${baseFighter.element} kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${legacyActionIcon('kick')}</span><span class="element-badge" aria-hidden="true">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
       </div>
-      <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)} · VIEW V${freePlayMode ? ` · CREATION ${formatKeyLabel(keys.ultimate)}` : ''}</div>
+      <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPECIAL ${formatKeyLabel(keys.special)} · VIEW V${freePlayMode ? ` · CREATION ${formatKeyLabel(keys.ultimate)}` : ''}</div>
       <div class="dodge-hint">SWIPE ARENA TO DODGE · ${formatKeyLabel(keys.dodge)}</div>
       <div id="game-over" class="game-over hidden"></div>
     </main>`;
