@@ -66,53 +66,6 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     };
   }
 
-  if (
-    element.includes('serpentine') ||
-    element.includes('venomari') ||
-    element.includes('anacondrai') ||
-    element.includes('constrictai') ||
-    element.includes('hypnobrai') ||
-    id === 'pythor' ||
-    id === 'acidicus'
-  ) {
-    return {
-      archetype: 'serpentine',
-      weapon: character.style === 'ranged' ? 'staff' : 'claws',
-      hood: false,
-      shoulderArmor: true,
-      extraArms: false,
-      metallic: false,
-      faceColor: character.color,
-      eyeColor: id === 'skales' ? 0xd94b4b : 0xf4df55,
-      serpentineTail: !['snike', 'bytar'].includes(id)
-    };
-  }
-
-  if (id === 'samurai-x') {
-    return {
-      archetype: 'samurai',
-      weapon: 'dual-katana',
-      hood: false,
-      shoulderArmor: true,
-      armorStyle: 'samurai',
-      extraArms: false,
-      metallic: true
-    };
-  }
-
-  if (id === 'techno-wu') {
-    return {
-      archetype: 'master',
-      weapon: 'staff',
-      hood: false,
-      shoulderArmor: false,
-      extraArms: false,
-      metallic: false,
-      faceColor: 0xf2c64f,
-      eyeColor: 0x17191c
-    };
-  }
-
   const tournamentIdentity: Record<string, CharacterModelProfile> = {
     'master-chen': {
       archetype: 'villain',
@@ -275,6 +228,53 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
   };
 
   if (tournamentIdentity[id]) return tournamentIdentity[id];
+
+  if (
+    element.includes('serpentine') ||
+    element.includes('venomari') ||
+    element.includes('anacondrai') ||
+    element.includes('constrictai') ||
+    element.includes('hypnobrai') ||
+    id === 'pythor' ||
+    id === 'acidicus'
+  ) {
+    return {
+      archetype: 'serpentine',
+      weapon: character.style === 'ranged' ? 'staff' : 'claws',
+      hood: false,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: character.color,
+      eyeColor: id === 'skales' ? 0xd94b4b : 0xf4df55,
+      serpentineTail: !['snike', 'bytar'].includes(id)
+    };
+  }
+
+  if (id === 'samurai-x') {
+    return {
+      archetype: 'samurai',
+      weapon: 'dual-katana',
+      hood: false,
+      shoulderArmor: true,
+      armorStyle: 'samurai',
+      extraArms: false,
+      metallic: true
+    };
+  }
+
+  if (id === 'techno-wu') {
+    return {
+      archetype: 'master',
+      weapon: 'staff',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x17191c
+    };
+  }
 
   const coreNinja = /^(lloyd|kai|jay|cole)-/.test(id);
   if (coreNinja || id.startsWith('lloyd')) {
