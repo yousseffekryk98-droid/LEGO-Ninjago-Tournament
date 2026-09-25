@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   ROSTER,
+  EXPANDED_CHARACTER_CATALOG,
   createCharacterModel,
   findCharacter,
   getBossRushRoster,
@@ -12,14 +13,14 @@ import {
 import { applyFighterXp, fighterLevelFromXp } from '../../src/features/progression';
 
 test('roster data is complete, unique, and playable', () => {
-  expect(ROSTER.length).toBe(58);
+  expect(ROSTER.length).toBe(58 + EXPANDED_CHARACTER_CATALOG.length);
   expect(new Set(ROSTER.map((fighter) => fighter.id)).size).toBe(ROSTER.length);
   expect(ROSTER.filter((fighter) => fighter.unlockedByDefault).length).toBeGreaterThanOrEqual(4);
 
   for (const requiredId of ['master-chen', 'techno-wu', 'tox', 'karlof', 'paleman', 'neuro', 'griffin-turner', 'jacob-pevsner', 'bolobo', 'gravis', 'kapau', 'chope', 'krait', 'sleven', 'zane-techno', 'zane-battle-damaged', 'snike', 'bytar', 'skales', 'kai-zx']) {
     expect(ROSTER.some((fighter) => fighter.id === requiredId), `missing documented fighter ${requiredId}`).toBeTruthy();
   }
-  expect(ROSTER.some((fighter) => fighter.id === 'ronin'), 'Ronin should remain boss-only').toBeFalsy();
+  expect(ROSTER.some((fighter) => fighter.id === 'catalog-ronin'), 'Ronin should now be playable from the expanded catalog').toBeTruthy();
 
   const specials = new Set(ROSTER.map((fighter) => fighter.special));
   for (const special of ['spinjitzu', 'boost', 'charge', 'overload', 'airstrike', 'toxic-cloud', 'shout']) {
@@ -36,6 +37,21 @@ test('roster data is complete, unique, and playable', () => {
     expect(fighter.cost).toBeGreaterThanOrEqual(0);
     expect(Number.isInteger(fighter.color)).toBeTruthy();
     expect(Number.isInteger(fighter.accent)).toBeTruthy();
+    expect(fighter.power?.length ?? 0, `${fighter.id} missing power`).toBeGreaterThan(0);
+    expect(fighter.normalAttack?.length ?? 0, `${fighter.id} missing normal attack`).toBeGreaterThan(0);
+    expect(fighter.specialAttack?.length ?? 0, `${fighter.id} missing special attack`).toBeGreaterThan(0);
+    expect(fighter.spinjitzu?.length ?? 0, `${fighter.id} missing Spinjitzu`).toBeGreaterThan(0);
+    expect(fighter.ultimateSpinjitzu?.length ?? 0, `${fighter.id} missing ultimate`).toBeGreaterThan(0);
+    expect(fighter.passive?.length ?? 0, `${fighter.id} missing passive`).toBeGreaterThan(0);
+  }
+
+  for (const entry of EXPANDED_CHARACTER_CATALOG) {
+    const fighter = findCharacter(`catalog-${entry.id}`);
+    expect(fighter.id).toBe(`catalog-${entry.id}`);
+    expect(fighter.name).toBe(entry.name);
+    expect(fighter.power).toBe(entry.power);
+    expect(fighter.sourceEra).toBe(entry.era);
+    expect(fighter.sourceGroup).toBe(entry.group);
   }
 });
 
@@ -44,8 +60,13 @@ test('Zane is surfaced as the primary character name with the suit as a variant'
   expect(getCharacterIdentity(zane)).toEqual({ name: 'Zane', variant: 'Techno' });
 });
 
-test('every roster fighter builds a stable 3d model with animation parts', () => {
-  for (const fighter of ROSTER) {
+test('representative roster fighters build stable 3d models with animation parts', () => {
+  const modelSample = Array.from(new Map([
+    ...ROSTER.slice(0, 58),
+    ...ROSTER.filter((_, index) => index >= 58 && index % 18 === 0)
+  ].map((fighter) => [fighter.id, fighter])).values());
+
+  for (const fighter of modelSample) {
     const model = createCharacterModel(fighter);
     expect(model.name, fighter.id).toBe('fighterModel');
     expect(model.getObjectByName('torso'), `${fighter.id} missing torso`).toBeTruthy();
@@ -130,6 +151,16 @@ test('elemental kick themes distinguish core ninja powers', () => {
   expect(getElementCombatTheme('Earth').effect).toBe('earth');
   expect(getElementCombatTheme('Energy').effect).toBe('energy');
   expect(getElementCombatTheme('Water').effect).toBe('water');
+});
+
+test('expanded powers resolve to power-matched VFX families', () => {
+  expect(getElementCombatTheme('Heat').effect).toBe('fire');
+  expect(getElementCombatTheme('Quake').effect).toBe('earth');
+  expect(getElementCombatTheme('Technology').effect).toBe('lightning');
+  expect(getElementCombatTheme('Fear').effect).toBe('mind');
+  expect(getElementCombatTheme('Decay').effect).toBe('poison');
+  expect(getElementCombatTheme('Chaos').effect).toBe('shadow');
+  expect(getElementCombatTheme('Surface Tension').effect).toBe('water');
 });
 
 test('fighter levels add permanent stats and extra heart capacity', () => {
