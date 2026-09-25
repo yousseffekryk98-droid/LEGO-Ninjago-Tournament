@@ -17,3 +17,5 @@ export * from './icons';
 export * from './boss-rush-order';
 
 export * from './reference-images';
+
+export * from './designs';
