@@ -1205,6 +1205,57 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
     0 3px 8px #0008;
 }
 
+.fighter-avatar-real {
+  position:absolute;
+  inset:1px;
+  z-index:4;
+  width:calc(100% - 2px);
+  height:calc(100% - 2px);
+  object-fit:cover;
+  object-position:center;
+  border-radius:50%;
+  background:#211727;
+  filter:saturate(1.04) contrast(1.03) drop-shadow(0 2px 2px #0008);
+}
+.fighter-avatar.has-reference .fighter-avatar-render,
+.fighter-avatar.has-reference .fighter-avatar-svg,
+.fighter-avatar.has-reference .fighter-avatar-fallback,
+.fighter-avatar.has-reference .fighter-avatar-body {
+  opacity:0;
+}
+.fighter-avatar.has-reference > small {
+  z-index:6;
+}
+.fighter-reference-badge {
+  position:absolute;
+  left:2px;
+  top:2px;
+  z-index:6;
+  padding:2px 3px;
+  border:1px solid #f0cd63;
+  border-radius:4px;
+  background:rgba(28,18,35,.9);
+  color:#ffe79d;
+  font:900 6px/1 'Barlow Condensed',sans-serif;
+  letter-spacing:.04em;
+  pointer-events:none;
+}
+.fighter-reference-link {
+  display:inline-flex;
+  width:max-content;
+  max-width:100%;
+  margin-top:5px;
+  color:#e9c968;
+  font:800 8px/1.2 Inter,sans-serif;
+  letter-spacing:.06em;
+  text-decoration:none;
+}
+.fighter-reference-link:hover,
+.fighter-reference-link:focus-visible {
+  color:#fff0b2;
+  text-decoration:underline;
+}
+
 @media (max-width:700px) {
   .game-screen .portrait-ring { width:54px; height:54px; }
   .game-screen .action-button { width:60px; height:60px; border-width:4px; }

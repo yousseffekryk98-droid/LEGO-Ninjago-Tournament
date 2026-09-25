@@ -7,7 +7,9 @@ import {
   getBossRushRoster,
   getCharacterIdentity,
   getCharacterModelProfile,
+  getCharacterReferenceImage,
   getCharacterSvgIcon,
+  OFFICIAL_REFERENCE_IMAGE_COUNT,
   getElementCombatTheme
 } from '../../src/features/characters';
 import { applyFighterXp, fighterLevelFromXp } from '../../src/features/progression';
@@ -53,6 +55,22 @@ test('roster data is complete, unique, and playable', () => {
     expect(fighter.sourceEra).toBe(entry.era);
     expect(fighter.sourceGroup).toBe(entry.group);
   }
+});
+
+test('verified official LEGO reference images cover supported core ninja without mislabeling variants', () => {
+  expect(OFFICIAL_REFERENCE_IMAGE_COUNT).toBe(4);
+
+  for (const id of ['kai-tournament', 'jay-tournament', 'zane-techno', 'nya']) {
+    const reference = getCharacterReferenceImage(findCharacter(id));
+    expect(reference, `${id} missing reference image`).toBeTruthy();
+    expect(reference!.imageUrl).toMatch(/^https:\/\/www\.lego\.com\/cdn\//);
+    expect(reference!.sourceUrl).toMatch(/^https:\/\/www\.lego\.com\//);
+    expect(reference!.sourceLabel).toContain('Official LEGO');
+  }
+
+  const bizarro = ROSTER.find((fighter) => fighter.name === 'Bizarro Kai');
+  if (bizarro) expect(getCharacterReferenceImage(bizarro)).toBeNull();
+  expect(getCharacterReferenceImage(findCharacter('master-chen'))).toBeNull();
 });
 
 test('Zane is surfaced as the primary character name with the suit as a variant', () => {

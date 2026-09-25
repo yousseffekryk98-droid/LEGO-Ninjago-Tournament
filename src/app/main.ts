@@ -8,6 +8,7 @@ import {
   characterSearchText,
   findCharacter,
   getCharacterIdentity,
+  getCharacterReferenceImage,
   getElementCombatTheme,
   getCachedCharacterPortrait,
   getCharacterSvgIcon,
@@ -289,6 +290,7 @@ function showBossPath() {
 
   const allNodes = challengers.map((fighter, index) => {
     const identity = getCharacterIdentity(fighter);
+    const reference = getCharacterReferenceImage(fighter);
     return `
       <span class="boss-path-mini ${index === 0 ? 'current' : ''}" data-gauntlet-order="${index + 1}" title="${identity.name} · ${identity.variant ?? fighter.element}" style="--node-color:#${fighter.color.toString(16).padStart(6, '0')}">
         <img src="${getCachedCharacterPortrait(fighter.id) ?? getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />
@@ -372,13 +374,15 @@ function showRoster() {
     const upgradeCost = fighterUpgradeCost(fighter.id);
     const canUpgrade = progress.level < 5 && save.bankStuds >= upgradeCost;
     const identity = getCharacterIdentity(fighter);
+    const reference = getCharacterReferenceImage(fighter);
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
-        <button class="fighter-avatar preview-character-btn" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
+        <button class="fighter-avatar preview-character-btn ${reference ? 'has-reference' : ''}" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
           ${getCachedCharacterPortrait(fighter.id)
             ? `<img class="fighter-avatar-render" src="${getCachedCharacterPortrait(fighter.id)}" alt="" aria-hidden="true" />`
             : `<img class="fighter-avatar-svg" src="${getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />`}
-          <span class="fighter-avatar-fallback"></span><i class="fighter-avatar-body"></i><small>3D</small>
+          ${reference ? `<img class="fighter-avatar-real" data-reference-image src="${reference.imageUrl}" alt="" aria-hidden="true" referrerpolicy="no-referrer" loading="lazy" /><span class="fighter-reference-badge">LEGO REF</span>` : ''}
+          <span class="fighter-avatar-fallback"></span><i class="fighter-avatar-body"></i><small>${reference ? 'REF' : '3D'}</small>
         </button>
         <div class="fighter-copy">
           <h3><span class="fighter-primary-name">${identity.name}</span> <small>LV ${progress.level}</small></h3>
@@ -386,6 +390,7 @@ function showRoster() {
           <p>${fighter.power ?? fighter.element} · ${fighter.style} · ${fighter.specialAttack ?? fighter.special.replace('-', ' ')}</p>
           <small class="fighter-ability-line">NORMAL ${fighter.normalAttack ?? 'Ninja Combo'} · SPIN ${fighter.spinjitzu ?? 'Spinjitzu'} · ULT ${fighter.ultimateSpinjitzu ?? 'Ultimate'} · PASSIVE ${fighter.passive ?? 'Battle Focus'}</small>
           ${fighter.sourceEra ? `<small class="fighter-source-line">${fighter.sourceEra}${fighter.sourceGroup ? ` · ${fighter.sourceGroup}` : ''}</small>` : ''}
+          ${reference ? `<a class="fighter-reference-link" href="${reference.sourceUrl}" target="_blank" rel="noopener noreferrer" title="${reference.note}">OFFICIAL LEGO® REFERENCE ↗</a>` : ''}
           <div class="stat-row"><span>SPD ${upgraded.speed.toFixed(1)}</span><span>DMG ${upgraded.damage}</span><span>♥ ${upgraded.maxHealth}</span></div>
           ${unlocked ? `<div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'MAX POTENTIAL' : `${progress.current}/${progress.target} XP`}</em><small class="upgrade-copy">${nextUpgradeCopy(fighter.id)}</small>` : ''}
         </div>
@@ -444,6 +449,7 @@ function showRoster() {
       const fighterId = button.dataset.preview;
       if (!fighterId) continue;
       observer.unobserve(button);
+      if (button.classList.contains('has-reference')) continue;
       const fighter = findCharacter(fighterId);
       void renderCharacterPortraits([fighter]).then((cache) => {
         if (!button.isConnected) return;
@@ -467,6 +473,13 @@ function showRoster() {
 
   document.querySelectorAll<HTMLButtonElement>('.fighter-avatar[data-preview]').forEach((button) => {
     portraitObserver.observe(button);
+  });
+
+  document.querySelectorAll<HTMLImageElement>('[data-reference-image]').forEach((image) => {
+    image.addEventListener('error', () => {
+      image.closest('.fighter-avatar')?.classList.remove('has-reference');
+      image.remove();
+    }, { once: true });
   });
 
   document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach((button) => {

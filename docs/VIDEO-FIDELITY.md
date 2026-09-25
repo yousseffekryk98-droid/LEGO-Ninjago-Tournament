@@ -10,6 +10,8 @@ This document tracks the clean-room remake against the gameplay material supplie
 
 The implementation does **not** copy APK/OBB assets, textures, audio, models, animation files or source code. Video and screenshot material is used only as behavioral and visual reference for original clean-room code and geometry.
 
+A small, explicitly sourced set of roster cards can display **remote official LEGO-hosted character reference images**. Those image files are not redistributed in this repository: each reference keeps its LEGO.com source link and the generated clean-room SVG/3D portrait remains the fallback if the remote image is unavailable.
+
 ## Evidence levels
 
 ### A — official/public app description

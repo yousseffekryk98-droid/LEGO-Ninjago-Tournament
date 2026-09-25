@@ -15,3 +15,5 @@ export * from './catalog-playable';
 export * from './icons';
 
 export * from './boss-rush-order';
+
+export * from './reference-images';
