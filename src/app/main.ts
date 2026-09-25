@@ -1072,10 +1072,9 @@ window.addEventListener('ninja-save-updated', () => {
 window.addEventListener('storage', (event) => {
   if (event.key === STORAGE_KEY || event.key === SAVE_CACHE_KEY) refreshSaveFromStorage();
 });
-window.addEventListener('pagehide', persist);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') persist();
-});
-
+// Every user-visible save mutation is persisted at the mutation site. Do not
+// blindly write the in-memory snapshot again during pagehide/visibilitychange:
+// a newer save may have been written by another tab, an integration, or the
+// recovery/loadout layer immediately before navigation or reload.
 persist();
 showHome();
