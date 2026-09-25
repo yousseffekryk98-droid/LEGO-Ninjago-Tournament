@@ -13,31 +13,41 @@ The fighter selector preserves visual history **from the first 3D character-desi
 | C05 | `d11705e6` | Armor Variants | Every fighter |
 | C06 | `cae32dc0` | Ninja Detail Pass | Every fighter |
 | C07 | `3dfe70cb` | Procedural Realism | Every fighter |
-| C08 | `8c67c327` | Tournament Geometry | Every fighter |
-| C09 | `67a0ba97` | Wave-1 Geometry | Every fighter |
-| C10 | `0170de08` | First Authored GLB | Core authored fighters |
-| C11 | `0bfc3094` | High-Fidelity Authored | Core authored fighters |
-| C12 | `425c89d4` | Detailed Lloyd | Lloyd |
-| C13 | `6860d027` | Exact Mould Initial | Lloyd |
-| C14 | `70f95ff9` | Exact Mould Intermediate | Lloyd |
-| C15 | `05b7ce43` | Exact Mould Refined | Lloyd |
-| C16 | `961edd9b` | Exact Mould + Back Emblem | Lloyd |
+| C08 | `26b198d6` | Wave-1 Profiles | Every fighter |
+| C09 | `8c67c327` | Tournament Geometry | Every fighter |
+| C10 | `ae6277d2` | Tournament Identity Priority | Every fighter |
+| C11 | `cf2f6329` | Remaining Wave-1 Identities | Every fighter |
+| C12 | `67a0ba97` | Remaining Wave-1 Geometry | Every fighter |
+| C13 | `99837226` | Catalog Identity Preservation | Every fighter |
+| C14 | `b5994b44` | Skeleton Profile Fix | Every fighter |
+| C15 | `0170de08` | First Authored GLB | Core authored fighters |
+| C16 | `0bfc3094` | High-Fidelity Authored | Core authored fighters |
+| C17 | `425c89d4` | Detailed Lloyd | Lloyd |
+| C18 | `6860d027` | Exact Mould Initial | Lloyd |
+| C19 | `70f95ff9` | Exact Mould Intermediate | Lloyd |
+| C20 | `05b7ce43` | Exact Mould Refined | Lloyd |
+| C21 | `961edd9b` | Exact Mould + Back Emblem | Lloyd |
 
 The first authored design was introduced in `113a74c1`; `0170de08` is used for the selectable asset because it is the working buffer-size-fixed version of that same design. The high-fidelity authored design was introduced in `36008526`; `0bfc3094` is used because it contains the generator-expression fix required to build that design correctly. Lloyd Detailed originated at `ca1faa7d`; `425c89d4` is the repaired hair-data revision of the same design.
 
-## Exact procedural snapshots
+## Exact historical procedural states
 
-C01–C09 are not approximations. Their original `src/shared/three/minifigure-model.ts` source revisions are preserved under:
+C01–C14 preserve both parts of each visual state:
+
+1. the historical `minifigure-model.ts` renderer revision;
+2. the historical `model-profile.ts` silhouette/profile revision active at that point.
+
+Renderer snapshots live under:
 
 `src/shared/three/history/`
 
-The runtime registry in:
+Profile snapshots live under:
 
-`src/shared/three/history/index.ts`
+`src/features/characters/history/`
 
-loads the selected historical renderer directly.
+The runtime registries select both together. Profile-only visual commits such as C08, C10, C11, C13 and C14 reuse the renderer that was current at that commit but use the exact profile mapping from that commit.
 
-For fighters that did not exist yet at an early commit, the historical renderer is applied to the fighter's current identity/profile data. This preserves the old rendering/design engine while keeping the modern roster playable.
+For fighters that did not exist yet at an early commit, the old renderer/profile logic is applied to the fighter's modern data where possible. This keeps the complete present-day roster playable while still preserving the historical visual engine.
 
 ## Authored assets
 
@@ -55,15 +65,21 @@ Historical authored assets are generated independently so one revision cannot ov
 
 Every fighter card has a **DESIGNS** button. The live 3D panel displays the timeline in chronological order and shows both the timeline slot and commit ID, for example:
 
-`C07 · 3dfe70cb`
+`C10 · ae6277d2`
 
 The selection is remembered separately for each fighter and is used by Tournament, Free Play, Dojo, and the live 3D model viewer.
 
+Counts:
+
+- every fighter: at least **14** historical procedural/profile states;
+- authored core fighters: **16** states;
+- Lloyd Tournament: **21** states.
+
 Defaults remain:
 
-- Lloyd Tournament → C12 Detailed Lloyd
-- other core authored fighters → C11 High-Fidelity Authored
-- all other fighters → C09 latest procedural design
+- Lloyd Tournament → C17 Detailed Lloyd
+- other core authored fighters → C16 High-Fidelity Authored
+- all other fighters → C14 latest procedural/profile design
 
 Old selections from the previous grouped selector are migrated automatically.
 
@@ -80,6 +96,6 @@ Every authored design preserves the gameplay animation roots:
 
 That lets a later mixer support requests such as:
 
-> head from C12 + torso from C11 + arms from C15 + legs from C09
+> head from C17 + torso from C16 + arms from C20 + legs from C14
 
 The rule going forward is: **add another design entry; never destroy the previous visual state.**
