@@ -1942,3 +1942,79 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   .game-screen .player-hud-copy > b { font-size:15px; }
   .game-screen .stud-copy > small { max-width:170px; white-space:normal; }
 }
+
+
+/* Historical fighter design library */
+.fighter-design-summary {
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  margin:.28rem 0 .16rem;
+  padding:.18rem .48rem;
+  border:1px solid rgba(220,178,77,.42);
+  border-radius:999px;
+  background:rgba(25,18,31,.7);
+  color:#e8c875;
+  font-size:.68rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.fighter-design-picker {
+  display:flex;
+  flex-wrap:wrap;
+  gap:.48rem;
+  margin:.7rem 0 .35rem;
+  max-width:100%;
+}
+.fighter-design-option {
+  appearance:none;
+  min-width:96px;
+  max-width:180px;
+  padding:.5rem .62rem;
+  border:1px solid rgba(220,178,77,.38);
+  border-radius:10px;
+  background:linear-gradient(180deg,rgba(62,46,70,.94),rgba(27,20,33,.96));
+  color:#efe6cf;
+  cursor:pointer;
+  text-align:left;
+  transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease,background .15s ease;
+}
+.fighter-design-option:hover,
+.fighter-design-option:focus-visible {
+  transform:translateY(-1px);
+  border-color:rgba(239,197,91,.82);
+  outline:none;
+}
+.fighter-design-option.active {
+  border-color:#e7bc50;
+  background:linear-gradient(180deg,rgba(118,83,30,.96),rgba(49,34,24,.98));
+  box-shadow:0 0 0 1px rgba(255,220,123,.22),0 0 18px rgba(223,175,62,.18);
+}
+.fighter-design-option b,
+.fighter-design-option span {
+  display:block;
+}
+.fighter-design-option b {
+  color:#ffd873;
+  font-size:.72rem;
+  letter-spacing:.1em;
+}
+.fighter-design-option span {
+  margin-top:.16rem;
+  color:#f2ead8;
+  font-size:.74rem;
+  line-height:1.2;
+}
+@media (max-width:760px) {
+  .fighter-design-picker {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+  }
+  .fighter-design-option {
+    min-width:0;
+    max-width:none;
+    width:100%;
+  }
+}
