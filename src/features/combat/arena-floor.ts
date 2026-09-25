@@ -89,6 +89,32 @@ function buildCenterMedallion(group: THREE.Group, dark: THREE.Material, mid: THR
   makeSerpent(1);
 }
 
+function buildPillarFootprint(group: THREE.Group, dark: THREE.Material, mid: THREE.Material, bronze: THREE.Material) {
+  const footprint = new THREE.Group();
+  footprint.name = 'centerPillarFootprint';
+
+  for (const [inner, outer, material] of [
+    [1.72, 1.84, dark],
+    [2.08, 2.2, bronze],
+    [2.76, 2.86, mid]
+  ] as const) {
+    addArc(footprint, material, inner, 0, Math.PI * 2, outer - inner, FLOOR_Y + 0.012);
+  }
+
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2;
+    const block = new THREE.Mesh(
+      new THREE.BoxGeometry(i % 3 === 0 ? 0.72 : 0.5, 0.018, 0.12),
+      i % 4 === 0 ? bronze : dark
+    );
+    block.position.set(Math.cos(angle) * 2.42, FLOOR_Y + 0.014, Math.sin(angle) * 2.42);
+    block.rotation.y = -angle;
+    footprint.add(block);
+  }
+
+  group.add(footprint);
+}
+
 function buildSlabSeams(group: THREE.Group, fine: THREE.Material, dark: THREE.Material) {
   // Radial seams are staggered by ring so the floor reads like fitted stone slabs
   // rather than a modern square grid.
@@ -295,6 +321,7 @@ export function buildTournamentFloorDetails(
   const bronze = lineMaterial(0x72522f, 0.52);
 
   buildCenterMedallion(group, dark, mid, bronze);
+  buildPillarFootprint(group, dark, mid, bronze);
   buildSlabSeams(group, fine, dark);
   buildOuterGlyphRing(group, dark, fine);
   buildHazardInlays(group, anchors, dark, bronze);

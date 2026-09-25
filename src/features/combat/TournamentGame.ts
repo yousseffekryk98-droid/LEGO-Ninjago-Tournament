@@ -6,6 +6,7 @@ import { getKeyBindings, type KeyBindings } from '../controls';
 import { ArenaHazardManager } from './arena-hazards';
 import { ElementVfxSystem } from './element-vfx';
 import { buildTournamentFloorDetails } from './arena-floor';
+import { CENTER_PILLAR_CLEARANCE, buildLegacyCenterPillar, resolveCenterPillarCollision, updateCenterPillarOcclusion } from './arena-landmarks';
 
 export interface HudState {
   health: number;
@@ -105,16 +106,14 @@ interface HealthPickup {
 }
 
 const ARENA_RADIUS = 43.5;
-const CENTER_PILLAR_RADIUS = 1.52;
-const CENTER_PILLAR_CLEARANCE = 0.72;
 const FIXED_SIMULATION_STEP = 1 / 60;
 const MAX_SIMULATION_CATCHUP = 0.22;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export class TournamentGame {
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 230);
-  private cameraBasePosition = new THREE.Vector3(21.5, 18.2, 24.0);
+  private camera = new THREE.PerspectiveCamera(48, 1, 0.1, 230);
+  private cameraBasePosition = new THREE.Vector3(20.8, 16.9, 23.6);
   private cameraTarget = new THREE.Vector3(0, 0.85, -0.35);
   private cameraMode: CameraMode = 'classic';
   private cameraShakeTime = 0;
@@ -124,6 +123,7 @@ export class TournamentGame {
   private clock = new THREE.Clock();
   private player: THREE.Group;
   private playerShadow: THREE.Mesh;
+  private centerPillar!: THREE.Group;
   private enemies: Enemy[] = [];
   private projectiles: Projectile[] = [];
   private boulders: Boulder[] = [];
@@ -192,8 +192,8 @@ export class TournamentGame {
     this.renderer.toneMappingExposure = 1.08;
     this.host.appendChild(this.renderer.domElement);
 
-    this.scene.background = new THREE.Color(0x251a22);
-    this.scene.fog = new THREE.FogExp2(0x251a22, 0.0135);
+    this.scene.background = new THREE.Color(0x211a21);
+    this.scene.fog = new THREE.FogExp2(0x211a21, 0.0122);
     this.buildArena();
     this.hazards = new ArenaHazardManager(this.scene);
     this.elementVfx = new ElementVfxSystem(this.scene);
@@ -412,6 +412,7 @@ export class TournamentGame {
     } else {
       this.cameraShakeStrength = 0;
     }
+    updateCenterPillarOcclusion(this.centerPillar, this.camera, this.player.position, dt);
     this.camera.lookAt(this.cameraTarget);
   }
 
@@ -559,7 +560,7 @@ export class TournamentGame {
       this.player.position.x = planar.x;
       this.player.position.z = planar.y;
     }
-    this.resolveCenterPillarCollision(this.player.position, CENTER_PILLAR_CLEARANCE);
+    resolveCenterPillarCollision(this.player.position, CENTER_PILLAR_CLEARANCE);
 
     if (!this.grounded || this.jumpVelocity !== 0) {
       this.jumpVelocity -= 19 * dt;
@@ -1105,7 +1106,7 @@ export class TournamentGame {
           enemy.mesh.position.x = spinPlanar.x;
           enemy.mesh.position.z = spinPlanar.y;
         }
-        this.resolveCenterPillarCollision(enemy.mesh.position, 0.58);
+        resolveCenterPillarCollision(enemy.mesh.position, 0.58);
         continue;
       }
 
@@ -1144,7 +1145,7 @@ export class TournamentGame {
         enemy.mesh.position.x = planar.x;
         enemy.mesh.position.z = planar.y;
       }
-      this.resolveCenterPillarCollision(enemy.mesh.position, 0.58);
+      resolveCenterPillarCollision(enemy.mesh.position, 0.58);
 
       if (Math.abs(enemy.mesh.position.x) > 41.8 && Math.abs(enemy.mesh.position.z) < 2.8 && enemy.knock.length() > 1.5) {
         this.defeatEnemy(enemy);
@@ -2199,7 +2200,7 @@ export class TournamentGame {
     }
 
     this.buildArenaGate();
-    this.buildLegacyCenterPillar();
+    this.centerPillar = buildLegacyCenterPillar(this.scene);
     this.buildSerpentPillar(-41.0, -37.2, 0.28);
     this.buildSerpentPillar(41.0, -37.2, -0.28);
     this.buildSerpentPillar(-41.8, 35.8, 0.2);
@@ -2303,6 +2304,68 @@ export class TournamentGame {
     const purple = new THREE.MeshStandardMaterial({ color: 0x563365, roughness: 0.76 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xb8892e, roughness: 0.38, metalness: 0.48 });
 
+    // The legacy arena reads as an enclosed stone bowl, especially behind Chen.
+    // Build a faceted curved retaining wall and parapet around the far half so
+    // the player never sees a flat empty horizon behind the combat ring.
+    for (let i = 0; i < 19; i++) {
+      const angle = Math.PI + (i / 18) * Math.PI;
+      const radius = 48.45;
+      const height = 2.65 + (i % 4) * 0.16;
+      const wallBlock = new THREE.Mesh(
+        new THREE.BoxGeometry(4.25, height, 0.95),
+        i % 3 === 0 ? darkStone : stone
+      );
+      wallBlock.name = `arenaFarWall:${i}`;
+      wallBlock.position.set(Math.cos(angle) * radius, height * 0.5, Math.sin(angle) * radius);
+      wallBlock.rotation.y = -angle + Math.PI / 2;
+      wallBlock.castShadow = true;
+      wallBlock.receiveShadow = true;
+      this.scene.add(wallBlock);
+
+      const parapet = new THREE.Mesh(
+        new THREE.BoxGeometry(4.35, 0.34, 1.16),
+        i % 2 ? stone : darkStone
+      );
+      parapet.name = `arenaFarParapet:${i}`;
+      parapet.position.set(Math.cos(angle) * 48.42, height + 0.1, Math.sin(angle) * 48.42);
+      parapet.rotation.y = wallBlock.rotation.y;
+      parapet.castShadow = true;
+      this.scene.add(parapet);
+    }
+
+    // Three shallow terrace rows follow the same curve. They stay outside the
+    // playable radius but add the layered stone/crowd depth visible in footage.
+    for (let row = 0; row < 3; row++) {
+      const radius = 44.8 + row * 1.15;
+      const y = 0.2 + row * 0.48;
+      for (let i = 0; i < 15; i++) {
+        const angle = Math.PI + 0.16 + (i / 14) * (Math.PI - 0.32);
+        const terrace = new THREE.Mesh(
+          new THREE.BoxGeometry(3.5, 0.46, 1.55),
+          row % 2 ? darkStone : stone
+        );
+        terrace.name = `arenaCurvedTerrace:${row}:${i}`;
+        terrace.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+        terrace.rotation.y = -angle + Math.PI / 2;
+        terrace.castShadow = true;
+        terrace.receiveShadow = true;
+        this.scene.add(terrace);
+      }
+    }
+
+    // Broad stone steps lead from the fighting floor up into Chen's gate.
+    for (let step = 0; step < 5; step++) {
+      const stair = new THREE.Mesh(
+        new THREE.BoxGeometry(9.2 - step * 0.72, 0.24, 1.16),
+        step % 2 ? darkStone : stone
+      );
+      stair.name = `arenaGateStep:${step}`;
+      stair.position.set(0, 0.12 + step * 0.16, -41.6 - step * 0.76);
+      stair.castShadow = true;
+      stair.receiveShadow = true;
+      this.scene.add(stair);
+    }
+
     // Low stepped spectator terraces outside the playable ring.
     for (const side of [-1, 1] as const) {
       for (let level = 0; level < 3; level++) {
@@ -2339,6 +2402,29 @@ export class TournamentGame {
       }
     }
 
+    // Continue the crowd around the curved far stand without creating hundreds
+    // of expensive minifigures. Simple LEGO-sized silhouettes give depth.
+    for (let row = 0; row < 2; row++) {
+      const radius = 44.35 + row * 1.02;
+      for (let i = 0; i < 18; i++) {
+        const angle = Math.PI + 0.2 + (i / 17) * (Math.PI - 0.4);
+        const spectator = new THREE.Group();
+        spectator.name = `arenaFarSpectator:${row}:${i}`;
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.44, 0.25), crowdMaterial);
+        body.position.y = 0.32;
+        const head = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.2, 10), crowdMaterial);
+        head.position.y = 0.66;
+        spectator.add(body, head);
+        spectator.position.set(
+          Math.cos(angle) * radius,
+          1.2 + row * 0.54 + (i % 3) * 0.03,
+          Math.sin(angle) * radius
+        );
+        spectator.rotation.y = -angle - Math.PI / 2;
+        this.scene.add(spectator);
+      }
+    }
+
     // Tournament banners echo the red/purple/gold architecture in reference footage.
     const bannerPoints: Array<[number, number, number, THREE.Material]> = [
       [-43.0, 4.0, -23.0, red],
@@ -2360,6 +2446,30 @@ export class TournamentGame {
         object.castShadow = true;
         this.scene.add(object);
       }
+    }
+
+    // Warm wall torches punctuate the dark stone bowl and mirror the orange
+    // practical lights visible around the legacy arena perimeter.
+    for (const angle of [3.52, 3.86, 4.2, 5.22, 5.56, 5.9]) {
+      const x = Math.cos(angle) * 47.0;
+      const z = Math.sin(angle) * 47.0;
+      const holder = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 0.62, 8), gold);
+      holder.position.set(x, 2.55, z);
+      holder.rotation.z = Math.PI / 2;
+      holder.castShadow = true;
+      this.scene.add(holder);
+
+      const flame = new THREE.Mesh(
+        new THREE.ConeGeometry(0.17, 0.56, 8),
+        new THREE.MeshBasicMaterial({ color: 0xff9e36, transparent: true, opacity: 0.9 })
+      );
+      flame.position.set(x, 3.02, z);
+      flame.rotation.z = (angle % 2) * 0.03;
+      this.scene.add(flame);
+
+      const torchLight = new THREE.PointLight(0xff7930, 2.9, 7.2, 2);
+      torchLight.position.set(x, 3.0, z);
+      this.scene.add(torchLight);
     }
 
     // Chen's elevated viewing throne above the far gate.
@@ -2509,140 +2619,6 @@ export class TournamentGame {
     crestCore.rotation.x = Math.PI / 2;
     crestCore.position.set(0, 5.0, z + 1.25);
     this.scene.add(crestCore);
-  }
-
-  private buildLegacyCenterPillar() {
-    const group = new THREE.Group();
-    group.name = 'legacyCenterSerpentPillar';
-
-    const stone = new THREE.MeshStandardMaterial({
-      color: 0x4a4845,
-      roughness: 0.94,
-      metalness: 0.015
-    });
-    const darkStone = new THREE.MeshStandardMaterial({
-      color: 0x2f3032,
-      roughness: 0.97
-    });
-    const serpent = new THREE.MeshStandardMaterial({
-      color: 0x6b2639,
-      roughness: 0.6,
-      metalness: 0.04
-    });
-    const serpentDark = new THREE.MeshStandardMaterial({
-      color: 0x391724,
-      roughness: 0.68
-    });
-    const bronze = new THREE.MeshStandardMaterial({
-      color: 0x9b7433,
-      roughness: 0.42,
-      metalness: 0.32
-    });
-
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.82, 0.44, 18), darkStone);
-    base.position.y = 0.22;
-    const baseRing = new THREE.Mesh(new THREE.TorusGeometry(1.48, 0.16, 10, 32), bronze);
-    baseRing.rotation.x = Math.PI / 2;
-    baseRing.position.y = 0.5;
-
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.18, 8.8, 18), stone);
-    shaft.position.y = 4.8;
-
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(1.34, 1.15, 0.5, 18), darkStone);
-    cap.position.y = 9.22;
-    const capRing = new THREE.Mesh(new THREE.TorusGeometry(1.22, 0.14, 10, 32), bronze);
-    capRing.rotation.x = Math.PI / 2;
-    capRing.position.y = 9.05;
-
-    for (const object of [base, baseRing, shaft, cap, capRing]) {
-      object.castShadow = true;
-      object.receiveShadow = true;
-      group.add(object);
-    }
-
-    const helixPoints: THREE.Vector3[] = [];
-    const turns = 2.48;
-    const segments = 88;
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      const angle = -0.55 + t * Math.PI * 2 * turns;
-      const radius = 1.22 + Math.sin(t * Math.PI * 3) * 0.06;
-      helixPoints.push(new THREE.Vector3(
-        Math.cos(angle) * radius,
-        0.72 + t * 7.85,
-        Math.sin(angle) * radius
-      ));
-    }
-    const serpentCurve = new THREE.CatmullRomCurve3(helixPoints);
-    const coil = new THREE.Mesh(new THREE.TubeGeometry(serpentCurve, 112, 0.19, 10, false), serpent);
-    coil.castShadow = true;
-    coil.receiveShadow = true;
-    group.add(coil);
-
-    const headAngle = -0.55 + Math.PI * 2 * turns;
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.9, 6), serpent);
-    head.position.set(Math.cos(headAngle) * 1.3, 8.72, Math.sin(headAngle) * 1.3);
-    head.rotation.x = Math.PI / 2;
-    head.rotation.z = -headAngle + Math.PI / 2;
-    head.castShadow = true;
-    group.add(head);
-
-    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.13, 0.28), serpentDark);
-    brow.position.copy(head.position).add(new THREE.Vector3(0, 0.14, 0));
-    brow.rotation.y = -headAngle;
-    brow.castShadow = true;
-    group.add(brow);
-
-    for (const side of [-1, 1]) {
-      const eye = new THREE.Mesh(
-        new THREE.SphereGeometry(0.055, 8, 6),
-        new THREE.MeshBasicMaterial({ color: 0xf2c45e })
-      );
-      const sideOffset = new THREE.Vector3(
-        Math.cos(headAngle + Math.PI / 2) * side * 0.16,
-        0.17,
-        Math.sin(headAngle + Math.PI / 2) * side * 0.16
-      );
-      eye.position.copy(head.position).add(sideOffset);
-      group.add(eye);
-    }
-
-    // Slightly irregular stone bands make the pillar read as an old arena prop,
-    // not a perfect primitive generated by the browser.
-    for (let i = 0; i < 6; i++) {
-      const band = new THREE.Mesh(
-        new THREE.TorusGeometry(1.06 + (i % 2) * 0.045, 0.055, 7, 28),
-        i % 3 === 0 ? darkStone : stone
-      );
-      band.rotation.x = Math.PI / 2;
-      band.rotation.z = i * 0.19;
-      band.position.y = 1.35 + i * 1.28;
-      band.scale.x = 1 + (i % 2 ? 0.06 : -0.03);
-      band.castShadow = true;
-      group.add(band);
-    }
-
-    group.position.set(0, 0, 0);
-    this.scene.add(group);
-  }
-
-  private resolveCenterPillarCollision(position: THREE.Vector3, padding: number) {
-    const minimumDistance = CENTER_PILLAR_RADIUS + padding;
-    const dx = position.x;
-    const dz = position.z;
-    const distanceSq = dx * dx + dz * dz;
-    if (distanceSq >= minimumDistance * minimumDistance) return;
-
-    const distance = Math.sqrt(distanceSq);
-    if (distance < 0.0001) {
-      position.x = minimumDistance;
-      position.z = 0;
-      return;
-    }
-
-    const scale = minimumDistance / distance;
-    position.x = dx * scale;
-    position.z = dz * scale;
   }
 
   private buildSerpentPillar(x: number, z: number, lean: number) {
