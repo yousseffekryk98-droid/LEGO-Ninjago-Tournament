@@ -292,8 +292,6 @@ function showBossPath() {
   const allNodes = challengers.map((fighter, index) => {
     const identity = getCharacterIdentity(fighter);
     const reference = getCharacterReferenceImage(fighter);
-    const suppliedLook = getUserCharacterPortrait(fighter.id);
-    const showRemoteReference = suppliedLook ? null : reference;
     return `
       <span class="boss-path-mini ${index === 0 ? 'current' : ''}" data-gauntlet-order="${index + 1}" title="${identity.name} · ${identity.variant ?? fighter.element}" style="--node-color:#${fighter.color.toString(16).padStart(6, '0')}">
         <img src="${getCachedCharacterPortrait(fighter.id) ?? getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />
@@ -378,6 +376,8 @@ function showRoster() {
     const canUpgrade = progress.level < 5 && save.bankStuds >= upgradeCost;
     const identity = getCharacterIdentity(fighter);
     const reference = getCharacterReferenceImage(fighter);
+    const suppliedLook = getUserCharacterPortrait(fighter.id);
+    const showRemoteReference = suppliedLook ? null : reference;
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
         <button class="fighter-avatar preview-character-btn ${suppliedLook ? 'has-user-look' : showRemoteReference ? 'has-reference' : ''}" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
