@@ -27,6 +27,14 @@ export function characterSearchText(character: CharacterDef) {
     identity.variant ?? '',
     character.name,
     character.element,
+    character.power ?? '',
+    character.normalAttack ?? '',
+    character.specialAttack ?? '',
+    character.spinjitzu ?? '',
+    character.ultimateSpinjitzu ?? '',
+    character.passive ?? '',
+    character.sourceEra ?? '',
+    character.sourceGroup ?? '',
     character.style,
     character.special
   ].join(' ').toLowerCase();
