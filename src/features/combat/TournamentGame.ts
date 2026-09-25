@@ -1289,7 +1289,7 @@ export class TournamentGame {
         }
         projectile.life = 0;
       }
-      if (projectile.life <= 0 || projectile.mesh.position.length() > 43) {
+      if (projectile.life <= 0 || projectile.mesh.position.length() > 64) {
         this.scene.remove(projectile.mesh);
         this.projectiles.splice(this.projectiles.indexOf(projectile), 1);
       }
@@ -1306,7 +1306,7 @@ export class TournamentGame {
       const bossPool = ROSTER.filter((fighter) => fighter.id !== this.character.id);
       const bossRound = this.bossRush ? this.wave - 1 : Math.floor(this.wave / 5) - 1;
       const bossCharacter = bossPool[((bossRound % bossPool.length) + bossPool.length) % bossPool.length];
-      this.enemies.push(this.createEnemy('boss', 0, -13.5, bossCharacter.name, bossCharacter));
+      this.enemies.push(this.createEnemy('boss', 0, -22.0, bossCharacter.name, bossCharacter));
       this.callbacks.onMessage(this.bossRush
         ? `CHALLENGER ${((bossRound % bossPool.length) + bossPool.length) % bossPool.length + 1}/${bossPool.length}: ${bossCharacter.name}`
         : `ELEMENTAL MASTER: ${bossCharacter.name}`);
@@ -1314,7 +1314,7 @@ export class TournamentGame {
       const count = Math.min(14, 2 + this.wave);
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2 + Math.random() * 0.35;
-        const radius = 11 + Math.random() * 13.5;
+        const radius = 16 + Math.random() * 19.0;
         const roll = Math.random();
         const kind: EnemyKind = this.wave < 2 ? 'melee' : roll > 0.78 ? 'ranged' : roll > 0.56 ? 'heavy' : 'melee';
         this.enemies.push(this.createEnemy(kind, Math.cos(angle) * radius, Math.sin(angle) * radius));
