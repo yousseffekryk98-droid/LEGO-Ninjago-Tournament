@@ -123,13 +123,13 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 
 .roster-grid { max-width:1100px; margin:0 auto; padding:20px; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
 .fighter-card {
-  display:grid; grid-template-columns:64px 1fr auto; gap:12px; align-items:center;
-  min-height:92px; padding:12px; border-radius:17px;
+  display:grid; grid-template-columns:84px 1fr auto; gap:12px; align-items:center;
+  min-height:112px; padding:12px; border-radius:17px;
   border:1px solid rgba(214,175,71,.24); background:rgba(17,13,24,.66); box-shadow:inset 0 1px rgba(255,255,255,.04);
 }
 .fighter-card.selected { outline:2px solid #e7bd50; background:rgba(74,45,80,.72); }
 .fighter-card.locked { filter:saturate(.65); }
-.fighter-avatar { position:relative; width:58px; height:64px; display:grid; place-items:center; }
+.fighter-avatar { position:relative; width:78px; height:84px; display:grid; place-items:center; }
 .fighter-avatar span { position:absolute; top:3px; width:32px; height:27px; border-radius:10px 10px 6px 6px; background:var(--fighter); border:3px solid #1c1720; }
 .fighter-avatar i { position:absolute; top:29px; width:45px; height:30px; border-radius:5px; background:linear-gradient(90deg,var(--accent) 0 12%,var(--fighter) 12% 88%,var(--accent) 88%); border:3px solid #1c1720; }
 .fighter-copy h3 { margin:0; font-size:20px; }
@@ -1203,6 +1203,43 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
     inset 0 0 0 2px #3a2445,
     inset 0 0 0 5px rgba(227,181,67,.24),
     0 3px 8px #0008;
+}
+
+.fighter-avatar.has-user-look {
+  overflow:hidden;
+  border:3px solid #d8ad43;
+  border-radius:16px;
+  background:#1c1422;
+  box-shadow:
+    inset 0 0 0 2px rgba(255,232,157,.22),
+    0 5px 13px #0009,
+    0 0 15px color-mix(in srgb,var(--fighter) 34%,transparent);
+}
+.fighter-avatar.has-user-look .fighter-avatar-render {
+  inset:0;
+  width:100%;
+  height:100%;
+  border-radius:12px;
+  object-fit:cover;
+  object-position:center 38%;
+  filter:saturate(1.08) contrast(1.06);
+}
+.fighter-avatar.has-user-look .fighter-avatar-svg,
+.fighter-avatar.has-user-look .fighter-avatar-fallback,
+.fighter-avatar.has-user-look .fighter-avatar-body {
+  opacity:0;
+}
+.fighter-avatar.has-user-look > small {
+  z-index:7;
+  right:4px;
+  bottom:3px;
+}
+.user-look-badge {
+  left:4px;
+  top:4px;
+  border-color:#f3d16d;
+  background:rgba(35,21,28,.9);
+  color:#fff0b0;
 }
 
 .fighter-avatar-real {

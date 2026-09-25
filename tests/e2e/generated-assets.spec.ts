@@ -95,3 +95,33 @@ test('generated core fighter GLBs preserve the animation-part contract', async (
     for (const part of requiredParts) expect(names.has(part), `${id} missing ${part}`).toBeTruthy();
   }
 });
+
+
+test('supplied Lloyd Kai and Jay look references are bundled as WebP assets', async () => {
+  for (const id of ['lloyd', 'kai', 'jay']) {
+    const file = await readFile(resolve(`public/assets/reference/${id}-user-reference.webp`));
+    expect(file.byteLength, id).toBeGreaterThan(2_000);
+    expect(file.subarray(0, 4).toString('ascii'), id).toBe('RIFF');
+    expect(file.subarray(8, 12).toString('ascii'), id).toBe('WEBP');
+  }
+});
+
+test('high-fidelity hero GLBs include faces hair and outfit-specific detail', async () => {
+  const heroRequirements: Record<string, string[]> = {
+    'lloyd-tournament': ['leftEye', 'rightEye', 'leftBrow', 'rightBrow', 'mouth', 'headbandFront', 'hairCap', 'leftShoulderGold', 'rightShoulderGold'],
+    'kai-tournament': ['leftEye', 'rightEye', 'leftBrow', 'rightBrow', 'kaiHeadband', 'hairCap', 'hairSpike0', 'leftShoulderArmor', 'rightShoulderArmor'],
+    'jay-tournament': ['leftEye', 'rightEye', 'leftBrow', 'rightBrow', 'hairCap', 'hairLock0', 'jayChestStrap', 'jayBuckle']
+  };
+
+  for (const [id, required] of Object.entries(heroRequirements)) {
+    const file = await readFile(resolve(`public/assets/models/fighters/${id}.glb`));
+    const jsonLength = file.readUInt32LE(12);
+    const json = JSON.parse(file.subarray(20, 20 + jsonLength).toString('utf8').trim());
+    const names = new Set(json.nodes.map((node: { name?: string }) => node.name));
+    for (const part of required) expect(names.has(part), `${id} missing ${part}`).toBeTruthy();
+    expect(json.nodes.length, id).toBeGreaterThan(35);
+    expect(json.materials.map((material: { name?: string }) => material.name), id).toEqual(
+      expect.arrayContaining(['Hair', 'Secondary', 'Eye', 'White'])
+    );
+  }
+});

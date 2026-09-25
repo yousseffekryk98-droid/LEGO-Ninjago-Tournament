@@ -2,7 +2,17 @@ import * as THREE from 'three';
 import type { CharacterDef } from './types';
 import { createCharacterModel } from './model';
 
-const portraitCache = new Map<string, string>();
+export const USER_CHARACTER_PORTRAITS: Readonly<Record<string, string>> = {
+  'lloyd-tournament': '/assets/reference/lloyd-user-reference.webp',
+  'kai-tournament': '/assets/reference/kai-user-reference.webp',
+  'jay-tournament': '/assets/reference/jay-user-reference.webp'
+};
+
+const portraitCache = new Map<string, string>(Object.entries(USER_CHARACTER_PORTRAITS));
+
+export function getUserCharacterPortrait(characterId: string) {
+  return USER_CHARACTER_PORTRAITS[characterId] ?? null;
+}
 
 function disposeObject(object: THREE.Object3D) {
   object.traverse((child) => {

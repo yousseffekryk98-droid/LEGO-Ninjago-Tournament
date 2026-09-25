@@ -52,7 +52,7 @@ test('tournament HUD exposes collectible stud economy and stage presentation', a
   await expect(page.locator('#stage-banner')).toBeAttached();
   await expect(page.locator('#boss-health')).toBeAttached();
   await expect(page.locator('#player-face-render')).toBeVisible();
-  await expect(page.locator('#player-face-render')).toHaveAttribute('src', /^data:image\/(svg\+xml|png)/);
+  await expect(page.locator('#player-face-render')).toHaveAttribute('src', '/assets/reference/lloyd-user-reference.webp');
 });
 
 
@@ -63,9 +63,14 @@ test('all fighters are open and free play starts with unlimited Spinjitzu', asyn
   await expect(page.locator('.fighter-card.locked')).toHaveCount(0);
   await expect(page.locator('[data-unlock]')).toHaveCount(0);
 
+  const lloydCard = page.locator('.fighter-card[data-id="lloyd-tournament"]');
   const kaiCard = page.locator('.fighter-card[data-id="kai-tournament"]');
-  await expect(kaiCard.locator('.fighter-avatar-real')).toHaveAttribute('src', /^https:\/\/www\.lego\.com\/cdn\//);
-  await expect(kaiCard.locator('.fighter-reference-badge')).toHaveText('LEGO REF');
+  const jayCard = page.locator('.fighter-card[data-id="jay-tournament"]');
+  await expect(lloydCard.locator('.fighter-avatar-render')).toHaveAttribute('src', '/assets/reference/lloyd-user-reference.webp');
+  await expect(kaiCard.locator('.fighter-avatar-render')).toHaveAttribute('src', '/assets/reference/kai-user-reference.webp');
+  await expect(jayCard.locator('.fighter-avatar-render')).toHaveAttribute('src', '/assets/reference/jay-user-reference.webp');
+  await expect(kaiCard.locator('.fighter-avatar-real')).toHaveCount(0);
+  await expect(kaiCard.locator('.fighter-reference-badge')).toHaveText('GAME LOOK');
   await expect(kaiCard.locator('.fighter-reference-link')).toHaveAttribute('href', 'https://www.lego.com/en-us/themes/ninjago/characters/kai');
   await expect(page.locator('.fighter-card[data-id="master-chen"] .fighter-avatar-real')).toHaveCount(0);
 
@@ -240,9 +245,15 @@ test('fighter cards upgrade from CSS fallbacks to rendered 3D portraits when Web
   await page.getByRole('button', { name: /FIGHTERS/i }).click();
   await expect(page.locator('.fighter-card')).toHaveCount(ROSTER.length);
 
-  const firstPortrait = page.locator('.fighter-avatar-render').first();
-  await expect(firstPortrait).toBeAttached({ timeout: 6000 });
-  await expect(firstPortrait).toHaveAttribute('src', /^data:image\/png;base64,/);
+  const lloydPortrait = page.locator('.fighter-card[data-id="lloyd-tournament"] .fighter-avatar-render');
+  await expect(lloydPortrait).toBeAttached({ timeout: 6000 });
+  await expect(lloydPortrait).toHaveAttribute('src', '/assets/reference/lloyd-user-reference.webp');
+
+  const chenCard = page.locator('.fighter-card[data-id="master-chen"]');
+  await chenCard.scrollIntoViewIfNeeded();
+  const generatedPortrait = chenCard.locator('.fighter-avatar-render');
+  await expect(generatedPortrait).toBeAttached({ timeout: 6000 });
+  await expect(generatedPortrait).toHaveAttribute('src', /^data:image\/png;base64,/);
 });
 
 
