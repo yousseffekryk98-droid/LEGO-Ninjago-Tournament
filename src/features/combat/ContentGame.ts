@@ -576,10 +576,19 @@ export class TournamentGame extends StableContentGame {
     const weaponRig = state.player.getObjectByName('weaponRig');
 
     const runSwing = Math.sin(state.elapsed * 11) * 0.48 * this.visualMoveAmount;
+    const idleWeight = 1 - this.visualMoveAmount;
+    const idleBreath = Math.sin(state.elapsed * 2.35) * 0.024 * idleWeight;
+    const runBounce = Math.abs(Math.sin(state.elapsed * 11)) * 0.035 * this.visualMoveAmount;
     const attackProgress = state.attackAnimationTime > 0 && state.attackAnimationDuration > 0
       ? THREE.MathUtils.clamp(1 - state.attackAnimationTime / state.attackAnimationDuration, 0, 1)
       : 0;
     const attackPulse = attackProgress > 0 ? Math.sin(Math.PI * attackProgress) : 0;
+    const anticipation = attackProgress > 0 && attackProgress < 0.24
+      ? Math.sin((attackProgress / 0.24) * Math.PI)
+      : 0;
+    const recoverySnap = attackProgress > 0.7
+      ? Math.sin(((attackProgress - 0.7) / 0.3) * Math.PI)
+      : 0;
     const attackingWithLeg = state.combatMove === 'kick' || state.combatMove === 'roundhouse';
 
     if (leftLeg && rightLeg) {
@@ -613,15 +622,15 @@ export class TournamentGame extends StableContentGame {
         leftArm.rotation.z = -0.58;
         rightArm.rotation.z = 0.58;
       } else if (attackPulse > 0.01 && state.combatMove === 'jab') {
-        rightArm.rotation.x = -1.5 * attackPulse;
-        rightArm.rotation.z = 0.2 + attackPulse * 0.42;
-        leftArm.rotation.x = -0.72 * attackPulse;
-        leftArm.rotation.z = -0.48;
+        rightArm.rotation.x = -1.58 * attackPulse + anticipation * 0.2;
+        rightArm.rotation.z = 0.2 + attackPulse * 0.5;
+        leftArm.rotation.x = -0.74 * attackPulse - anticipation * 0.12;
+        leftArm.rotation.z = -0.5;
       } else if (attackPulse > 0.01 && state.combatMove === 'cross') {
-        leftArm.rotation.x = -1.52 * attackPulse;
-        leftArm.rotation.z = -0.2 - attackPulse * 0.44;
-        rightArm.rotation.x = -0.7 * attackPulse;
-        rightArm.rotation.z = 0.48;
+        leftArm.rotation.x = -1.62 * attackPulse + anticipation * 0.18;
+        leftArm.rotation.z = -0.2 - attackPulse * 0.52;
+        rightArm.rotation.x = -0.72 * attackPulse - anticipation * 0.1;
+        rightArm.rotation.z = 0.5;
       } else if (attackPulse > 0.01 && attackingWithLeg) {
         leftArm.rotation.x = -0.8 * attackPulse;
         rightArm.rotation.x = -0.8 * attackPulse;
@@ -636,28 +645,68 @@ export class TournamentGame extends StableContentGame {
     }
 
     if (torso) {
+      if (typeof torso.userData.presentationHomeY !== 'number') {
+        torso.userData.presentationHomeY = torso.position.y;
+      }
+      torso.position.y = Number(torso.userData.presentationHomeY) + idleBreath + runBounce - attackPulse * 0.018;
+
       const twist = state.combatMove === 'cross'
-        ? attackPulse * 0.34
+        ? attackPulse * 0.42
         : state.combatMove === 'roundhouse'
-          ? attackPulse * -0.62
-          : attackPulse * -0.22;
-      torso.rotation.y = twist;
-      torso.rotation.z = state.dodgeTime > 0
-        ? -0.18
+          ? attackPulse * -0.7
+          : attackPulse * -0.28;
+      const windup = state.combatMove === 'cross' ? anticipation * 0.13 : anticipation * -0.11;
+      torso.rotation.y = twist + windup - recoverySnap * twist * 0.18;
+      torso.rotation.x = state.input.block
+        ? -0.08
         : attackingWithLeg
-          ? attackPulse * 0.13
-          : runSwing * 0.05;
+          ? -attackPulse * 0.1
+          : anticipation * 0.055;
+      torso.rotation.z = state.dodgeTime > 0
+        ? -0.22
+        : attackingWithLeg
+          ? attackPulse * 0.16
+          : runSwing * 0.065;
     }
-    if (head) head.rotation.y = state.combatMove === 'cross' ? attackPulse * -0.18 : attackPulse * 0.12;
+    if (head) {
+      if (typeof head.userData.presentationHomeY !== 'number') {
+        head.userData.presentationHomeY = head.position.y;
+      }
+      head.position.y = Number(head.userData.presentationHomeY) + idleBreath * 0.45 + runBounce * 0.28;
+      head.rotation.y = state.combatMove === 'cross' ? attackPulse * -0.22 : attackPulse * 0.14;
+      head.rotation.z = state.dodgeTime > 0 ? 0.1 : -runSwing * 0.035;
+    }
     if (weaponRig) {
-      weaponRig.rotation.z = attackingWithLeg ? 0 : attackPulse * -0.42;
-      weaponRig.rotation.x = attackingWithLeg ? 0 : attackPulse * -0.18;
+      weaponRig.rotation.z = attackingWithLeg ? 0 : attackPulse * -0.54 + anticipation * 0.18;
+      weaponRig.rotation.x = attackingWithLeg ? 0 : attackPulse * -0.24 - anticipation * 0.12;
+      weaponRig.rotation.y = attackingWithLeg ? 0 : recoverySnap * 0.08;
     }
 
     if (state.spinTime > 0) {
-      if (leftArm) leftArm.rotation.x = -0.35;
-      if (rightArm) rightArm.rotation.x = 0.35;
-      if (weaponRig) weaponRig.rotation.z = 0;
+      const spinBeat = Math.sin(state.elapsed * 17);
+      if (leftArm) {
+        leftArm.rotation.x = -0.42 + spinBeat * 0.16;
+        leftArm.rotation.z = -0.82;
+      }
+      if (rightArm) {
+        rightArm.rotation.x = 0.42 - spinBeat * 0.16;
+        rightArm.rotation.z = 0.82;
+      }
+      if (leftLeg && rightLeg) {
+        leftLeg.rotation.x = -0.2 + spinBeat * 0.08;
+        rightLeg.rotation.x = 0.2 - spinBeat * 0.08;
+        leftLeg.rotation.z = -0.08;
+        rightLeg.rotation.z = 0.08;
+      }
+      if (torso) {
+        torso.rotation.x = -0.07;
+        torso.rotation.z = spinBeat * 0.055;
+      }
+      if (head) head.rotation.y = spinBeat * 0.08;
+      if (weaponRig) {
+        weaponRig.rotation.z = 0;
+        weaponRig.rotation.x = -0.16;
+      }
     }
   }
 

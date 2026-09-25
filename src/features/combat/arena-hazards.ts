@@ -50,6 +50,7 @@ interface RuntimeHazard {
   spikeHomeY: number[];
   fireJets: THREE.Mesh[];
   poisonClouds: THREE.Mesh[];
+  pitDust: THREE.Mesh[];
   effectLight?: THREE.PointLight;
 }
 
@@ -270,7 +271,8 @@ export class ArenaHazardManager {
       spikes: [],
       spikeHomeY: [],
       fireJets: [],
-      poisonClouds: []
+      poisonClouds: [],
+      pitDust: []
     };
 
     if (anchor.kind === 'pit') this.buildPit(runtime);
@@ -329,6 +331,7 @@ export class ArenaHazardManager {
         new THREE.CircleGeometry(radius * 0.89, 5, angle, (Math.PI * 2) / panelCount),
         stoneMaterial.clone()
       );
+      panel.name = `hazardPitPanel${i}`;
       panel.rotation.x = -Math.PI / 2;
       panel.position.y = 0.11;
       panel.receiveShadow = true;
@@ -359,6 +362,34 @@ export class ArenaHazardManager {
       crack.position.set(Math.cos(angle) * radius * 0.35, 0.126, Math.sin(angle) * radius * 0.35);
       crack.rotation.y = -angle + (i % 2 ? 0.18 : -0.18);
       hazard.group.add(crack);
+    }
+
+    // Dust lives on the trap itself so the collapse feels physical without
+    // adding a global particle system. It appears during the warning shake,
+    // bursts as the slabs fall, then fades while the floor rebuilds.
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2 + (i % 3) * 0.11;
+      const dust = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08 + (i % 4) * 0.025, 7, 5),
+        new THREE.MeshBasicMaterial({
+          color: i % 2 ? 0x8a7967 : 0x6f655b,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false
+        })
+      );
+      dust.name = `hazardPitDust${i}`;
+      dust.userData.angle = angle;
+      dust.userData.radius = radius * (0.4 + (i % 5) * 0.105);
+      dust.userData.phase = i * 0.73;
+      dust.position.set(
+        Math.cos(angle) * Number(dust.userData.radius),
+        0.18,
+        Math.sin(angle) * Number(dust.userData.radius)
+      );
+      dust.scale.setScalar(0.01);
+      hazard.group.add(dust);
+      hazard.pitDust.push(dust);
     }
   }
 
@@ -610,17 +641,42 @@ export class ArenaHazardManager {
       if (depth) depth.material.opacity = clamp01(openProgress * 1.18);
       if (hazard.shaft) hazard.shaft.visible = openProgress > 0.08;
 
-      for (const panel of hazard.panels) {
+      for (let i = 0; i < hazard.panels.length; i++) {
+        const panel = hazard.panels[i];
         const angle = Number(panel.userData.hazardAngle ?? 0);
         const sign = Number(panel.userData.hazardTiltSign ?? 1);
         const warningJitter = warningProgress > 0 && openProgress === 0
-          ? Math.sin(performance.now() * 0.028 + angle * 3) * 0.035 * warningProgress
+          ? Math.sin(performance.now() * 0.028 + angle * 3) * 0.055 * warningProgress
           : 0;
-        panel.position.x = Math.cos(angle) * openProgress * 0.48 + Math.cos(angle) * warningJitter;
-        panel.position.z = Math.sin(angle) * openProgress * 0.48 + Math.sin(angle) * warningJitter;
-        panel.position.y = 0.11 - openProgress * 2.65;
-        panel.rotation.x = -Math.PI / 2 + sign * openProgress * 0.72;
-        panel.rotation.z = sign * openProgress * 0.24;
+        const stagger = Math.min(0.22, i * 0.028);
+        const fallProgress = smooth(clamp01((openProgress - stagger) / Math.max(0.01, 1 - stagger)));
+        const radialKick = Math.sin(Math.PI * fallProgress) * 0.54 + fallProgress * 0.28;
+        panel.position.x = Math.cos(angle) * radialKick + Math.cos(angle) * warningJitter;
+        panel.position.z = Math.sin(angle) * radialKick + Math.sin(angle) * warningJitter;
+        panel.position.y = 0.11 - fallProgress * (2.5 + (i % 3) * 0.24);
+        panel.rotation.x = -Math.PI / 2 + sign * fallProgress * (0.78 + (i % 2) * 0.18);
+        panel.rotation.z = sign * fallProgress * (0.26 + (i % 3) * 0.08);
+        panel.rotation.y = sign * fallProgress * 0.18;
+      }
+
+      const now = performance.now();
+      for (let i = 0; i < hazard.pitDust.length; i++) {
+        const dust = hazard.pitDust[i];
+        const angle = Number(dust.userData.angle ?? 0);
+        const radius = Number(dust.userData.radius ?? 1);
+        const phase = Number(dust.userData.phase ?? 0);
+        const warningLift = warningProgress * (0.04 + (i % 4) * 0.025);
+        const collapseBurst = Math.sin(Math.PI * clamp01(openProgress * 1.45));
+        const drift = warningProgress * 0.05 + collapseBurst * (0.24 + (i % 5) * 0.055);
+        dust.position.set(
+          Math.cos(angle) * (radius + drift) + Math.sin(now * 0.002 + phase) * 0.04,
+          0.16 + warningLift + collapseBurst * (0.22 + (i % 4) * 0.08),
+          Math.sin(angle) * (radius + drift) + Math.cos(now * 0.0017 + phase) * 0.04
+        );
+        dust.scale.setScalar(0.01 + warningProgress * 0.42 + collapseBurst * (0.75 + (i % 3) * 0.12));
+        if (dust.material instanceof THREE.MeshBasicMaterial) {
+          dust.material.opacity = clamp01(warningProgress * 0.22 + collapseBurst * 0.34);
+        }
       }
       return;
     }
