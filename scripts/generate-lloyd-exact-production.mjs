@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 const ID = 'lloyd-tournament';
 const PART_ROOT = resolve('third_party/ldraw-stl');
 const OUTPUT = resolve('public/assets/models/fighters/lloyd-tournament.glb');
-const TARGET_HEIGHT = 2.68;
+const TARGET_HEIGHT = 2.55;
 const LDRAW_TO_MM = 0.4;
 
 const enc = new TextEncoder();
@@ -28,7 +28,7 @@ const PLACEMENT = {
   torso: [0, -72, 0],
   head: [0, -100, 0],
   hair: [0, -100, 0],
-  bandana: [0, -100, 0],
+  bandana: [0, -84, 0],
   hips: [0, -40, 0],
   screenLeftLeg: [0, -28, 0],
   screenRightLeg: [0, -28, 0],
@@ -103,7 +103,7 @@ function transformPart(rawPositions, placementLdu, rotation = I3) {
     // LDraw is Y-down. The game's Three.js convention is Y-up and +Z is front.
     out[i] = lx;
     out[i+1] = -ly;
-    out[i+2] = -lz;
+    out[i+2] = lz;
   }
   return out;
 }
@@ -267,28 +267,28 @@ async function generate() {
   const addTorsoBox=(name,world,scale,mat,rot=0)=>torsoKids.push(node(name,mat,rel(world,RIG_PIVOTS.torso),scale,qEuler(0,0,rot)));
 
   // Tournament Robe: broad black diagonal sash with thin gold edging.
-  addTorsoBox('tournamentSash',[-.005,1.48,.285],[.18,.82,.022],M.blackBox,-.57);
-  addTorsoBox('tournamentSashGoldEdgeL',[-.105,1.48,.302],[.025,.82,.012],M.goldBox,-.57);
-  addTorsoBox('tournamentSashGoldEdgeR',[.095,1.48,.302],[.022,.82,.012],M.goldBox,-.57);
+  addTorsoBox('tournamentSash',[-.005,1.48,.245],[.18,.82,.022],M.blackBox,-.57);
+  addTorsoBox('tournamentSashGoldEdgeL',[-.105,1.48,.258],[.025,.82,.012],M.goldBox,-.57);
+  addTorsoBox('tournamentSashGoldEdgeR',[.095,1.48,.258],[.022,.82,.012],M.goldBox,-.57);
 
   // Collar and robe seam visible beside the sash.
-  addTorsoBox('collarBlackLeft',[-.14,1.73,.305],[.085,.34,.016],M.blackBox,-.48);
-  addTorsoBox('collarOliveRight',[.14,1.72,.306],[.06,.31,.016],M.oliveBox,.48);
-  addTorsoBox('robeChestLine',[.23,1.56,.307],[.25,.035,.016],M.grayBox,-.08);
-  addTorsoBox('robeChestGoldLine',[.23,1.61,.309],[.22,.018,.014],M.goldBox,-.08);
+  addTorsoBox('collarBlackLeft',[-.14,1.73,.258],[.085,.34,.016],M.blackBox,-.48);
+  addTorsoBox('collarOliveRight',[.14,1.72,.260],[.06,.31,.016],M.oliveBox,.48);
+  addTorsoBox('robeChestLine',[.23,1.56,.262],[.25,.035,.016],M.grayBox,-.08);
+  addTorsoBox('robeChestGoldLine',[.23,1.61,.265],[.22,.018,.014],M.goldBox,-.08);
 
   // Waist print / knot lines from the physical Tournament robe.
-  addTorsoBox('waistBlackBand',[0,1.02,.305],[.78,.055,.018],M.blackBox,0);
-  addTorsoBox('waistOliveBand',[0,.965,.306],[.74,.025,.017],M.oliveBox,0);
-  addTorsoBox('waistTieDiagonal',[.18,.94,.31],[.30,.04,.017],M.blackBox,-.23);
+  addTorsoBox('waistBlackBand',[0,1.02,.258],[.78,.055,.018],M.blackBox,0);
+  addTorsoBox('waistOliveBand',[0,.965,.261],[.74,.025,.017],M.oliveBox,0);
+  addTorsoBox('waistTieDiagonal',[.18,.94,.264],[.30,.04,.017],M.blackBox,-.23);
 
   // Lloyd power medallion on upper screen-left chest.
-  torsoKids.push(node('powerMedallionDisk',M.blackCyl,rel([-.255,1.69,.323],RIG_PIVOTS.torso),[.115,.028,.115],qEuler(Math.PI/2,0,0)));
-  torsoKids.push(node('powerMedallionRing',M.goldTorus,rel([-.255,1.69,.338],RIG_PIVOTS.torso),[.145,.036,.145],qEuler(Math.PI/2,0,0)));
+  torsoKids.push(node('powerMedallionDisk',M.blackCyl,rel([-.255,1.69,.275],RIG_PIVOTS.torso),[.115,.028,.115],qEuler(Math.PI/2,0,0)));
+  torsoKids.push(node('powerMedallionRing',M.goldTorus,rel([-.255,1.69,.290],RIG_PIVOTS.torso),[.145,.036,.145],qEuler(Math.PI/2,0,0)));
   const emblemMarks=[
-    [[-.29,1.72,.349],[.08,.018,.012],-.55],
-    [[-.255,1.68,.350],[.09,.016,.012],.28],
-    [[-.225,1.72,.350],[.07,.016,.012],.72]
+    [[-.29,1.72,.304],[.08,.018,.012],-.55],
+    [[-.255,1.68,.305],[.09,.016,.012],.28],
+    [[-.225,1.72,.305],[.07,.016,.012],.72]
   ];
   for(let i=0;i<emblemMarks.length;i++){const [w,s,r]=emblemMarks[i];torsoKids.push(node(`powerGlyph${i}`,M.goldBox,rel(w,RIG_PIVOTS.torso),s,qEuler(0,0,r)));}
 
@@ -311,13 +311,13 @@ async function generate() {
   // Angry Tournament eyes / brows visible above the bandana.
   for(const side of[-1,1]){
     const x=side*.125;
-    headKids.push(node(side<0?'leftEye':'rightEye',M.blackSphere,rel([x,2.145,.345],RIG_PIVOTS.head),[.042,.035,.018]));
-    headKids.push(node(side<0?'leftEyeGlint':'rightEyeGlint',M.whiteSphere,rel([x-side*.011,2.158,.358],RIG_PIVOTS.head),[.010,.010,.006]));
-    headKids.push(node(side<0?'leftBrow':'rightBrow',M.blackBox,rel([x,2.215,.347],RIG_PIVOTS.head),[.13,.025,.014],qEuler(0,0,side<0?.16:-.16)));
+    headKids.push(node(side<0?'leftEye':'rightEye',M.blackSphere,rel([x,2.145,.316],RIG_PIVOTS.head),[.042,.035,.018]));
+    headKids.push(node(side<0?'leftEyeGlint':'rightEyeGlint',M.whiteSphere,rel([x-side*.011,2.158,.327],RIG_PIVOTS.head),[.010,.010,.006]));
+    headKids.push(node(side<0?'leftBrow':'rightBrow',M.blackBox,rel([x,2.215,.318],RIG_PIVOTS.head),[.13,.025,.014],qEuler(0,0,side<0?.16:-.16)));
   }
   // Subtle dark green creases enhance the exact bandana mould without changing its silhouette.
-  headKids.push(node('bandanaFoldUpper',M.deepBox,rel([0,2.045,.39],RIG_PIVOTS.head),[.42,.022,.012],qEuler(0,0,-.03)));
-  headKids.push(node('bandanaFoldLower',M.deepBox,rel([-.02,1.985,.395],RIG_PIVOTS.head),[.34,.018,.011],qEuler(0,0,.05)));
+  headKids.push(node('bandanaFoldUpper',M.deepBox,rel([0,2.045,.323],RIG_PIVOTS.head),[.42,.022,.012],qEuler(0,0,-.03)));
+  headKids.push(node('bandanaFoldLower',M.deepBox,rel([-.02,1.985,.326],RIG_PIVOTS.head),[.34,.018,.011],qEuler(0,0,.05)));
   const head=node('head',null,RIG_PIVOTS.head,[1,1,1],undefined,headKids,{sourceParts:['3626b.dat','61183.dat','15619.dat']});
 
   const leftArmKids=[node('leftArmMould3818',exactMeshes.leftArm),node('leftHandMould3820',exactMeshes.leftHand)];
@@ -328,11 +328,11 @@ async function generate() {
   const leftLegKids=[node('leftLegMould3816',exactMeshes.leftLeg)];
   const rightLegKids=[node('rightLegMould3817',exactMeshes.rightLeg)];
   const addLegPrint=(kids,pivot,prefix,x,mirror=1)=>{
-    kids.push(node(`${prefix}KneeStripe`,M.blackBox,rel([x,.56,.285],pivot),[.25,.045,.014]));
-    kids.push(node(`${prefix}KneeOlive`,M.oliveBox,rel([x,.63,.288],pivot),[.24,.024,.014]));
-    kids.push(node(`${prefix}ShinStripe`,M.blackBox,rel([x,.34,.286],pivot),[.24,.038,.014]));
-    kids.push(node(`${prefix}RobeFoldA`,M.blackBox,rel([x+mirror*.045,.81,.29],pivot),[.045,.28,.014],qEuler(0,0,mirror*.34)));
-    kids.push(node(`${prefix}RobeFoldB`,M.oliveBox,rel([x-mirror*.045,.82,.291],pivot),[.038,.24,.014],qEuler(0,0,-mirror*.42)));
+    kids.push(node(`${prefix}KneeStripe`,M.blackBox,rel([x,.56,.222],pivot),[.25,.045,.014]));
+    kids.push(node(`${prefix}KneeOlive`,M.oliveBox,rel([x,.63,.224],pivot),[.24,.024,.014]));
+    kids.push(node(`${prefix}ShinStripe`,M.blackBox,rel([x,.34,.223],pivot),[.24,.038,.014]));
+    kids.push(node(`${prefix}RobeFoldA`,M.blackBox,rel([x+mirror*.045,.81,.226],pivot),[.045,.28,.014],qEuler(0,0,mirror*.34)));
+    kids.push(node(`${prefix}RobeFoldB`,M.oliveBox,rel([x-mirror*.045,.82,.227],pivot),[.038,.24,.014],qEuler(0,0,-mirror*.42)));
   };
   addLegPrint(leftLegKids,RIG_PIVOTS.leftLeg,'left',-.23,-1);
   addLegPrint(rightLegKids,RIG_PIVOTS.rightLeg,'right',.23,1);
