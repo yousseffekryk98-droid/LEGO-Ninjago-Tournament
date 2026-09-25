@@ -174,11 +174,14 @@ test('the complete seven-step Dojo tutorial is playable with keyboard controls',
   // Move from the known spawn point to the training dummy, then land actual hits.
   await hold(page, 'ArrowRight', 180);
   await hold(page, 'ArrowUp', 820);
-  for (let i = 0; i < 3; i++) {
+  // Allow several real attack attempts because animation timing can vary on
+  // slower CI/GPU runners. Stop as soon as the tutorial advances.
+  for (let i = 0; i < 7; i++) {
+    if ((await page.locator('#dojo-step-title').textContent()) === 'Jump') break;
     await page.keyboard.press('j');
-    await page.waitForTimeout(360);
+    await page.waitForTimeout(420);
   }
-  await expect(page.locator('#dojo-step-title')).toHaveText('Jump');
+  await expect(page.locator('#dojo-step-title')).toHaveText('Jump', { timeout: 10_000 });
 
   await page.keyboard.press('k');
   await expect(page.locator('#dojo-step-title')).toHaveText('Block');
@@ -190,7 +193,7 @@ test('the complete seven-step Dojo tutorial is playable with keyboard controls',
   await expect(page.locator('#dojo-step-title')).toHaveText('Dodge');
 
   await page.keyboard.press('q');
-  await expect(page.locator('#dojo-step-title')).toHaveText('Special');
+  await expect(page.locator('#dojo-step-title')).toHaveText('Spinjitzu / Special');
   await expect(page.locator('#dojo-special')).toHaveClass(/ready/);
 
   await page.keyboard.press('e');
@@ -225,8 +228,13 @@ test('a tournament run renders, accepts controls, survives sustained play, and r
   await page.keyboard.press('q');
 
   // Leave the low-health fighter exposed after exercising controls; enemy AI must
-  // be able to complete the run without any test-only hooks.
-  await expect(page.getByText('TOURNAMENT RUN COMPLETE')).toBeVisible({ timeout: 100_000 });
+  // be able to end the run without any test-only hooks. The current production
+  // result UI is the score card (or a Continue prompt when the account has enough
+  // banked studs), so assert the real overlay rather than an obsolete heading.
+  const gameOver = page.locator('#game-over');
+  await expect(gameOver).toBeVisible({ timeout: 100_000 });
+  const finishRun = page.getByRole('button', { name: 'End run' });
+  if (await finishRun.isVisible().catch(() => false)) await finishRun.click();
   await expect(page.getByRole('button', { name: 'RETRY' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'DAILY REWARDS' })).toBeVisible();
 

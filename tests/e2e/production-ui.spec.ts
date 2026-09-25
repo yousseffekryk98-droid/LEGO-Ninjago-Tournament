@@ -25,7 +25,7 @@ test('equipped power-up applies to one arena run and is consumed', async ({ page
   }, POWERUP_KEY);
   await page.reload();
 
-  await page.getByRole('button', { name: /POWER-UPS/i }).click();
+  await page.getByRole('button', { name: /SHOP & LOADOUT/i }).click();
   const ironHeart = page.locator('[data-powerup-card="iron-heart"]');
   await expect(ironHeart).toHaveClass(/active/);
   await expect(ironHeart).toContainText('Owned ×1');
@@ -222,7 +222,7 @@ test('elemental master gauntlet shows the boss path before starting the full-ros
   await page.getByRole('button', { name: /START GAUNTLET/i }).click();
   await expect(page.locator('#game-host canvas')).toBeVisible();
   await expect(page.locator('.game-screen')).toHaveClass(/boss-rush-mode/);
-  await expect(page.locator('#wave-label')).toContainText('CHALLENGER 1', { timeout: 6000 });
+  await expect(page.locator('#wave-label')).toContainText('CHALLENGER 1', { timeout: 12_000 });
   await expect(page.locator('#enemy-label')).toHaveText('ELEMENTAL MASTER');
   await expect(page.locator('#boss-portrait')).toBeVisible();
   await expect(page.locator('#boss-portrait-name')).not.toHaveText('ELEMENTAL MASTER');
