@@ -374,6 +374,7 @@ function showRoster() {
     const upgradeCost = fighterUpgradeCost(fighter.id);
     const canUpgrade = progress.level < 5 && save.bankStuds >= upgradeCost;
     const identity = getCharacterIdentity(fighter);
+    const reference = getCharacterReferenceImage(fighter);
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
         <button class="fighter-avatar preview-character-btn ${reference ? 'has-reference' : ''}" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
