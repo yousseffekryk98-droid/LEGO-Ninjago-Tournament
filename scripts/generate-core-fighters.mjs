@@ -286,8 +286,12 @@ async function generate(profile) {
   view.setUint32(o,jc.byteLength,true);o+=4;view.setUint32(o,0x4e4f534a,true);o+=4;bytes.set(jc,o);o+=jc.byteLength;
   view.setUint32(o,bc.byteLength,true);o+=4;view.setUint32(o,0x004e4942,true);o+=4;bytes.set(bc,o);
   const output=resolve(`public/assets/models/fighters/${id}.glb`);
+  const variantOutput=resolve(`public/assets/models/fighters/variants/${id}/authored-v2.glb`);
   await mkdir(dirname(output),{recursive:true});
-  await writeFile(output,new Uint8Array(out));
-  console.log(`Generated ${output} (${total} bytes, ${nodes.length} nodes)`);
+  await mkdir(dirname(variantOutput),{recursive:true});
+  const payload=new Uint8Array(out);
+  await writeFile(output,payload);
+  await writeFile(variantOutput,payload);
+  console.log(`Generated ${output} and ${variantOutput} (${total} bytes, ${nodes.length} nodes)`);
 }
 for(const fighter of fighters) await generate(fighter);
