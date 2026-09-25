@@ -363,8 +363,12 @@ async function generate() {
   };
   let json=enc.encode(JSON.stringify(gltf));const jp=pad4(json.byteLength),jc=new Uint8Array(jp);jc.fill(0x20);jc.set(json);const bpadded=pad4(bin.byteLength),bc=new Uint8Array(bpadded);bc.set(bin);const total=12+8+jc.byteLength+8+bc.byteLength,out=new ArrayBuffer(total),view=new DataView(out),bytes=new Uint8Array(out);let o=0;
   view.setUint32(o,0x46546c67,true);o+=4;view.setUint32(o,2,true);o+=4;view.setUint32(o,total,true);o+=4;view.setUint32(o,jc.byteLength,true);o+=4;view.setUint32(o,0x4e4f534a,true);o+=4;bytes.set(jc,o);o+=jc.byteLength;view.setUint32(o,bc.byteLength,true);o+=4;view.setUint32(o,0x004e4942,true);o+=4;bytes.set(bc,o);
+  const exactVariantOutput=resolve('public/assets/models/fighters/variants/lloyd-tournament/lloyd-exact.glb');
   await mkdir(dirname(OUTPUT),{recursive:true});
-  await writeFile(OUTPUT,new Uint8Array(out));
+  await mkdir(dirname(exactVariantOutput),{recursive:true});
+  const payload=new Uint8Array(out);
+  await writeFile(OUTPUT,payload);
+  await writeFile(exactVariantOutput,payload);
   const required=['torso','head','leftArm','rightArm','leftLeg','rightLeg'];
   console.log(JSON.stringify({
     output:OUTPUT,bytes:total,nodes:nodes.length,meshes:meshes.length,materials:materials.length,
