@@ -62,7 +62,7 @@ async function generate(id,primary,accent,skin){
 
   const bin=new Uint8Array(byteLength);let cur=0;for(const c of chunks){bin.set(c,cur);cur+=c.byteLength;}
   const gltf={asset:{version:'2.0',generator:'Ninjago Tournament clean-room authored fighter generator'},scene:0,scenes:[{name:`Fighter_${id}`,nodes:roots}],nodes,meshes,materials,buffers:[{byteLength:bin.byteLength}],bufferViews,accessors};
-  let json=enc.encode(JSON.stringify(gltf));const jp=pad4(json.byteLength),jc=new Uint8Array(jp);jc.fill(0x20);jc.set(json);const bpadded=pad4(bin.byteLength),bc=new Uint8Array(bpadded);bc.set(bin),total=12+8+jc.byteLength+8+bc.byteLength,out=new ArrayBuffer(total),view=new DataView(out),bytes=new Uint8Array(out);let o=0;
+  let json=enc.encode(JSON.stringify(gltf));const jp=pad4(json.byteLength),jc=new Uint8Array(jp);jc.fill(0x20);jc.set(json);const bpadded=pad4(bin.byteLength),bc=new Uint8Array(bpadded);bc.set(bin);const total=12+8+jc.byteLength+8+bc.byteLength,out=new ArrayBuffer(total),view=new DataView(out),bytes=new Uint8Array(out);let o=0;
   view.setUint32(o,0x46546c67,true);o+=4;view.setUint32(o,2,true);o+=4;view.setUint32(o,total,true);o+=4;view.setUint32(o,jc.byteLength,true);o+=4;view.setUint32(o,0x4e4f534a,true);o+=4;bytes.set(jc,o);o+=jc.byteLength;view.setUint32(o,bc.byteLength,true);o+=4;view.setUint32(o,0x004e4942,true);o+=4;bytes.set(bc,o);
   const output=resolve(`public/assets/models/fighters/variants/${id}/authored-v1.glb`);await mkdir(dirname(output),{recursive:true});await writeFile(output,new Uint8Array(out));console.log(`Generated ${output} (${total} bytes)`);
 }
