@@ -11,6 +11,7 @@ This fan remake keeps shipped game art clean-room or openly licensed. Do not cop
 - `scripts/generate-authored-assets.mjs` — original clean-room source that generates the local Chen center-pillar GLB used by the arena GLB pipeline. The generated binary is intentionally not committed.
 - `scripts/generate-chen-gate.mjs` — original clean-room Chen gate GLB generator.
 - `scripts/generate-arena-props.mjs` — original clean-room serpent-column and gong GLB generator.
+- `scripts/generate-core-fighters.mjs` — original clean-room authored-body GLB generator for the main ninja, Garmadon, Chen and Skylor; procedural accessories remain the fallback/secondary detail layer.
 
 ## Open-license references approved for future additions
 
