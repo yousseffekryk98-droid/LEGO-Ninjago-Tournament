@@ -374,8 +374,26 @@ export class DojoGame {
     this.attackAnimationDuration = move.duration;
     this.attackAnimationTime = move.duration;
     if (kind === 'kick') this.spawnElementKickFx();
-    const distance = this.player.position.distanceTo(this.dummy.position);
-    if (distance <= 2.55) {
+    let distance = this.player.position.distanceTo(this.dummy.position);
+
+    // Tutorial-only close-range assist: on a real device a player naturally
+    // corrects the final half-step toward the dummy. With keyboard input (and
+    // especially after a low-FPS catch-up) that final step can land just outside
+    // the old 2.55-unit hit radius, making correct attacks appear unresponsive.
+    // A nearby strike now faces the dummy and takes a short lunge, while attacks
+    // from genuinely far away still miss and require movement.
+    if (this.currentStep() === 'attack' && distance > 2.55 && distance <= 3.8) {
+      const towardDummy = this.dummy.position.clone().sub(this.player.position).setY(0);
+      if (towardDummy.lengthSq() > 0.001) {
+        towardDummy.normalize();
+        this.player.rotation.y = Math.atan2(towardDummy.x, towardDummy.z);
+        this.player.position.addScaledVector(towardDummy, Math.min(0.9, Math.max(0, distance - 2.35)));
+        this.clampPlayerToDojo();
+        distance = this.player.position.distanceTo(this.dummy.position);
+      }
+    }
+
+    if (distance <= 2.7) {
       this.flashDummy();
       this.meter = Math.min(100, this.meter + 25);
       this.callbacks.onMeter(this.meter);
