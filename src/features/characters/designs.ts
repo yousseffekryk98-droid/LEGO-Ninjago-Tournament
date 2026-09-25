@@ -8,6 +8,8 @@ export interface CharacterDesign {
   kind: CharacterDesignKind;
   sourceCommit: string;
   timelineIndex: number;
+  rendererCommit?: string;
+  profileCommit?: string;
   assetUrl?: string;
 }
 
@@ -26,100 +28,68 @@ const CORE_AUTHORED_IDS = new Set([
   'skylor'
 ]);
 
+function historical(
+  timelineIndex: number,
+  commit: string,
+  label: string,
+  rendererCommit: string,
+  profileCommit: string,
+  description: string
+): CharacterDesign {
+  return {
+    id: `commit-${commit.slice(0, 8)}`,
+    label,
+    shortLabel: `C${String(timelineIndex).padStart(2, '0')} · ${commit.slice(0, 8)}`,
+    description,
+    kind: 'historical-procedural',
+    sourceCommit: commit,
+    rendererCommit,
+    profileCommit,
+    timelineIndex
+  };
+}
+
 const PROCEDURAL_TIMELINE: CharacterDesign[] = [
-  {
-    id: 'commit-998d2fce',
-    label: 'Initial 3D Model',
-    shortLabel: 'C01 · 998d2fce',
-    description: 'First preserved shared 3D fighter renderer from Sep 21: character refactor, Zane visibility and initial 3D source structure.',
-    kind: 'historical-procedural',
-    sourceCommit: '998d2fce5ef9',
-    timelineIndex: 1
-  },
-  {
-    id: 'commit-819add38',
-    label: 'Video Fidelity',
-    shortLabel: 'C02 · 819add38',
-    description: 'Sep 21 video-fidelity fighter revision with the first legacy-game visual pass.',
-    kind: 'historical-procedural',
-    sourceCommit: '819add385e76',
-    timelineIndex: 2
-  },
-  {
-    id: 'commit-b9eb6bfc',
-    label: 'LEGO Proportions',
-    shortLabel: 'C03 · b9eb6bfc',
-    description: 'Sep 24 procedural minifigure revision with stronger LEGO-style proportions and armor.',
-    kind: 'historical-procedural',
-    sourceCommit: 'b9eb6bfc87d5',
-    timelineIndex: 3
-  },
-  {
-    id: 'commit-d1e20ac2',
-    label: 'Glossy Articulated',
-    shortLabel: 'C04 · d1e20ac2',
-    description: 'Sep 24 glossy LEGO-style material and articulated-rig revision.',
-    kind: 'historical-procedural',
-    sourceCommit: 'd1e20ac26365',
-    timelineIndex: 4
-  },
-  {
-    id: 'commit-d11705e6',
-    label: 'Armor Variants',
-    shortLabel: 'C05 · d11705e6',
-    description: 'Sep 24 revision differentiating ZX, DX, Techno and Samurai armor silhouettes.',
-    kind: 'historical-procedural',
-    sourceCommit: 'd11705e6aeab',
-    timelineIndex: 5
-  },
-  {
-    id: 'commit-cae32dc0',
-    label: 'Ninja Detail Pass',
-    shortLabel: 'C06 · cae32dc0',
-    description: 'Sep 24 hood, cuff, knee, boot and mask-detail refinement.',
-    kind: 'historical-procedural',
-    sourceCommit: 'cae32dc0e722',
-    timelineIndex: 6
-  },
-  {
-    id: 'commit-3dfe70cb',
-    label: 'Procedural Realism',
-    shortLabel: 'C07 · 3dfe70cb',
-    description: 'Sep 25 procedural NINJAGO realism revision with upgraded plastic materials and geometry.',
-    kind: 'historical-procedural',
-    sourceCommit: '3dfe70cb5b31',
-    timelineIndex: 7
-  },
-  {
-    id: 'commit-8c67c327',
-    label: 'Tournament Geometry',
-    shortLabel: 'C08 · 8c67c327',
-    description: 'Sep 25 distinctive Tournament-character geometry revision.',
-    kind: 'historical-procedural',
-    sourceCommit: '8c67c3277784',
-    timelineIndex: 8
-  },
-  {
-    id: 'commit-67a0ba97',
-    label: 'Wave-1 Geometry',
-    shortLabel: 'C09 · 67a0ba97',
-    description: 'Latest shared procedural renderer revision, adding geometry for the remaining Wave-1 fighters.',
-    kind: 'historical-procedural',
-    sourceCommit: '67a0ba97a0de',
-    timelineIndex: 9
-  }
+  historical(1, '998d2fce5ef9', 'Initial 3D Model', '998d2fce5ef9', '998d2fce5ef9',
+    'First preserved 3D fighter state: initial renderer and initial fighter profile mapping.'),
+  historical(2, '819add385e76', 'Video Fidelity', '819add385e76', '819add385e76',
+    'Video-fidelity fighter state with its matching profile rules.'),
+  historical(3, 'b9eb6bfc87d5', 'LEGO Proportions', 'b9eb6bfc87d5', '819add385e76',
+    'LEGO-style proportions and armor revision; profile mapping was unchanged from C02.'),
+  historical(4, 'd1e20ac26365', 'Glossy Articulated', 'd1e20ac26365', '819add385e76',
+    'Glossy LEGO-style materials and articulated rig revision.'),
+  historical(5, 'd11705e6aeab', 'Armor Variants', 'd11705e6aeab', 'd11705e6aeab',
+    'ZX, DX, Techno and Samurai armor silhouettes with their matching profile revision.'),
+  historical(6, 'cae32dc0e722', 'Ninja Detail Pass', 'cae32dc0e722', 'd11705e6aeab',
+    'Hood, cuff, knee, boot and mask detail revision.'),
+  historical(7, '3dfe70cb5b31', 'Procedural Realism', '3dfe70cb5b31', 'd11705e6aeab',
+    'Procedural NINJAGO realism and upgraded plastic-material revision.'),
+  historical(8, '26b198d6064b', 'Wave-1 Profiles', '3dfe70cb5b31', '26b198d6064b',
+    'Character-specific Wave-1 Tournament profile/silhouette revision using the C07 renderer.'),
+  historical(9, '8c67c3277784', 'Tournament Geometry', '8c67c3277784', '26b198d6064b',
+    'Distinctive Tournament character geometry with the Wave-1 profile rules.'),
+  historical(10, 'ae6277d2228c', 'Tournament Identity Priority', '8c67c3277784', 'ae6277d2228c',
+    'Tournament identities were prioritized ahead of faction fallbacks.'),
+  historical(11, 'cf2f6329a58c', 'Remaining Wave-1 Identities', '8c67c3277784', 'cf2f6329a58c',
+    'Remaining Wave-1 Tournament fighters received dedicated model identities.'),
+  historical(12, '67a0ba97a0de', 'Remaining Wave-1 Geometry', '67a0ba97a0de', 'cf2f6329a58c',
+    'Geometry was added for the remaining Wave-1 fighters.'),
+  historical(13, '9983722666e3', 'Catalog Identity Preservation', '67a0ba97a0de', '9983722666e3',
+    'Catalog fighters began preserving known identities and source-group silhouette data.'),
+  historical(14, 'b5994b44dfcb', 'Skeleton Profile Fix', '67a0ba97a0de', 'b5994b44dfcb',
+    'Latest procedural profile revision, correcting generic skeleton profiles and Samukai-style arm behavior.')
 ];
 
 function authoredFirst(characterId: string): CharacterDesign {
   return {
     id: 'commit-0170de08',
     label: 'First Authored GLB',
-    shortLabel: 'C10 · 0170de08',
-    description: 'First authored-body design (introduced at 113a74c1) using the working buffer-fixed revision 0170de08.',
+    shortLabel: 'C15 · 0170de08',
+    description: 'First authored-body design introduced at 113a74c1, using the buffer-fixed working revision 0170de08.',
     kind: 'authored',
     assetUrl: `/assets/models/fighters/variants/${characterId}/authored-v1.glb`,
     sourceCommit: '0170de08cb5c',
-    timelineIndex: 10
+    timelineIndex: 15
   };
 }
 
@@ -127,12 +97,12 @@ function authoredHighFidelity(characterId: string): CharacterDesign {
   return {
     id: 'commit-0bfc3094',
     label: 'High-Fidelity Authored',
-    shortLabel: 'C11 · 0bfc3094',
-    description: 'High-fidelity authored body with faces, hair and layered outfit detail; this is the working revision after the hair-expression fix.',
+    shortLabel: 'C16 · 0bfc3094',
+    description: 'High-fidelity authored body introduced at 36008526, using the working hair-expression-fixed revision 0bfc3094.',
     kind: 'authored',
     assetUrl: `/assets/models/fighters/variants/${characterId}/authored-v2.glb`,
     sourceCommit: '0bfc30944669',
-    timelineIndex: 11
+    timelineIndex: 16
   };
 }
 
@@ -140,52 +110,52 @@ const LLOYD_TIMELINE: CharacterDesign[] = [
   {
     id: 'commit-425c89d4',
     label: 'Detailed Lloyd',
-    shortLabel: 'C12 · 425c89d4',
-    description: 'Hand-built detailed Lloyd with blond procedural hair, layered green/gold outfit, armor and energy-weapon silhouette.',
+    shortLabel: 'C17 · 425c89d4',
+    description: 'Hand-built detailed Lloyd; this is the repaired hair-data revision of the design introduced at ca1faa7d.',
     kind: 'authored',
     assetUrl: '/assets/models/fighters/variants/lloyd-tournament/lloyd-detailed.glb',
     sourceCommit: '425c89d402a2',
-    timelineIndex: 12
+    timelineIndex: 17
   },
   {
     id: 'commit-6860d027',
     label: 'Exact Mould Initial',
-    shortLabel: 'C13 · 6860d027',
+    shortLabel: 'C18 · 6860d027',
     description: 'First dedicated LDraw-derived exact-mould Lloyd production generator.',
     kind: 'authored',
     assetUrl: '/assets/models/fighters/variants/lloyd-tournament/exact-6860d027.glb',
     sourceCommit: '6860d0274f71',
-    timelineIndex: 13
+    timelineIndex: 18
   },
   {
     id: 'commit-70f95ff9',
     label: 'Exact Mould Intermediate',
-    shortLabel: 'C14 · 70f95ff9',
+    shortLabel: 'C19 · 70f95ff9',
     description: 'Intermediate exact-mould production pass from the former Lloyd generator path.',
     kind: 'authored',
     assetUrl: '/assets/models/fighters/variants/lloyd-tournament/exact-70f95ff9.glb',
     sourceCommit: '70f95ff967a3',
-    timelineIndex: 14
+    timelineIndex: 19
   },
   {
     id: 'commit-05b7ce43',
     label: 'Exact Mould Refined',
-    shortLabel: 'C15 · 05b7ce43',
-    description: 'Exact-mould silhouette, bandana, front orientation and Tournament print-placement refinement.',
+    shortLabel: 'C20 · 05b7ce43',
+    description: 'Exact-mould silhouette, bandana, orientation and Tournament-print refinement.',
     kind: 'authored',
     assetUrl: '/assets/models/fighters/variants/lloyd-tournament/exact-05b7ce43.glb',
     sourceCommit: '05b7ce43000e',
-    timelineIndex: 15
+    timelineIndex: 20
   },
   {
     id: 'commit-961edd9b',
     label: 'Exact Mould + Back Emblem',
-    shortLabel: 'C16 · 961edd9b',
-    description: 'Latest Lloyd visual revision: refined exact-mould design plus rear Tournament power emblem.',
+    shortLabel: 'C21 · 961edd9b',
+    description: 'Latest Lloyd visual revision: refined exact-mould model plus rear Tournament power emblem.',
     kind: 'authored',
     assetUrl: '/assets/models/fighters/variants/lloyd-tournament/lloyd-exact.glb',
     sourceCommit: '961edd9b4692',
-    timelineIndex: 16
+    timelineIndex: 21
   }
 ];
 
@@ -201,15 +171,16 @@ export function getCharacterDesigns(characterId: string): CharacterDesign[] {
 export function getDefaultCharacterDesignId(characterId: string) {
   if (characterId === 'lloyd-tournament') return 'commit-425c89d4';
   if (CORE_AUTHORED_IDS.has(characterId)) return 'commit-0bfc3094';
-  return 'commit-67a0ba97';
+  return 'commit-b5994b44';
 }
 
 const LEGACY_SELECTION_MAP: Readonly<Record<string, string>> = {
-  procedural: 'commit-67a0ba97',
+  procedural: 'commit-b5994b44',
   'authored-v1': 'commit-0170de08',
   'authored-v2': 'commit-0bfc3094',
   'lloyd-detailed': 'commit-425c89d4',
-  'lloyd-exact': 'commit-961edd9b'
+  'lloyd-exact': 'commit-961edd9b',
+  'commit-67a0ba97': 'commit-b5994b44'
 };
 
 function readSelections(): Record<string, string> {
