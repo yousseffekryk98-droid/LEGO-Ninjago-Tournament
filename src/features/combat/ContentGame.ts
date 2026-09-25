@@ -214,6 +214,54 @@ export class TournamentGame extends StableContentGame {
     group.add(core);
 
     const colors = teamIds.map((id) => findCharacter(id).color);
+
+    // Six interwoven elemental ribbons make the team ultimate read as one
+    // combined tornado instead of several separate rings.
+    for (let ribbonIndex = 0; ribbonIndex < (safe ? 3 : 6); ribbonIndex++) {
+      const points: THREE.Vector3[] = [];
+      for (let step = 0; step <= (safe ? 28 : 42); step++) {
+        const t = step / (safe ? 28 : 42);
+        const radius = 1.0 + t * 4.65;
+        const angle = t * Math.PI * 6.0 + ribbonIndex * (Math.PI * 2 / 6);
+        points.push(new THREE.Vector3(
+          Math.cos(angle) * radius,
+          0.35 + t * 6.75,
+          Math.sin(angle) * radius
+        ));
+      }
+      const ribbon = new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), safe ? 38 : 64, safe ? 0.055 : 0.07, 7, false),
+        new THREE.MeshBasicMaterial({
+          color: colors[ribbonIndex % colors.length],
+          transparent: true,
+          opacity: safe ? 0.58 : 0.72,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      ribbon.name = 'creationRibbon';
+      ribbon.userData.spinRate = ribbonIndex % 2 === 0 ? 3.6 : -4.2;
+      group.add(ribbon);
+    }
+
+    for (let sparkIndex = 0; sparkIndex < (safe ? 12 : 24); sparkIndex++) {
+      const spark = new THREE.Mesh(
+        new THREE.BoxGeometry(0.07, 0.08, 0.28 + (sparkIndex % 4) * 0.05),
+        new THREE.MeshBasicMaterial({
+          color: colors[sparkIndex % colors.length],
+          transparent: true,
+          opacity: 0.82,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      spark.name = 'creationSpark';
+      spark.userData.sparkAngle = sparkIndex / (safe ? 12 : 24) * Math.PI * 2;
+      spark.userData.sparkRadius = 1.5 + (sparkIndex % 6) * 0.72;
+      spark.userData.sparkHeight = 0.5 + (sparkIndex % 9) * 0.72;
+      spark.userData.sparkSpeed = (sparkIndex % 2 === 0 ? 1 : -1) * (3.2 + (sparkIndex % 5) * 0.36);
+      group.add(spark);
+    }
     for (let index = 0; index < (safe ? 9 : 15); index++) {
       const t = index / (safe ? 8 : 14);
       const radius = 1.2 + t * 4.2;
@@ -235,7 +283,7 @@ export class TournamentGame extends StableContentGame {
     }
 
     const floorWave = new THREE.Mesh(
-      new THREE.RingGeometry(1.4, 6.8, safe ? 44 : 72),
+      new THREE.RingGeometry(1.4, 8.8, safe ? 48 : 84),
       new THREE.MeshBasicMaterial({
         color: 0xe8c65c,
         transparent: true,
@@ -256,7 +304,7 @@ export class TournamentGame extends StableContentGame {
 
     state.scene.add(group);
     this.creationUltimateGroup = group;
-    this.creationUltimateTime = 4.8;
+    this.creationUltimateTime = 5.4;
     this.creationUltimateTick = 0;
     this.creationUltimateCooldown = 6.5;
     state.callbacks.onMessage('TORNADO OF CREATION — ALL NINJA, GO!');
@@ -422,7 +470,7 @@ export class TournamentGame extends StableContentGame {
     const state = this.productionRuntime();
     this.creationUltimateTime = Math.max(0, this.creationUltimateTime - dt);
     this.creationUltimateTick -= dt;
-    const elapsed = 4.8 - this.creationUltimateTime;
+    const elapsed = 5.4 - this.creationUltimateTime;
     group.position.x = state.player.position.x;
     group.position.z = state.player.position.z;
     group.rotation.y += dt * (elapsed < 1.25 ? 1.8 : 4.8);
@@ -439,7 +487,18 @@ export class TournamentGame extends StableContentGame {
 
     group.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
-      if (object.name === 'creationBand') object.rotation.z += dt * Number(object.userData.spinRate ?? 4.5);
+      if (object.name === 'creationBand' || object.name === 'creationRibbon') {
+        object.rotation.z += dt * Number(object.userData.spinRate ?? 4.5);
+      }
+      if (object.name === 'creationSpark') {
+        const base = Number(object.userData.sparkAngle ?? 0);
+        const radius = Number(object.userData.sparkRadius ?? 2);
+        const height = Number(object.userData.sparkHeight ?? 1);
+        const angle = base + elapsed * Number(object.userData.sparkSpeed ?? 3.6);
+        object.position.set(Math.cos(angle) * radius, height + Math.sin(elapsed * 8 + base) * 0.22, Math.sin(angle) * radius);
+        object.rotation.x += dt * 9;
+        object.rotation.z += dt * 11;
+      }
       if (object.name.startsWith('creationMiniTornado-')) {
         const base = Number(object.userData.creationAngle ?? 0);
         const angle = base + elapsed * 1.9;
@@ -459,19 +518,19 @@ export class TournamentGame extends StableContentGame {
       for (const enemy of [...state.enemies]) {
         const planar = enemy.mesh.position.clone().sub(group.position).setY(0);
         const distance = planar.length();
-        if (distance > 11.5) continue;
-        if (distance > 0.05) enemy.mesh.position.addScaledVector(planar.normalize(), -0.18);
-        state.hitEnemy(enemy, state.character.damage * 0.42, 3.4, true);
+        if (distance > 14.5) continue;
+        if (distance > 0.05) enemy.mesh.position.addScaledVector(planar.normalize(), -0.24);
+        state.hitEnemy(enemy, state.character.damage * 0.46, 3.8, true);
       }
     }
 
     if (this.creationUltimateTime <= 0) {
       for (const enemy of [...state.enemies]) {
-        if (enemy.mesh.position.distanceTo(group.position) <= 13.2) {
-          state.hitEnemy(enemy, state.character.damage * 2.2, 12, true);
+        if (enemy.mesh.position.distanceTo(group.position) <= 16.0) {
+          state.hitEnemy(enemy, state.character.damage * 2.35, 13.5, true);
         }
       }
-      this.spawnRing(group.position.clone(), 0xf0cc64, 7.8);
+      this.spawnRing(group.position.clone(), 0xf0cc64, 9.6);
       state.callbacks.onMessage('Creation energy released!');
       this.stopCreationTornado();
     }

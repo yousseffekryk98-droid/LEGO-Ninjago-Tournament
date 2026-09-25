@@ -101,13 +101,13 @@ interface HealthPickup {
   age: number;
 }
 
-const ARENA_RADIUS = 29.5;
+const ARENA_RADIUS = 43.5;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export class TournamentGame {
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 150);
-  private cameraBasePosition = new THREE.Vector3(19.5, 16.5, 21.5);
+  private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 230);
+  private cameraBasePosition = new THREE.Vector3(21.5, 18.2, 24.0);
   private cameraTarget = new THREE.Vector3(0, 0.85, -0.35);
   private cameraMode: CameraMode = 'classic';
   private cameraShakeTime = 0;
@@ -352,7 +352,7 @@ export class TournamentGame {
     this.cameraTarget.lerp(desiredTarget, followAlpha);
 
     const desiredPosition = this.cameraMode === 'overhead'
-      ? this.cameraTarget.clone().add(new THREE.Vector3(0.01, 38, 0.01))
+      ? this.cameraTarget.clone().add(new THREE.Vector3(0.01, 46, 0.01))
       : this.cameraTarget.clone().add(this.cameraBasePosition);
     const cameraAlpha = dt <= 0 ? 1 : 1 - Math.exp(-dt * 8.0);
     this.camera.position.lerp(desiredPosition, cameraAlpha);
@@ -450,21 +450,33 @@ export class TournamentGame {
     } else if (this.spinTime > 0) {
       this.spinTime = Math.max(0, this.spinTime - dt);
       this.spinTick -= dt;
-      this.player.rotation.y += dt * 24;
-      this.invulnerable = Math.max(this.invulnerable, 0.14);
+      this.player.rotation.y += dt * 29;
+      this.invulnerable = Math.max(this.invulnerable, 0.16);
 
       if (move.lengthSq() > 0.01) {
-        const spinSpeed = this.character.speed * 0.78;
+        const spinSpeed = this.character.speed * 0.92;
         this.player.position.x += move.x * spinSpeed * dt;
         this.player.position.z += move.y * spinSpeed * dt;
       }
 
       this.updateSpinjitzuVfx(dt);
+
+      // The cyclone now has a readable suction zone before the damaging core.
+      // This makes Spinjitzu feel like a moving tornado instead of a circular melee hitbox.
+      for (const enemy of this.enemies) {
+        const pull = this.player.position.clone().sub(enemy.mesh.position).setY(0);
+        const distance = pull.length();
+        if (distance > 1.05 && distance < 8.4) {
+          const strength = (8.4 - distance) * 1.15 * dt;
+          enemy.knock.add(pull.normalize().multiplyScalar(strength));
+        }
+      }
+
       if (this.spinTick <= 0) {
-        this.spinTick = 0.12;
+        this.spinTick = 0.11;
         for (const enemy of [...this.enemies]) {
           const distance = enemy.mesh.position.distanceTo(this.player.position);
-          if (distance < 3.45) this.hitEnemy(enemy, this.character.damage * 0.82, 5.4, true);
+          if (distance < 4.45) this.hitEnemy(enemy, this.character.damage * 0.9, 6.6, true);
         }
       }
       if (this.spinTime <= 0) this.stopSpinjitzuVfx();
@@ -684,7 +696,7 @@ export class TournamentGame {
   private performSpecial() {
     if ((!this.unlimitedSpecial && this.special < 100) || this.spinTime > 0 || !this.grounded || this.dodgeTime > 0) return;
     this.special = this.unlimitedSpecial ? 100 : 0;
-    this.spinTime = 2.1;
+    this.spinTime = 2.65;
     this.spinTick = 0;
     this.startSpinjitzuVfx();
     this.callbacks.onMessage(`${this.character.element} Spinjitzu!`);
@@ -695,98 +707,117 @@ export class TournamentGame {
 
     const aura = new THREE.Group();
     aura.name = 'spinjitzuAura';
+    aura.userData.startedAt = this.elapsed;
+
+    const additive = (color: number, opacity: number) => new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
+    const innerCore = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.42, 1.52, 3.4, 32, 1, true),
+      additive(this.character.accent, 0.16)
+    );
+    innerCore.position.y = 1.45;
+    innerCore.userData.spinRate = 6.8;
+    aura.add(innerCore);
 
     const funnel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.58, 2.12, 3.05, 40, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: this.character.color,
-        transparent: true,
-        opacity: 0.2,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
+      new THREE.CylinderGeometry(0.72, 2.85, 3.75, 48, 1, true),
+      additive(this.character.color, 0.24)
     );
-    funnel.position.y = 1.32;
-    funnel.userData.spinRate = -3.5;
+    funnel.position.y = 1.58;
+    funnel.userData.spinRate = -4.2;
     aura.add(funnel);
 
-    for (let band = 0; band < 3; band++) {
+    for (let band = 0; band < 5; band++) {
       const points: THREE.Vector3[] = [];
-      for (let step = 0; step <= 34; step++) {
-        const t = step / 34;
-        const radius = 0.58 + t * 1.42;
-        const angle = t * Math.PI * 5.4 + band * (Math.PI * 2 / 3);
+      for (let step = 0; step <= 42; step++) {
+        const t = step / 42;
+        const radius = 0.66 + t * 1.95;
+        const angle = t * Math.PI * 6.2 + band * (Math.PI * 2 / 5);
         points.push(new THREE.Vector3(
           Math.cos(angle) * radius,
-          0.12 + t * 2.85,
+          0.12 + t * 3.55,
           Math.sin(angle) * radius
         ));
       }
       const spiral = new THREE.Mesh(
-        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 54, 0.045, 7, false),
-        new THREE.MeshBasicMaterial({
-          color: band === 1 ? this.character.accent : this.character.color,
-          transparent: true,
-          opacity: band === 1 ? 0.86 : 0.68,
-          depthWrite: false
-        })
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 68, 0.048 + band * 0.003, 7, false),
+        additive(band % 2 === 0 ? this.character.color : this.character.accent, band === 2 ? 0.92 : 0.7)
       );
-      spiral.userData.spinRate = band % 2 ? 5.6 : -4.8;
+      spiral.userData.spinRate = band % 2 ? 6.4 : -5.6;
       aura.add(spiral);
     }
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.82 + i * 0.23, 0.045 + i * 0.006, 8, 44),
-        new THREE.MeshBasicMaterial({
-          color: i % 2 === 0 ? this.character.accent : this.character.color,
-          transparent: true,
-          opacity: 0.72 - i * 0.08,
-          depthWrite: false
-        })
+        new THREE.TorusGeometry(0.92 + i * 0.255, 0.046 + i * 0.006, 8, 48),
+        additive(i % 2 === 0 ? this.character.accent : this.character.color, 0.78 - i * 0.065)
       );
       ring.rotation.x = Math.PI / 2;
-      ring.rotation.z = i * 0.37;
-      ring.position.y = 0.26 + i * 0.43;
-      ring.userData.spinRate = i % 2 === 0 ? 5.2 : -5.2;
+      ring.rotation.z = i * 0.31;
+      ring.position.y = 0.22 + i * 0.43;
+      ring.userData.spinRate = i % 2 === 0 ? 6.1 : -6.6;
       aura.add(ring);
     }
 
-    for (let i = 0; i < 18; i++) {
+    // Orbiting energy/debris gives the cyclone depth from both classic and overhead cameras.
+    for (let i = 0; i < 30; i++) {
       const shard = new THREE.Mesh(
-        new THREE.BoxGeometry(0.08, 0.08, 0.34 + (i % 3) * 0.08),
-        new THREE.MeshBasicMaterial({
-          color: i % 2 === 0 ? this.character.color : this.character.accent,
-          transparent: true,
-          opacity: 0.78,
-          depthWrite: false
-        })
+        i % 3 === 0
+          ? new THREE.IcosahedronGeometry(0.085 + (i % 4) * 0.012, 0)
+          : new THREE.BoxGeometry(0.07, 0.09, 0.3 + (i % 4) * 0.07),
+        additive(i % 2 === 0 ? this.character.color : this.character.accent, 0.82)
       );
-      const angle = (i / 18) * Math.PI * 2;
-      const radius = 0.9 + (i % 5) * 0.2;
-      shard.position.set(Math.cos(angle) * radius, 0.22 + (i % 7) * 0.4, Math.sin(angle) * radius);
-      shard.rotation.set(angle * 0.35, angle, angle * 0.6);
-      shard.userData.spinRate = i % 2 === 0 ? 7.2 : -6.2;
+      shard.userData.orbitRadius = 0.95 + (i % 7) * 0.27;
+      shard.userData.orbitSpeed = (i % 2 === 0 ? 1 : -1) * (5.8 + (i % 5) * 0.55);
+      shard.userData.orbitAngle = (i / 30) * Math.PI * 2;
+      shard.userData.baseY = 0.2 + (i % 10) * 0.34;
+      shard.userData.bobSpeed = 8 + (i % 6);
+      shard.position.set(
+        Math.cos(shard.userData.orbitAngle) * shard.userData.orbitRadius,
+        shard.userData.baseY,
+        Math.sin(shard.userData.orbitAngle) * shard.userData.orbitRadius
+      );
       aura.add(shard);
     }
 
     const dust = new THREE.Mesh(
-      new THREE.RingGeometry(0.9, 2.35, 56),
-      new THREE.MeshBasicMaterial({
-        color: this.character.accent,
-        transparent: true,
-        opacity: 0.22,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
+      new THREE.RingGeometry(1.0, 3.2, 64),
+      additive(this.character.accent, 0.24)
     );
     dust.rotation.x = -Math.PI / 2;
     dust.position.y = 0.05;
-    dust.userData.spinRate = 2.5;
+    dust.userData.spinRate = 3.2;
     aura.add(dust);
 
-    const glow = new THREE.PointLight(this.character.color, 3.6, 7.5, 2);
-    glow.position.y = 1.35;
+    const activationWave = new THREE.Mesh(
+      new THREE.RingGeometry(0.76, 1.08, 64),
+      additive(this.character.accent, 0.72)
+    );
+    activationWave.rotation.x = -Math.PI / 2;
+    activationWave.position.y = 0.065;
+    activationWave.scale.setScalar(0.22);
+    activationWave.userData.expandRing = true;
+    activationWave.userData.baseOpacity = 0.72;
+    aura.add(activationWave);
+
+    const crown = new THREE.Mesh(
+      new THREE.TorusGeometry(2.35, 0.08, 8, 54),
+      additive(this.character.color, 0.56)
+    );
+    crown.rotation.x = Math.PI / 2;
+    crown.position.y = 3.55;
+    crown.userData.spinRate = -7.2;
+    aura.add(crown);
+
+    const glow = new THREE.PointLight(this.character.color, 4.8, 10.5, 2);
+    glow.position.y = 1.6;
     aura.add(glow);
 
     aura.position.copy(this.player.position);
@@ -797,11 +828,34 @@ export class TournamentGame {
   private updateSpinjitzuVfx(dt: number) {
     if (!this.spinAura) return;
     this.spinAura.position.copy(this.player.position);
-    this.spinAura.rotation.y += dt * 10.8;
-    const pulse = 1 + Math.sin(this.elapsed * 22) * 0.065;
+    this.spinAura.rotation.y += dt * 12.8;
+    const pulse = 1 + Math.sin(this.elapsed * 24) * 0.07;
     this.spinAura.scale.setScalar(pulse);
 
+    const activationT = clamp((2.65 - this.spinTime) / 0.48, 0, 1);
     this.spinAura.children.forEach((child, index) => {
+      const orbitRadius = Number(child.userData.orbitRadius ?? 0);
+      if (orbitRadius > 0) {
+        const angle = Number(child.userData.orbitAngle ?? 0) + this.elapsed * Number(child.userData.orbitSpeed ?? 6);
+        const baseY = Number(child.userData.baseY ?? 0.5);
+        const bobSpeed = Number(child.userData.bobSpeed ?? 9);
+        child.position.set(
+          Math.cos(angle) * orbitRadius,
+          baseY + Math.sin(this.elapsed * bobSpeed + index) * 0.16,
+          Math.sin(angle) * orbitRadius
+        );
+        child.rotation.x += dt * 9;
+        child.rotation.z += dt * 12;
+        return;
+      }
+
+      if (child.userData.expandRing && child instanceof THREE.Mesh) {
+        child.scale.setScalar(0.22 + activationT * 5.1);
+        const material = child.material as THREE.MeshBasicMaterial;
+        material.opacity = Number(child.userData.baseOpacity ?? 0.72) * (1 - activationT);
+        return;
+      }
+
       const rate = typeof child.userData.spinRate === 'number'
         ? child.userData.spinRate as number
         : (index % 2 === 0 ? 4.5 : -4.5);
@@ -908,8 +962,8 @@ export class TournamentGame {
         enemy.bossSpinTime = Math.max(0, enemy.bossSpinTime - dt);
         const toPlayer = playerPos.clone().sub(enemy.mesh.position).setY(0);
         const distance = toPlayer.length();
-        enemy.mesh.rotation.y += dt * 24;
-        if (distance > 0.45) enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * 1.42 * dt);
+        enemy.mesh.rotation.y += dt * 27;
+        if (distance > 0.45) enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * 1.55 * dt);
 
         const aura = enemy.mesh.getObjectByName('bossSpinjitzuAura') as THREE.Group | undefined;
         if (aura) {
@@ -920,8 +974,8 @@ export class TournamentGame {
           aura.scale.setScalar(pulse);
         }
 
-        if (distance < 2.7 && enemy.bossSpinHitCooldown <= 0) {
-          this.damagePlayer(enemy.damage * 0.82);
+        if (distance < 3.45 && enemy.bossSpinHitCooldown <= 0) {
+          this.damagePlayer(enemy.damage * 0.78);
           enemy.bossSpinHitCooldown = 0.3;
         }
 
@@ -971,7 +1025,7 @@ export class TournamentGame {
         enemy.mesh.position.z = planar.y;
       }
 
-      if (Math.abs(enemy.mesh.position.x) > 27.6 && Math.abs(enemy.mesh.position.z) < 2.35 && enemy.knock.length() > 1.5) {
+      if (Math.abs(enemy.mesh.position.x) > 41.8 && Math.abs(enemy.mesh.position.z) < 2.8 && enemy.knock.length() > 1.5) {
         this.defeatEnemy(enemy);
         this.callbacks.onMessage('GONG KO! Instant arena knockout.');
       }
@@ -1139,7 +1193,7 @@ export class TournamentGame {
   }
 
   private startBossSpinjitzu(enemy: Enemy) {
-    enemy.bossSpinTime = 1.7;
+    enemy.bossSpinTime = 2.05;
     enemy.bossSpinHitCooldown = 0;
     enemy.specialCooldown = 5.5 + Math.random() * 2;
     let aura = enemy.mesh.getObjectByName('bossSpinjitzuAura') as THREE.Group | undefined;
@@ -1147,16 +1201,49 @@ export class TournamentGame {
       aura = new THREE.Group();
       aura.name = 'bossSpinjitzuAura';
       const color = enemy.bossCharacter?.color ?? 0xd7a841;
-      for (let i = 0; i < 4; i++) {
+      const accent = enemy.bossCharacter?.accent ?? color;
+      const addMat = (tone: number, opacity: number) => new THREE.MeshBasicMaterial({
+        color: tone,
+        transparent: true,
+        opacity,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending
+      });
+
+      const funnel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.54, 1.72, 2.7, 32, 1, true),
+        addMat(color, 0.2)
+      );
+      funnel.position.y = 1.18;
+      aura.add(funnel);
+
+      for (let i = 0; i < 6; i++) {
         const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(0.62 + i * 0.18, 0.055 + i * 0.012, 8, 34),
-          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.72 - i * 0.1, depthWrite: false })
+          new THREE.TorusGeometry(0.66 + i * 0.19, 0.05 + i * 0.009, 8, 38),
+          addMat(i % 2 === 0 ? color : accent, 0.78 - i * 0.085)
         );
-        ring.position.y = 0.7 + i * 0.32;
-        ring.rotation.x = Math.PI / 2 + i * 0.16;
-        ring.rotation.z = i * 0.65;
+        ring.position.y = 0.48 + i * 0.34;
+        ring.rotation.x = Math.PI / 2 + i * 0.13;
+        ring.rotation.z = i * 0.58;
         aura.add(ring);
       }
+
+      for (let i = 0; i < 12; i++) {
+        const shard = new THREE.Mesh(
+          new THREE.BoxGeometry(0.06, 0.08, 0.24 + (i % 3) * 0.06),
+          addMat(i % 2 === 0 ? color : accent, 0.74)
+        );
+        const angle = i / 12 * Math.PI * 2;
+        const radius = 0.75 + (i % 4) * 0.19;
+        shard.position.set(Math.cos(angle) * radius, 0.35 + (i % 6) * 0.34, Math.sin(angle) * radius);
+        shard.rotation.set(angle, angle * 0.5, -angle);
+        aura.add(shard);
+      }
+
+      const light = new THREE.PointLight(color, 2.8, 6.5, 2);
+      light.position.y = 1.25;
+      aura.add(light);
       enemy.mesh.add(aura);
     }
     aura.visible = true;
@@ -1202,7 +1289,7 @@ export class TournamentGame {
         }
         projectile.life = 0;
       }
-      if (projectile.life <= 0 || projectile.mesh.position.length() > 43) {
+      if (projectile.life <= 0 || projectile.mesh.position.length() > 64) {
         this.scene.remove(projectile.mesh);
         this.projectiles.splice(this.projectiles.indexOf(projectile), 1);
       }
@@ -1219,7 +1306,7 @@ export class TournamentGame {
       const bossPool = ROSTER.filter((fighter) => fighter.id !== this.character.id);
       const bossRound = this.bossRush ? this.wave - 1 : Math.floor(this.wave / 5) - 1;
       const bossCharacter = bossPool[((bossRound % bossPool.length) + bossPool.length) % bossPool.length];
-      this.enemies.push(this.createEnemy('boss', 0, -13.5, bossCharacter.name, bossCharacter));
+      this.enemies.push(this.createEnemy('boss', 0, -22.0, bossCharacter.name, bossCharacter));
       this.callbacks.onMessage(this.bossRush
         ? `CHALLENGER ${((bossRound % bossPool.length) + bossPool.length) % bossPool.length + 1}/${bossPool.length}: ${bossCharacter.name}`
         : `ELEMENTAL MASTER: ${bossCharacter.name}`);
@@ -1227,7 +1314,7 @@ export class TournamentGame {
       const count = Math.min(14, 2 + this.wave);
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2 + Math.random() * 0.35;
-        const radius = 11 + Math.random() * 13.5;
+        const radius = 16 + Math.random() * 19.0;
         const roll = Math.random();
         const kind: EnemyKind = this.wave < 2 ? 'melee' : roll > 0.78 ? 'ranged' : roll > 0.56 ? 'heavy' : 'melee';
         this.enemies.push(this.createEnemy(kind, Math.cos(angle) * radius, Math.sin(angle) * radius));
@@ -1809,10 +1896,10 @@ export class TournamentGame {
     key.position.set(-8, 14, 9);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.left = -36;
-    key.shadow.camera.right = 36;
-    key.shadow.camera.top = 36;
-    key.shadow.camera.bottom = -36;
+    key.shadow.camera.left = -54;
+    key.shadow.camera.right = 54;
+    key.shadow.camera.top = 54;
+    key.shadow.camera.bottom = -54;
     key.shadow.bias = -0.00045;
     this.scene.add(key);
 
@@ -1821,7 +1908,7 @@ export class TournamentGame {
     this.scene.add(rim);
 
     const floor = new THREE.Mesh(
-      new THREE.CylinderGeometry(31.5, 31.5, 0.55, 112),
+      new THREE.CylinderGeometry(46.8, 46.8, 0.55, 144),
       new THREE.MeshStandardMaterial({ color: 0x505b66, roughness: 0.9, metalness: 0.015 })
     );
     floor.receiveShadow = true;
@@ -1829,7 +1916,7 @@ export class TournamentGame {
     this.scene.add(floor);
 
     const inner = new THREE.Mesh(
-      new THREE.CylinderGeometry(26.5, 26.5, 0.04, 112),
+      new THREE.CylinderGeometry(41.2, 41.2, 0.04, 144),
       new THREE.MeshStandardMaterial({ color: 0x66727d, roughness: 0.86 })
     );
     inner.position.y = 0.01;
@@ -1837,7 +1924,7 @@ export class TournamentGame {
     this.scene.add(inner);
 
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(25.7, 26.4, 112),
+      new THREE.RingGeometry(40.2, 41.0, 144),
       new THREE.MeshBasicMaterial({ color: 0x252a30, transparent: true, opacity: 0.9, side: THREE.DoubleSide })
     );
     ring.rotation.x = -Math.PI / 2;
@@ -1848,7 +1935,7 @@ export class TournamentGame {
 
     for (let i = 0; i < 24; i++) {
       const angle = (i / 24) * Math.PI * 2;
-      const radius = i % 2 ? 27.0 : 28.4;
+      const radius = i % 2 ? 42.0 : 44.0;
       const tile = new THREE.Mesh(
         new THREE.BoxGeometry(2.2, 0.08, 1.25),
         new THREE.MeshStandardMaterial({ color: i % 3 === 0 ? 0x555c63 : 0x474e55, roughness: 0.95 })
@@ -1860,11 +1947,11 @@ export class TournamentGame {
     }
 
     const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x34383e, roughness: 0.96 });
-    for (let i = 0; i < 18; i++) {
-      const angle = (i / 18) * Math.PI * 2;
+    for (let i = 0; i < 24; i++) {
+      const angle = (i / 24) * Math.PI * 2;
       if (Math.abs(Math.cos(angle)) > 0.9 && Math.abs(Math.sin(angle)) < 0.32) continue;
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(4.6, 2.5 + Math.random() * 1.1, 0.65), wallMaterial);
-      wall.position.set(Math.cos(angle) * 32.4, 1.1, Math.sin(angle) * 32.4);
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(5.6, 2.5 + Math.random() * 1.1, 0.65), wallMaterial);
+      wall.position.set(Math.cos(angle) * 47.6, 1.1, Math.sin(angle) * 47.6);
       wall.rotation.y = -angle + Math.PI / 2;
       wall.castShadow = true;
       wall.receiveShadow = true;
@@ -1872,17 +1959,19 @@ export class TournamentGame {
     }
 
     this.buildArenaGate();
-    this.buildSerpentPillar(-27.0, -25.0, 0.28);
-    this.buildSerpentPillar(27.0, -25.0, -0.28);
-    this.buildSerpentPillar(-27.8, 23.8, 0.2);
-    this.buildSerpentPillar(27.8, 23.8, -0.2);
+    this.buildSerpentPillar(-41.0, -37.2, 0.28);
+    this.buildSerpentPillar(41.0, -37.2, -0.28);
+    this.buildSerpentPillar(-41.8, 35.8, 0.2);
+    this.buildSerpentPillar(41.8, 35.8, -0.2);
 
-    this.buildGong(-29.0, 0);
-    this.buildGong(29.0, 0);
-    this.buildSpikeTrap(-4.4, -4.2);
-    this.buildSpikeTrap(4.6, 4.0);
+    this.buildGong(-43.0, 0);
+    this.buildGong(43.0, 0);
+    this.buildSpikeTrap(-7.2, -6.4);
+    this.buildSpikeTrap(7.4, 6.2);
+    this.buildSpikeTrap(-15.2, 11.0);
+    this.buildSpikeTrap(14.4, -12.6);
 
-    for (const z of [-8.4, 8.4]) {
+    for (const z of [-22.0, -10.5, 10.5, 22.0]) {
       const brazier = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x5b3420, roughness: 0.8 }));
       brazier.position.set(0, 0.4, z);
       brazier.castShadow = true;
@@ -1919,7 +2008,7 @@ export class TournamentGame {
     });
 
     // Concentric tournament rings, based on the cool grey engraved floor seen in legacy footage.
-    for (const radius of [6.2, 9.8, 13.6, 17.8, 22.2, 25.0]) {
+    for (const radius of [6.2, 10.4, 15.2, 21.4, 28.4, 34.8, 39.4]) {
       const circle = new THREE.Mesh(new THREE.RingGeometry(radius, radius + 0.12, 96), radius > 17 ? darkInk : fineInk);
       circle.rotation.x = -Math.PI / 2;
       circle.position.y = 0.078;
@@ -1927,8 +2016,8 @@ export class TournamentGame {
     }
 
     // Stone slab seams clipped to the circular floor instead of a square grid.
-    const floorRadius = 25.7;
-    for (let step = -8; step <= 8; step++) {
+    const floorRadius = 39.8;
+    for (let step = -13; step <= 13; step++) {
       const offset = step * 2.85;
       const halfLength = Math.sqrt(Math.max(0, floorRadius * floorRadius - offset * offset));
       const horizontal = new THREE.Mesh(new THREE.BoxGeometry(halfLength * 2, 0.014, 0.055), fineInk);
@@ -1941,7 +2030,7 @@ export class TournamentGame {
     // Repeated dark glyph blocks create the strong maze-like ring language of Chen's arena.
     for (let i = 0; i < 36; i++) {
       const angle = (i / 36) * Math.PI * 2;
-      const radius = i % 2 === 0 ? 18.9 : 20.3;
+      const radius = i % 2 === 0 ? 30.2 : 33.8;
       const glyph = new THREE.Mesh(new THREE.BoxGeometry(i % 3 === 0 ? 1.65 : 1.05, 0.018, 0.26), darkInk);
       glyph.position.set(Math.cos(angle) * radius, 0.084, Math.sin(angle) * radius);
       glyph.rotation.y = -angle + (i % 4 === 0 ? 0.62 : -0.18);
@@ -1984,7 +2073,7 @@ export class TournamentGame {
           new THREE.BoxGeometry(4.8 + level * 0.55, 0.55 + level * 0.16, 8.0),
           level % 2 ? darkStone : stone
         );
-        stand.position.set(side * (31.4 + level * 0.55), 0.25 + level * 0.48, 0.6);
+        stand.position.set(side * (45.4 + level * 0.62), 0.25 + level * 0.48, 0.6);
         stand.castShadow = true;
         stand.receiveShadow = true;
         this.scene.add(stand);
@@ -2003,7 +2092,7 @@ export class TournamentGame {
           head.position.y = 0.72;
           spectator.add(body, head);
           spectator.position.set(
-            side * (29.8 + row * 0.72),
+            side * (43.6 + row * 0.78),
             1.0 + row * 0.55,
             -7.4 + i * 1.82 + (row % 2) * 0.45
           );
@@ -2015,10 +2104,10 @@ export class TournamentGame {
 
     // Tournament banners echo the red/purple/gold architecture in reference footage.
     const bannerPoints: Array<[number, number, number, THREE.Material]> = [
-      [-29.3, 4.0, -14.2, red],
-      [29.3, 4.0, -14.2, purple],
-      [-29.5, 4.1, 13.8, purple],
-      [29.5, 4.1, 13.8, red]
+      [-43.0, 4.0, -23.0, red],
+      [43.0, 4.0, -23.0, purple],
+      [-43.2, 4.1, 22.6, purple],
+      [43.2, 4.1, 22.6, red]
     ];
     for (const [x, y, z, bannerMaterial] of bannerPoints) {
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.8, 10), timber);
@@ -2038,22 +2127,22 @@ export class TournamentGame {
 
     // Chen's elevated viewing throne above the far gate.
     const balcony = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.42, 2.4), darkStone);
-    balcony.position.set(0, 6.55, -30.85);
+    balcony.position.set(0, 6.55, -45.65);
     balcony.castShadow = true;
     balcony.receiveShadow = true;
     this.scene.add(balcony);
     for (const x of [-2.25, -1.5, 1.5, 2.25]) {
       const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 1.0, 10), gold);
-      rail.position.set(x, 7.02, -30.02);
+      rail.position.set(x, 7.02, -44.82);
       rail.castShadow = true;
       this.scene.add(rail);
     }
     const throneBack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.05, 0.38), red);
-    throneBack.position.set(0, 7.45, -30.72);
+    throneBack.position.set(0, 7.45, -45.52);
     const throneSeat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.35, 1.05), gold);
-    throneSeat.position.set(0, 6.76, -30.38);
+    throneSeat.position.set(0, 6.76, -45.18);
     const crest = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.09, 8, 28), gold);
-    crest.position.set(0, 8.08, -30.48);
+    crest.position.set(0, 8.08, -45.28);
     for (const object of [throneBack, throneSeat, crest]) {
       object.castShadow = true;
       this.scene.add(object);
@@ -2061,14 +2150,14 @@ export class TournamentGame {
 
     const chen = createGenericFighterModel(0x7b2631, 0xd3a84c, 0.78, 'villain', 'staff');
     chen.name = 'chenThroneSpectator';
-    chen.position.set(0, 6.92, -30.12);
+    chen.position.set(0, 6.92, -44.92);
     chen.rotation.y = 0;
     this.scene.add(chen);
 
     for (const side of [-1, 1] as const) {
       const guard = createGenericFighterModel(0x342535, 0xb8892e, 0.7, 'villain', 'katana');
       guard.name = side < 0 ? 'chenGuardLeft' : 'chenGuardRight';
-      guard.position.set(side * 1.65, 6.84, -30.22);
+      guard.position.set(side * 1.65, 6.84, -45.02);
       guard.rotation.y = 0;
       this.scene.add(guard);
     }
@@ -2142,7 +2231,7 @@ export class TournamentGame {
     const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x661e24, roughness: 0.72, metalness: 0.06 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xb8872c, roughness: 0.38, metalness: 0.52 });
 
-    const z = -31.15;
+    const z = -45.95;
     const leftTower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 5.4, 2.1), stone);
     leftTower.position.set(-4.05, 2.4, z);
     const rightTower = leftTower.clone();
