@@ -93,6 +93,27 @@ test('generated core fighter GLBs preserve the animation-part contract', async (
     expect(json.scenes[0].name, id).toBe(`Fighter_${id}`);
     const names = new Set(json.nodes.map((node: { name?: string }) => node.name));
     for (const part of requiredParts) expect(names.has(part), `${id} missing ${part}`).toBeTruthy();
+
+    if (id === 'lloyd-tournament') {
+      expect(file.byteLength).toBeGreaterThan(100_000);
+      for (const exactNode of [
+        'torsoMould973',
+        'headMould3626b',
+        'hairMould61183',
+        'bandanaMould15619',
+        'leftArmMould3818',
+        'rightArmMould3819',
+        'leftHandMould3820',
+        'rightHandMould3820',
+        'hipsExact3815'
+      ]) {
+        expect(names.has(exactNode), `Lloyd missing exact mould node ${exactNode}`).toBeTruthy();
+      }
+      const materialNames = new Set(json.materials.map((material: { name?: string }) => material.name));
+      for (const material of ['TournamentGreen', 'SkinYellow', 'Black', 'TanHair', 'WarmGold', 'Olive']) {
+        expect(materialNames.has(material), `Lloyd missing ${material} material`).toBeTruthy();
+      }
+    }
   }
 });
 
