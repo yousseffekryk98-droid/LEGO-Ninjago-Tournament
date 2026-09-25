@@ -1,131 +1,85 @@
-# Character Design Library
+# Character Design Commit Timeline
 
-Historical fighter visuals are preserved as selectable designs instead of replacing one another.
+The fighter selector preserves visual history **from the first 3D character-design commit to the latest visual revision**. New design work must be added as another timeline entry; older designs must not be replaced or deleted.
 
-## Shared design slots
+## Timeline
 
-Every authored design used by the runtime preserves these animation roots:
+| Slot | Commit | Design | Availability |
+| --- | --- | --- | --- |
+| C01 | `998d2fce` | Initial 3D Model | Every fighter |
+| C02 | `819add38` | Video Fidelity | Every fighter |
+| C03 | `b9eb6bfc` | LEGO Proportions | Every fighter |
+| C04 | `d1e20ac2` | Glossy Articulated | Every fighter |
+| C05 | `d11705e6` | Armor Variants | Every fighter |
+| C06 | `cae32dc0` | Ninja Detail Pass | Every fighter |
+| C07 | `3dfe70cb` | Procedural Realism | Every fighter |
+| C08 | `8c67c327` | Tournament Geometry | Every fighter |
+| C09 | `67a0ba97` | Wave-1 Geometry | Every fighter |
+| C10 | `0170de08` | First Authored GLB | Core authored fighters |
+| C11 | `0bfc3094` | High-Fidelity Authored | Core authored fighters |
+| C12 | `425c89d4` | Detailed Lloyd | Lloyd |
+| C13 | `6860d027` | Exact Mould Initial | Lloyd |
+| C14 | `70f95ff9` | Exact Mould Intermediate | Lloyd |
+| C15 | `05b7ce43` | Exact Mould Refined | Lloyd |
+| C16 | `961edd9b` | Exact Mould + Back Emblem | Lloyd |
 
-- `torso`
+The first authored design was introduced in `113a74c1`; `0170de08` is used for the selectable asset because it is the working buffer-size-fixed version of that same design. The high-fidelity authored design was introduced in `36008526`; `0bfc3094` is used because it contains the generator-expression fix required to build that design correctly. Lloyd Detailed originated at `ca1faa7d`; `425c89d4` is the repaired hair-data revision of the same design.
+
+## Exact procedural snapshots
+
+C01–C09 are not approximations. Their original `src/shared/three/minifigure-model.ts` source revisions are preserved under:
+
+`src/shared/three/history/`
+
+The runtime registry in:
+
+`src/shared/three/history/index.ts`
+
+loads the selected historical renderer directly.
+
+For fighters that did not exist yet at an early commit, the historical renderer is applied to the fighter's current identity/profile data. This preserves the old rendering/design engine while keeping the modern roster playable.
+
+## Authored assets
+
+Historical authored assets are generated independently so one revision cannot overwrite another:
+
+- `variants/<fighter>/authored-v1.glb`
+- `variants/<fighter>/authored-v2.glb`
+- `variants/lloyd-tournament/lloyd-detailed.glb`
+- `variants/lloyd-tournament/exact-6860d027.glb`
+- `variants/lloyd-tournament/exact-70f95ff9.glb`
+- `variants/lloyd-tournament/exact-05b7ce43.glb`
+- `variants/lloyd-tournament/lloyd-exact.glb`
+
+## Selection behavior
+
+Every fighter card has a **DESIGNS** button. The live 3D panel displays the timeline in chronological order and shows both the timeline slot and commit ID, for example:
+
+`C07 · 3dfe70cb`
+
+The selection is remembered separately for each fighter and is used by Tournament, Free Play, Dojo, and the live 3D model viewer.
+
+Defaults remain:
+
+- Lloyd Tournament → C12 Detailed Lloyd
+- other core authored fighters → C11 High-Fidelity Authored
+- all other fighters → C09 latest procedural design
+
+Old selections from the previous grouped selector are migrated automatically.
+
+## Future design mixer
+
+Every authored design preserves the gameplay animation roots:
+
 - `head`
+- `torso`
 - `leftArm`
 - `rightArm`
 - `leftLeg`
 - `rightLeg`
 
-That shared contract is intentional. It is the basis for the next-stage design mixer, where a fighter can use a head from one design, torso from another, and arms/legs from another without changing combat code.
+That lets a later mixer support requests such as:
 
-## Available generations
+> head from C12 + torso from C11 + arms from C15 + legs from C09
 
-### Classic Procedural
-Available to **every fighter**.
-
-This is the normal shared minifigure/model-profile path. It remains in the game permanently as the fallback and as a selectable visual style.
-
-### Authored V1
-Available to the ten fighters that received the first GLB body pass:
-
-- Lloyd (Tournament)
-- Kai (Tournament)
-- Jay (Tournament)
-- Cole (Tournament)
-- Zane Techno
-- Zane ZX
-- Nya
-- Master Garmadon
-- Master Chen
-- Skylor
-
-Recovered from commit:
-
-`f06ea597d25fb4872527ce2a8542a56990a43857`
-
-Generated to:
-
-`public/assets/models/fighters/variants/<fighter-id>/authored-v1.glb`
-
-### Authored V2
-Available to the same ten core fighters.
-
-This is the later high-fidelity core generation with more face, hair, outfit and character-specific detail.
-
-Source generation lineage:
-
-`36008526f5a655ee9f4b88b558ca03c5dc163e83`
-
-Generated to:
-
-`public/assets/models/fighters/variants/<fighter-id>/authored-v2.glb`
-
-### Lloyd Detailed
-Available to Lloyd.
-
-This restores the hand-built detailed Lloyd that existed before the exact-mould experiment replaced it. It includes the layered green/gold suit, expressive face, blond procedural hair, armor details and energy weapon silhouette.
-
-Recovered from merge:
-
-`4074853454a059414332e93237027fdd9da230a7`
-
-Generated to:
-
-`public/assets/models/fighters/variants/lloyd-tournament/lloyd-detailed.glb`
-
-This is now Lloyd's **default** design because it is the version preferred before the exact-mould experiment.
-
-### Lloyd Exact Mould
-Available to Lloyd as an optional comparison design.
-
-This is the later LDraw-derived exact-mould experiment using the 61183 hair, 15619 bandana and exact minifigure body moulds.
-
-Lineage:
-
-`ac3983ea99daf1849cdaf375e6d000588e34e74c`
-
-Generated to:
-
-`public/assets/models/fighters/variants/lloyd-tournament/lloyd-exact.glb`
-
-It remains preserved for comparison and future part mixing; it no longer forces itself as Lloyd's selected look.
-
-## Selection behavior
-
-The Fighters screen contains a **DESIGNS** button on every fighter card.
-
-The live 3D viewer exposes all designs that actually exist for that fighter. Selection is stored per character under:
-
-`ninja-tournament-character-designs-v1`
-
-The chosen design is used by:
-
-- the live 3D fighter preview;
-- Tournament gameplay;
-- Free Play;
-- Dojo;
-- any other runtime path that calls `createCharacterModel`.
-
-Default rules:
-
-- Lloyd Tournament → **Lloyd Detailed**
-- other core authored fighters → **Authored V2**
-- everyone else → **Classic Procedural**
-
-## Future mixer
-
-Do not delete historical designs when creating a new visual pass.
-
-A future mixer should store independent selections for the six shared slots:
-
-```text
-head
-torso
-leftArm
-rightArm
-leftLeg
-rightLeg
-```
-
-Example future request:
-
-> Lloyd head from Detailed + torso from V2 + legs from Exact.
-
-Because all authored GLBs preserve the same root-node contract, the loader can compose those roots into one fighter while keeping the same combat animations.
+The rule going forward is: **add another design entry; never destroy the previous visual state.**
