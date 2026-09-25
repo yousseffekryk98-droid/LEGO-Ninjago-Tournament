@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export type ArenaHazardKind = 'pit' | 'spikes';
+export type ArenaHazardKind = 'pit' | 'spikes' | 'fire-jet' | 'poison';
 export type ArenaHazardPhase = 'idle' | 'warning' | 'active' | 'recovery';
 
 export interface ArenaHazardAnchor {
@@ -48,6 +48,9 @@ interface RuntimeHazard {
   shaft?: THREE.Mesh;
   spikes: THREE.Mesh[];
   spikeHomeY: number[];
+  fireJets: THREE.Mesh[];
+  poisonClouds: THREE.Mesh[];
+  effectLight?: THREE.PointLight;
 }
 
 export const DEFAULT_ARENA_HAZARD_ANCHORS: readonly ArenaHazardAnchor[] = [
@@ -58,7 +61,11 @@ export const DEFAULT_ARENA_HAZARD_ANCHORS: readonly ArenaHazardAnchor[] = [
   { id: 'spike-west', kind: 'spikes', x: -12, z: -3, radius: 1.35, minWave: 1 },
   { id: 'spike-east', kind: 'spikes', x: 12, z: 3, radius: 1.35, minWave: 1 },
   { id: 'spike-north', kind: 'spikes', x: 4, z: -13, radius: 1.35, minWave: 1 },
-  { id: 'spike-south', kind: 'spikes', x: -4, z: 13, radius: 1.35, minWave: 1 }
+  { id: 'spike-south', kind: 'spikes', x: -4, z: 13, radius: 1.35, minWave: 1 },
+  { id: 'fire-west', kind: 'fire-jet', x: -30, z: -4, radius: 1.6, minWave: 3 },
+  { id: 'fire-east', kind: 'fire-jet', x: 30, z: 4, radius: 1.6, minWave: 3 },
+  { id: 'poison-north-west', kind: 'poison', x: -29, z: 22, radius: 2.1, minWave: 4 },
+  { id: 'poison-south-east', kind: 'poison', x: 29, z: -22, radius: 2.1, minWave: 4 }
 ] as const;
 
 export function getArenaHazardDifficulty(wave: number): ArenaHazardDifficulty {
@@ -145,7 +152,9 @@ export class ArenaHazardManager {
         const activeProgress = 1 - clamp01(hazard.timer / hazard.phaseDuration);
         const openProgress = hazard.anchor.kind === 'pit'
           ? smooth(Math.min(1, activeProgress / 0.16))
-          : smooth(Math.min(1, activeProgress / 0.1));
+          : hazard.anchor.kind === 'poison'
+            ? smooth(Math.min(1, activeProgress / 0.2))
+            : smooth(Math.min(1, activeProgress / 0.1));
         this.setVisualProgress(hazard, openProgress, 1);
 
         const collisionReady = openProgress >= 0.72;
@@ -153,7 +162,13 @@ export class ArenaHazardManager {
           for (const target of targets) {
             if (!target.grounded || hazard.hitTargets.has(target.id)) continue;
             const distance = Math.hypot(target.position.x - hazard.anchor.x, target.position.z - hazard.anchor.z);
-            const collisionRadius = hazard.anchor.kind === 'pit' ? hazard.anchor.radius * 0.78 : hazard.anchor.radius * 0.88;
+            const collisionRadius = hazard.anchor.kind === 'pit'
+              ? hazard.anchor.radius * 0.78
+              : hazard.anchor.kind === 'fire-jet'
+                ? hazard.anchor.radius * 0.9
+                : hazard.anchor.kind === 'poison'
+                  ? hazard.anchor.radius * 0.96
+                  : hazard.anchor.radius * 0.88;
             if (distance > collisionRadius) continue;
             hazard.hitTargets.add(target.id);
             impacts.push({
@@ -225,7 +240,13 @@ export class ArenaHazardManager {
     const warningRing = new THREE.Mesh(
       new THREE.RingGeometry(anchor.radius * 0.82, anchor.radius * 1.02, 48),
       new THREE.MeshBasicMaterial({
-        color: anchor.kind === 'pit' ? 0xff633d : 0xffb43b,
+        color: anchor.kind === 'pit'
+          ? 0xff633d
+          : anchor.kind === 'fire-jet'
+            ? 0xff8a28
+            : anchor.kind === 'poison'
+              ? 0x91d94f
+              : 0xffb43b,
         transparent: true,
         opacity: 0,
         side: THREE.DoubleSide,
@@ -247,11 +268,15 @@ export class ArenaHazardManager {
       hitTargets: new Set(),
       panels: [],
       spikes: [],
-      spikeHomeY: []
+      spikeHomeY: [],
+      fireJets: [],
+      poisonClouds: []
     };
 
     if (anchor.kind === 'pit') this.buildPit(runtime);
-    else this.buildSpikes(runtime);
+    else if (anchor.kind === 'spikes') this.buildSpikes(runtime);
+    else if (anchor.kind === 'fire-jet') this.buildFireJet(runtime);
+    else this.buildPoisonVent(runtime);
 
     this.scene.add(group);
     this.setVisualProgress(runtime, 0, 0);
@@ -397,28 +422,181 @@ export class ArenaHazardManager {
     }
   }
 
+  private buildFireJet(hazard: RuntimeHazard) {
+    const { radius } = hazard.anchor;
+    const plate = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, 0.09, 28),
+      new THREE.MeshStandardMaterial({
+        color: 0x4f5961,
+        roughness: 0.72,
+        metalness: 0.22,
+        emissive: 0x000000
+      })
+    );
+    plate.name = 'hazardFirePlate';
+    plate.position.y = 0.055;
+    plate.receiveShadow = true;
+    hazard.group.add(plate);
+
+    const grateMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2e3439,
+      roughness: 0.42,
+      metalness: 0.58
+    });
+    for (let i = 0; i < 7; i++) {
+      const bar = new THREE.Mesh(
+        new THREE.BoxGeometry(radius * 1.45, 0.035, 0.08),
+        grateMaterial
+      );
+      bar.position.set(0, 0.115, (i - 3) * 0.28);
+      bar.rotation.y = i % 2 ? 0.04 : -0.04;
+      hazard.group.add(bar);
+    }
+
+    const fireColors = [0xffe26c, 0xffa126, 0xff4f1e];
+    for (let i = 0; i < 11; i++) {
+      const angle = (i / 11) * Math.PI * 2;
+      const radial = i === 0 ? 0 : radius * (0.22 + (i % 3) * 0.2);
+      const flame = new THREE.Mesh(
+        new THREE.ConeGeometry(0.13 + (i % 3) * 0.035, 1.15 + (i % 4) * 0.24, 8),
+        new THREE.MeshBasicMaterial({
+          color: fireColors[i % fireColors.length],
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      flame.name = `hazardFireFlame${i}`;
+      flame.position.set(Math.cos(angle) * radial, 0.2, Math.sin(angle) * radial);
+      flame.scale.set(0.3, 0.02, 0.3);
+      flame.userData.baseHeight = 1.15 + (i % 4) * 0.24;
+      flame.userData.phase = angle;
+      hazard.group.add(flame);
+      hazard.fireJets.push(flame);
+    }
+
+    const light = new THREE.PointLight(0xff6a24, 0, 7.5, 2);
+    light.name = 'hazardFireLight';
+    light.position.y = 1.1;
+    hazard.group.add(light);
+    hazard.effectLight = light;
+  }
+
+  private buildPoisonVent(hazard: RuntimeHazard) {
+    const { radius } = hazard.anchor;
+    const plate = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, 0.075, 32),
+      new THREE.MeshStandardMaterial({
+        color: 0x505d57,
+        roughness: 0.86,
+        metalness: 0.07,
+        emissive: 0x000000
+      })
+    );
+    plate.name = 'hazardPoisonPlate';
+    plate.position.y = 0.052;
+    plate.receiveShadow = true;
+    hazard.group.add(plate);
+
+    const ventMaterial = new THREE.MeshStandardMaterial({
+      color: 0x252c29,
+      roughness: 0.54,
+      metalness: 0.34
+    });
+    const ventLocations: Array<[number, number]> = [[0, 0]];
+    for (let ring = 0; ring < 2; ring++) {
+      const count = ring === 0 ? 6 : 10;
+      const r = ring === 0 ? radius * 0.38 : radius * 0.72;
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2 + ring * 0.15;
+        ventLocations.push([Math.cos(angle) * r, Math.sin(angle) * r]);
+      }
+    }
+    for (const [x, z] of ventLocations) {
+      const vent = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.03, 10), ventMaterial);
+      vent.position.set(x, 0.105, z);
+      hazard.group.add(vent);
+    }
+
+    const cloudMaterialColors = [0x6fae3e, 0x98d75a, 0xb2e56c];
+    for (let i = 0; i < 15; i++) {
+      const angle = (i / 15) * Math.PI * 2;
+      const cloud = new THREE.Mesh(
+        new THREE.SphereGeometry(0.28 + (i % 4) * 0.08, 9, 7),
+        new THREE.MeshBasicMaterial({
+          color: cloudMaterialColors[i % cloudMaterialColors.length],
+          transparent: true,
+          opacity: 0,
+          depthWrite: false
+        })
+      );
+      cloud.name = `hazardPoisonCloud${i}`;
+      cloud.userData.angle = angle;
+      cloud.userData.radius = 0.25 + (i % 5) * 0.34;
+      cloud.userData.baseY = 0.24 + (i % 6) * 0.2;
+      cloud.userData.phase = i * 0.61;
+      cloud.position.set(
+        Math.cos(angle) * Number(cloud.userData.radius),
+        Number(cloud.userData.baseY),
+        Math.sin(angle) * Number(cloud.userData.radius)
+      );
+      cloud.scale.setScalar(0.06);
+      hazard.group.add(cloud);
+      hazard.poisonClouds.push(cloud);
+    }
+
+    const light = new THREE.PointLight(0x82c94c, 0, 6.5, 2);
+    light.name = 'hazardPoisonLight';
+    light.position.y = 0.85;
+    hazard.group.add(light);
+    hazard.effectLight = light;
+  }
+
   private enterWarning(hazard: RuntimeHazard) {
     hazard.phase = 'warning';
-    hazard.phaseDuration = hazard.anchor.kind === 'pit' ? 1.2 : 0.8;
+    hazard.phaseDuration = hazard.anchor.kind === 'pit'
+      ? 1.2
+      : hazard.anchor.kind === 'fire-jet'
+        ? 1.0
+        : hazard.anchor.kind === 'poison'
+          ? 1.25
+          : 0.8;
     hazard.timer = hazard.phaseDuration;
     hazard.hitTargets.clear();
     this.announcements.push(
       hazard.anchor.kind === 'pit'
         ? 'PIT TRAP! Cracked floor is about to collapse.'
-        : 'SPIKE TRAP! Move off the glowing plate.'
+        : hazard.anchor.kind === 'fire-jet'
+          ? 'FIRE VENT! The grate is heating up.'
+          : hazard.anchor.kind === 'poison'
+            ? 'POISON VENT! Toxic gas is building.'
+            : 'SPIKE TRAP! Move off the glowing plate.'
     );
   }
 
   private enterActive(hazard: RuntimeHazard) {
     hazard.phase = 'active';
-    hazard.phaseDuration = hazard.anchor.kind === 'pit' ? 2.65 : 1.45;
+    hazard.phaseDuration = hazard.anchor.kind === 'pit'
+      ? 2.65
+      : hazard.anchor.kind === 'fire-jet'
+        ? 1.25
+        : hazard.anchor.kind === 'poison'
+          ? 2.5
+          : 1.45;
     hazard.timer = hazard.phaseDuration;
     hazard.hitTargets.clear();
   }
 
   private enterRecovery(hazard: RuntimeHazard) {
     hazard.phase = 'recovery';
-    hazard.phaseDuration = hazard.anchor.kind === 'pit' ? 0.9 : 0.58;
+    hazard.phaseDuration = hazard.anchor.kind === 'pit'
+      ? 0.9
+      : hazard.anchor.kind === 'fire-jet'
+        ? 0.65
+        : hazard.anchor.kind === 'poison'
+          ? 1.0
+          : 0.58;
     hazard.timer = hazard.phaseDuration;
   }
 
@@ -447,27 +625,85 @@ export class ArenaHazardManager {
       return;
     }
 
-    const plate = hazard.group.getObjectByName('hazardSpikePlate');
-    if (plate instanceof THREE.Mesh && plate.material instanceof THREE.MeshStandardMaterial) {
-      plate.material.emissive.setHex(warningProgress > 0 ? 0x6a2b0d : openProgress > 0.2 ? 0x351b09 : 0x000000);
-      plate.material.emissiveIntensity = warningProgress > 0 ? 0.8 + pulse * 0.6 : openProgress * 0.45;
+    if (hazard.anchor.kind === 'spikes') {
+      const plate = hazard.group.getObjectByName('hazardSpikePlate');
+      if (plate instanceof THREE.Mesh && plate.material instanceof THREE.MeshStandardMaterial) {
+        plate.material.emissive.setHex(warningProgress > 0 ? 0x6a2b0d : openProgress > 0.2 ? 0x351b09 : 0x000000);
+        plate.material.emissiveIntensity = warningProgress > 0 ? 0.8 + pulse * 0.6 : openProgress * 0.45;
+      }
+
+      for (let i = 0; i < hazard.spikes.length; i++) {
+        const spike = hazard.spikes[i];
+        const homeY = hazard.spikeHomeY[i];
+        spike.position.y = THREE.MathUtils.lerp(homeY, 0.42, openProgress);
+        spike.rotation.y += openProgress > 0 ? 0.015 * (i % 2 ? 1 : -1) : 0;
+      }
+      return;
     }
 
-    for (let i = 0; i < hazard.spikes.length; i++) {
-      const spike = hazard.spikes[i];
-      const homeY = hazard.spikeHomeY[i];
-      spike.position.y = THREE.MathUtils.lerp(homeY, 0.42, openProgress);
-      spike.rotation.y += openProgress > 0 ? 0.015 * (i % 2 ? 1 : -1) : 0;
+    if (hazard.anchor.kind === 'fire-jet') {
+      const plate = hazard.group.getObjectByName('hazardFirePlate');
+      if (plate instanceof THREE.Mesh && plate.material instanceof THREE.MeshStandardMaterial) {
+        plate.material.emissive.setHex(warningProgress > 0 ? 0x8f2e08 : openProgress > 0.15 ? 0x6f2004 : 0x000000);
+        plate.material.emissiveIntensity = warningProgress > 0 ? 0.7 + pulse : openProgress * 1.2;
+      }
+
+      const flicker = 0.82 + Math.sin(performance.now() * 0.035) * 0.14;
+      for (let i = 0; i < hazard.fireJets.length; i++) {
+        const flame = hazard.fireJets[i];
+        const phase = Number(flame.userData.phase ?? 0);
+        const active = openProgress * (0.86 + Math.sin(performance.now() * 0.028 + phase) * 0.14);
+        flame.scale.set(0.55 + active * 0.45, Math.max(0.02, active * (1.35 + (i % 4) * 0.16)), 0.55 + active * 0.45);
+        flame.position.y = 0.18 + active * (0.48 + (i % 3) * 0.16);
+        if (flame.material instanceof THREE.MeshBasicMaterial) flame.material.opacity = clamp01(active * 0.92);
+        flame.rotation.y += openProgress * 0.04 * (i % 2 ? 1 : -1);
+      }
+      if (hazard.effectLight) hazard.effectLight.intensity = openProgress * 4.2 * flicker;
+      return;
     }
+
+    const poisonPlate = hazard.group.getObjectByName('hazardPoisonPlate');
+    if (poisonPlate instanceof THREE.Mesh && poisonPlate.material instanceof THREE.MeshStandardMaterial) {
+      poisonPlate.material.emissive.setHex(warningProgress > 0 ? 0x315d18 : openProgress > 0.15 ? 0x244a12 : 0x000000);
+      poisonPlate.material.emissiveIntensity = warningProgress > 0 ? 0.65 + pulse * 0.7 : openProgress * 0.72;
+    }
+    for (let i = 0; i < hazard.poisonClouds.length; i++) {
+      const cloud = hazard.poisonClouds[i];
+      const angle = Number(cloud.userData.angle ?? 0) + performance.now() * 0.00025 * (i % 2 ? 1 : -1);
+      const radius = Number(cloud.userData.radius ?? 0.5);
+      const baseY = Number(cloud.userData.baseY ?? 0.4);
+      const phase = Number(cloud.userData.phase ?? 0);
+      const drift = openProgress * (1 + Math.sin(performance.now() * 0.0025 + phase) * 0.12);
+      cloud.position.set(
+        Math.cos(angle) * radius * drift,
+        baseY + openProgress * (0.3 + (i % 4) * 0.16) + Math.sin(performance.now() * 0.003 + phase) * 0.12,
+        Math.sin(angle) * radius * drift
+      );
+      cloud.scale.setScalar(0.06 + openProgress * (0.78 + (i % 3) * 0.15));
+      if (cloud.material instanceof THREE.MeshBasicMaterial) cloud.material.opacity = openProgress * (0.2 + (i % 4) * 0.035);
+    }
+    if (hazard.effectLight) hazard.effectLight.intensity = openProgress * 1.8;
   }
 
   private initialDelay(kind: ArenaHazardKind, index: number) {
-    const base = kind === 'pit' ? 5.5 : 3.3;
+    const base = kind === 'pit'
+      ? 5.5
+      : kind === 'fire-jet'
+        ? 7.2
+        : kind === 'poison'
+          ? 8.4
+          : 3.3;
     return base + index * 0.65 + this.random() * 2.4;
   }
 
   private nextCooldown(kind: ArenaHazardKind, cooldownScale: number) {
-    const base = kind === 'pit' ? 8.5 : 6.4;
+    const base = kind === 'pit'
+      ? 8.5
+      : kind === 'fire-jet'
+        ? 8.0
+        : kind === 'poison'
+          ? 9.4
+          : 6.4;
     return (base + this.random() * 4.2) * cooldownScale;
   }
 }
