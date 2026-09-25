@@ -133,6 +133,7 @@ export class TournamentGame {
   private bossRush: boolean;
   private victorySent = false;
   private animationFrame = 0;
+  private initialWaveTimer = 0;
   private running = true;
   private paused = false;
 
@@ -215,6 +216,20 @@ export class TournamentGame {
     this.resize();
     this.callbacks.onMessage(this.bossRush ? 'Elemental Master Gauntlet! Defeat every challenger.' : 'Tournament begins! Survive the waves.');
     this.emitHud();
+
+    // The simulation delta is intentionally capped to keep physics stable, but
+    // that also means a very slow software/WebGL renderer can make a 1.8-second
+    // opening intermission take many seconds of wall time. Arm a wall-clock
+    // fallback after construction so the first fight starts promptly even when
+    // requestAnimationFrame is heavily throttled. The guards prevent a duplicate
+    // spawn when the normal simulation gets there first.
+    this.initialWaveTimer = window.setTimeout(() => {
+      if (!this.running || this.wave !== 0 || this.enemies.length > 0) return;
+      this.intermission = 0;
+      this.spawnWave();
+      this.intermission = 1.4;
+    }, 650);
+
     this.loop();
   }
 
@@ -297,6 +312,7 @@ export class TournamentGame {
 
   destroy() {
     this.running = false;
+    window.clearTimeout(this.initialWaveTimer);
     cancelAnimationFrame(this.animationFrame);
     this.stopSpinjitzuVfx();
     this.hazards.destroy();
