@@ -88,6 +88,15 @@ export class ElementVfxSystem {
       case 'mind':
         this.spawnPsychic(theme, origin, 4);
         break;
+      case 'sound':
+        this.spawnSound(theme, origin, forward, 5);
+        break;
+      case 'nature':
+        this.spawnNature(theme, origin, forward, 10);
+        break;
+      case 'gravity':
+        this.spawnGravity(theme, origin, forward, 7);
+        break;
       case 'light':
       case 'energy':
       case 'force':
@@ -114,6 +123,9 @@ export class ElementVfxSystem {
       case 'metal': this.spawnMetal(theme, origin, direction, 6); break;
       case 'shadow': this.spawnShadow(theme, origin, direction, 5); break;
       case 'mind': this.spawnPsychic(theme, origin, 3); break;
+      case 'sound': this.spawnSound(theme, origin, direction, 4); break;
+      case 'nature': this.spawnNature(theme, origin, direction, 7); break;
+      case 'gravity': this.spawnGravity(theme, origin, direction, 5); break;
       default: this.spawnEnergy(theme, origin, direction, 6); break;
     }
     this.spawnLight(theme, origin, theme.lightIntensity * 0.7, 0.22);
@@ -139,6 +151,9 @@ export class ElementVfxSystem {
     else if (theme.effect === 'earth' || theme.effect === 'metal') this.spawnEarth(theme, origin, forward, 14);
     else if (theme.effect === 'water' || theme.effect === 'wind') this.spawnWater(theme, origin, forward, 16);
     else if (theme.effect === 'poison' || theme.effect === 'shadow') this.spawnPoison(theme, origin, forward, 14);
+    else if (theme.effect === 'sound') this.spawnSound(theme, origin, forward, 9);
+    else if (theme.effect === 'nature') this.spawnNature(theme, origin, forward, 16);
+    else if (theme.effect === 'gravity') this.spawnGravity(theme, origin, forward, 12);
     else this.spawnEnergy(theme, origin, forward, 16);
 
     this.spawnLight(theme, origin.clone().add(new THREE.Vector3(0, 1.1, 0)), theme.lightIntensity * 1.25, 0.6);
@@ -392,6 +407,83 @@ export class ElementVfxSystem {
       ring.rotation.x = Math.PI / 2;
       this.add(ring, new THREE.Vector3(0, 0.22, 0), 0, 0.5 + i * 0.05, 2.5, new THREE.Vector3(0.6, 2.2, 0.4));
     }
+  }
+
+  private spawnSound(theme: ElementCombatTheme, origin: THREE.Vector3, forward: THREE.Vector3, count: number) {
+    const side = new THREE.Vector3(-forward.z, 0, forward.x);
+    for (let i = 0; i < count; i++) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.34 + i * 0.16, 0.035, 7, 40),
+        this.additive(i % 2 ? theme.color : theme.accent, 0.78 - i * 0.07)
+      );
+      ring.position.copy(origin)
+        .addScaledVector(forward, i * 0.33)
+        .addScaledVector(side, (i % 2 ? 1 : -1) * 0.08)
+        .add(new THREE.Vector3(0, 0.32 + i * 0.12, 0));
+      ring.rotation.x = Math.PI / 2;
+      this.add(ring, forward.clone().multiplyScalar(2.6 + i * 0.42), -0.08, 0.42 + i * 0.04, 1.65, new THREE.Vector3(0.2, 3.2, 0.4));
+    }
+
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(0.16, 10, 8),
+      this.additive(theme.accent, 0.9)
+    );
+    core.position.copy(origin).add(new THREE.Vector3(0, 0.52, 0));
+    this.add(core, forward.clone().multiplyScalar(2.8), -0.12, 0.34, 0.5, new THREE.Vector3());
+  }
+
+  private spawnNature(theme: ElementCombatTheme, origin: THREE.Vector3, forward: THREE.Vector3, count: number) {
+    const side = new THREE.Vector3(-forward.z, 0, forward.x);
+    for (let i = 0; i < count; i++) {
+      const leaf = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08 + this.random() * 0.05, 7, 5),
+        new THREE.MeshStandardMaterial({
+          color: i % 3 === 0 ? theme.accent : theme.color,
+          roughness: 0.72,
+          metalness: 0.01,
+          transparent: true,
+          opacity: 0.9
+        })
+      );
+      leaf.scale.set(0.65, 0.18, 1.55);
+      leaf.position.copy(origin)
+        .addScaledVector(side, (this.random() - 0.5) * 0.9)
+        .add(new THREE.Vector3((this.random() - 0.5) * 0.35, 0.22 + this.random() * 0.65, (this.random() - 0.5) * 0.35));
+      const velocity = forward.clone().multiplyScalar(1.6 + this.random() * 2.8)
+        .add(side.clone().multiplyScalar((this.random() - 0.5) * 2.2));
+      velocity.y = 1.2 + this.random() * 2.3;
+      this.add(leaf, velocity, 2.5, 0.55 + this.random() * 0.3, -0.12, new THREE.Vector3(6, 8, 5));
+    }
+
+    const vine = new THREE.Mesh(
+      new THREE.TorusGeometry(0.46, 0.035, 7, 40),
+      this.additive(theme.accent, 0.62)
+    );
+    vine.rotation.x = Math.PI / 2;
+    vine.position.copy(origin).setY(0.08);
+    this.add(vine, new THREE.Vector3(), 0, 0.5, 3.4, new THREE.Vector3(0.3, 2.2, 0.4));
+  }
+
+  private spawnGravity(theme: ElementCombatTheme, origin: THREE.Vector3, forward: THREE.Vector3, count: number) {
+    const group = new THREE.Group();
+    group.position.copy(origin).add(new THREE.Vector3(0, 0.7, 0));
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      const radius = 0.45 + (i % 3) * 0.2;
+      const orb = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.08 + (i % 2) * 0.035, 0),
+        this.additive(i % 2 ? theme.color : theme.accent, 0.86)
+      );
+      orb.position.set(Math.cos(angle) * radius, (i % 3 - 1) * 0.16, Math.sin(angle) * radius);
+      group.add(orb);
+    }
+    const lens = new THREE.Mesh(
+      new THREE.TorusGeometry(0.72, 0.045, 8, 42),
+      this.additive(theme.accent, 0.7)
+    );
+    lens.rotation.x = Math.PI / 2;
+    group.add(lens);
+    this.add(group, forward.clone().multiplyScalar(1.25), -0.5, 0.62, 0.8, new THREE.Vector3(1.6, 7.5, -1.1));
   }
 
   private spawnEnergy(theme: ElementCombatTheme, origin: THREE.Vector3, forward: THREE.Vector3, count: number) {
