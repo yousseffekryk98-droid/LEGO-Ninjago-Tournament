@@ -3,6 +3,7 @@ import {
   ROSTER,
   createCharacterModel,
   findCharacter,
+  getBossRushRoster,
   getCharacterIdentity,
   getCharacterModelProfile,
   getCharacterSvgIcon,
@@ -196,4 +197,20 @@ test('remaining Wave-1 powers have distinct combat themes', () => {
     getElementCombatTheme('Nature').trailStyle,
     getElementCombatTheme('Gravity').trailStyle
   ]).size).toBe(3);
+});
+
+
+test('boss rush prioritizes Tournament challengers then still covers the full playable roster', () => {
+  const playerId = 'lloyd-tournament';
+  const order = getBossRushRoster(playerId);
+  expect(order).toHaveLength(ROSTER.length - 1);
+  expect(new Set(order.map((fighter) => fighter.id)).size).toBe(order.length);
+  expect(order.some((fighter) => fighter.id === playerId)).toBeFalsy();
+
+  const opening = order.slice(0, 6).map((fighter) => fighter.id);
+  expect(opening).toEqual(['karlof', 'griffin-turner', 'shade', 'neuro', 'paleman', 'tox']);
+
+  for (const id of ['jacob-pevsner', 'bolobo', 'gravis', 'kapau', 'chope', 'krait', 'sleven', 'master-chen']) {
+    expect(order.some((fighter) => fighter.id === id), `missing ${id} from boss rush`).toBeTruthy();
+  }
 });
