@@ -1234,14 +1234,6 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   right:4px;
   bottom:3px;
 }
-.user-look-badge {
-  left:4px;
-  top:4px;
-  border-color:#f3d16d;
-  background:rgba(35,21,28,.9);
-  color:#fff0b0;
-}
-
 .fighter-avatar-real {
   position:absolute;
   inset:1px;
