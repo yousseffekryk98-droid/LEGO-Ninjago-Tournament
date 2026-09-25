@@ -121,6 +121,7 @@ export class TournamentGame {
   private cameraShakeTime = 0;
   private cameraShakeStrength = 0;
   private hitStopTime = 0;
+  private arenaFlames: Array<{ mesh: THREE.Mesh; light: THREE.PointLight; phase: number }> = [];
   private renderer: THREE.WebGLRenderer;
   private clock = new THREE.Clock();
   private player: THREE.Group;
@@ -404,6 +405,15 @@ export class TournamentGame {
     this.camera.position.lerp(desiredPosition, cameraAlpha);
     this.camera.up.set(0, this.cameraMode === 'overhead' ? 0 : 1, this.cameraMode === 'overhead' ? -1 : 0);
 
+    const desiredFov = this.cameraMode === 'overhead'
+      ? 45
+      : 48 + (this.spinTime > 0 ? 2.4 : 0) + (this.dodgeTime > 0 ? 1.2 : 0) + (this.cameraShakeTime > 0 ? 0.7 : 0);
+    const nextFov = THREE.MathUtils.lerp(this.camera.fov, desiredFov, dt <= 0 ? 1 : 1 - Math.exp(-dt * 7.5));
+    if (Math.abs(nextFov - this.camera.fov) > 0.01) {
+      this.camera.fov = nextFov;
+      this.camera.updateProjectionMatrix();
+    }
+
     if (this.cameraShakeTime > 0) {
       this.cameraShakeTime = Math.max(0, this.cameraShakeTime - dt);
       const fade = Math.min(1, this.cameraShakeTime / 0.1);
@@ -445,6 +455,7 @@ export class TournamentGame {
     this.updateStudPickups(dt);
     this.updateHealthPickups(dt);
     this.updateArenaHazards(dt);
+    this.updateArenaAtmosphere();
 
     if (this.enemies.length === 0 && this.intermission <= 0) {
       const bossRushTarget = getBossRushRoster(this.character.id).length;
@@ -2314,9 +2325,25 @@ export class TournamentGame {
       const flame = new THREE.PointLight(0xff7a2d, 4.8, 8.5, 2);
       flame.position.set(0, 1.5, z);
       this.scene.add(flame);
+      this.arenaFlames.push({ mesh: flameMesh, light: flame, phase: z * 0.37 });
     }
 
     this.buildTournamentBackdrop();
+  }
+
+  private updateArenaAtmosphere() {
+    for (const flame of this.arenaFlames) {
+      const flicker = 0.88 + Math.sin(this.elapsed * 13.5 + flame.phase) * 0.08 + Math.sin(this.elapsed * 23.2 + flame.phase * 1.7) * 0.045;
+      flame.mesh.scale.set(0.92 + flicker * 0.08, flicker, 0.92 + flicker * 0.08);
+      flame.mesh.rotation.y += 0.018;
+      flame.mesh.position.y = 1.2 + Math.sin(this.elapsed * 9 + flame.phase) * 0.045;
+      flame.light.intensity = 4.25 + flicker * 1.25;
+      flame.light.position.y = 1.48 + Math.sin(this.elapsed * 8.3 + flame.phase) * 0.055;
+    }
+
+    const boss = this.enemies.find((enemy) => enemy.kind === 'boss');
+    const targetExposure = boss ? 1.13 : 1.08;
+    this.renderer.toneMappingExposure = THREE.MathUtils.lerp(this.renderer.toneMappingExposure, targetExposure, 0.018);
   }
 
   private buildLegacyFloorMarkings() {
