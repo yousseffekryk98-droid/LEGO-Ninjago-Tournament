@@ -5,6 +5,15 @@ export interface CharacterDef {
   id: string;
   name: string;
   element: string;
+  /** Exact source power/ability label shown in the roster. */
+  power?: string;
+  normalAttack?: string;
+  specialAttack?: string;
+  spinjitzu?: string;
+  ultimateSpinjitzu?: string;
+  passive?: string;
+  sourceEra?: string;
+  sourceGroup?: string;
   style: CombatStyle;
   special: SpecialType;
   color: number;
