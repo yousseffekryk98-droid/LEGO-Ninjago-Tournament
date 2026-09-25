@@ -124,5 +124,40 @@ const THEMES: Record<string, ElementCombatTheme> = {
 const FALLBACK = theme({ icon: '✦', color: 0x9a6ac0, accent: 0xe0c3f2, effect: 'force' });
 
 export function getElementCombatTheme(element: string): ElementCombatTheme {
-  return THEMES[element] ?? FALLBACK;
+  const direct = THEMES[element];
+  if (direct) return direct;
+
+  const value = element.toLowerCase();
+  if (value.includes('heat') || value.includes('fire') || value.includes('pyro')) return THEMES.Fire;
+  if (value.includes('ice') || value.includes('frost')) return THEMES.Ice;
+  if (value.includes('lightning') || value.includes('electric') || value.includes('static') || value.includes('storm')) return THEMES.Lightning;
+  if (value.includes('water') || value.includes('wave') || value.includes('ocean') || value.includes('aquatic') || value.includes('surface tension')) return THEMES.Water;
+  if (value.includes('quake') || value.includes('earth') || value.includes('rock') || value.includes('stone')) return THEMES.Earth;
+  if (value.includes('creation')) return THEMES.Creation;
+  if (value.includes('energy') || value.includes('golden') || value.includes('dragon') || value.includes('fusion') || value.includes('balance')) return THEMES.Energy;
+  if (value.includes('technology') || value.includes('nindroid') || value.includes('digital') || value.includes('robot') || value.includes('mechanic')) return THEMES.Nindroid;
+  if (value.includes('poison') || value.includes('venom') || value.includes('toxic') || value.includes('decay') || value.includes('swarm')) return THEMES.Poison;
+  if (value.includes('wind') || value.includes('air') || value.includes('propulsion')) return THEMES.Smoke;
+  if (value.includes('speed') || value.includes('reflex')) return THEMES.Speed;
+  if (value.includes('light') || value.includes('invisibility')) return THEMES.Light;
+  if (value.includes('mind') || value.includes('hypnosis') || value.includes('fear') || value.includes('figment') || value.includes('illusion')) return THEMES.Mind;
+  if (value.includes('metal')) return THEMES.Metal;
+  if (value.includes('shadow') || value.includes('darkness') || value.includes('destruction') || value.includes('oni') || value.includes('chaos') || value.includes('misfortune')) return THEMES.Shadow;
+  if (value.includes('sound') || value.includes('scream')) return THEMES.Sound;
+  if (value.includes('nature') || value.includes('plant')) return THEMES.Nature;
+  if (value.includes('gravity')) return THEMES.Gravity;
+  if (value.includes('smoke')) return THEMES.Smoke;
+  if (value.includes('amber') || value.includes('copy') || value.includes('absorb')) return THEMES.Amber;
+  if (value.includes('form') || value.includes('shape')) return THEMES.Form;
+  if (value.includes('magic') || value.includes('sorcery') || value.includes('wish') || value.includes('skull')) return THEMES['Dark Magic'];
+  if (value.includes('anacondrai')) return THEMES.Anacondrai;
+  if (value.includes('constrictai')) return THEMES.Constrictai;
+  if (value.includes('hypnobrai')) return THEMES.Hypnobrai;
+  if (value.includes('serpentine') || value.includes('snake')) return THEMES.Serpentine;
+  if (value.includes('skulkin') || value.includes('skeleton')) return THEMES.Skulkin;
+  if (value.includes('samurai')) return THEMES.Samurai;
+  if (value.includes('staff of elements')) return THEMES['Staff of Elements'];
+  if (value.includes('strength') || value.includes('brute') || value.includes('combat') || value.includes('martial')) return THEMES.Combat;
+
+  return FALLBACK;
 }

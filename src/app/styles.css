@@ -576,6 +576,14 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
 }
 .fighter-card.selected { outline:3px solid #e1b64b;background:linear-gradient(145deg,#73467e,#40294e);box-shadow:0 0 18px #e0b34a44,inset 0 0 0 2px #27172f; }
 .fighter-card.locked { background:linear-gradient(145deg,#302936,#18151d); }
+.fighter-ability-line,.fighter-source-line {
+  display:block;
+  margin-top:4px;
+  color:#cbb9cf;
+  font:700 8px/1.35 Inter,sans-serif;
+  letter-spacing:.025em;
+}
+.fighter-source-line { color:#ab8fc0; text-transform:uppercase; letter-spacing:.07em; }
 .preview-character-btn { border-radius:3px!important;border:2px solid #9e762d!important;background:#1d1623!important; }
 .mini-button { border-radius:4px;background:linear-gradient(#6a447c,#38254a);border:2px solid #ae822e;color:#f1cf68; }
 

@@ -1,11 +1,12 @@
 import type { CharacterDef } from './types';
+import { CATALOG_ROSTER, withFighterAbilityKit } from './catalog-playable';
 export type { CharacterDef, CombatStyle, SpecialType, CharacterIdentity, CharacterModelProfile } from './types';
 export { getCharacterIdentity, characterSearchText } from './identity';
 export { getCharacterModelProfile } from './model-profile';
 
 // Clean-room gameplay data only. Names/variants are drawn from public reference lists;
 // combat values are new balancing values for this fan remake and are not extracted from the original game.
-export const ROSTER: CharacterDef[] = [
+const LEGACY_ROSTER: CharacterDef[] = [
   { id: 'lloyd-tournament', name: 'Lloyd (Tournament)', element: 'Energy', style: 'balanced', special: 'spinjitzu', color: 0x28a745, accent: 0xd8c66a, speed: 5.7, damage: 20, maxHealth: 4, cost: 0, unlockedByDefault: true },
   { id: 'kai-tournament', name: 'Kai (Tournament)', element: 'Fire', style: 'balanced', special: 'spinjitzu', color: 0xc62828, accent: 0xf5a623, speed: 5.8, damage: 21, maxHealth: 4, cost: 0, unlockedByDefault: true },
   { id: 'jay-tournament', name: 'Jay (Tournament)', element: 'Lightning', style: 'speed', special: 'spinjitzu', color: 0x1d5fbf, accent: 0xf4d03f, speed: 6.5, damage: 17, maxHealth: 4, cost: 0, unlockedByDefault: true },
@@ -75,6 +76,14 @@ export const ROSTER: CharacterDef[] = [
   { id: 'samukai', name: 'Samukai', element: 'Skulkin', style: 'speed', special: 'shout', color: 0xe7e2d9, accent: 0x7d6a58, speed: 6.9, damage: 23, maxHealth: 3, cost: 15000 },
   { id: 'kruncha', name: 'Kruncha', element: 'Skulkin', style: 'heavy', special: 'charge', color: 0xe5dfd2, accent: 0x626a70, speed: 4.9, damage: 27, maxHealth: 5, cost: 9000 },
   { id: 'dareth', name: 'Dareth (Brown Ninja)', element: 'Brown Power', style: 'balanced', special: 'shout', color: 0x7a4d24, accent: 0xd8b36d, speed: 5.2, damage: 14, maxHealth: 4, cost: 2500 }
+];
+
+// Keep the original Tournament roster intact, then promote every entry from the
+// owner's expanded catalog into a playable fighter with a deterministic power kit.
+// Catalog IDs are prefixed so legacy variants and later-era appearances can coexist.
+export const ROSTER: CharacterDef[] = [
+  ...LEGACY_ROSTER.map(withFighterAbilityKit),
+  ...CATALOG_ROSTER
 ];
 
 export const findCharacter = (id: string) => ROSTER.find((c) => c.id === id) ?? ROSTER[0];

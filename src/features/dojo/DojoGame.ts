@@ -511,7 +511,23 @@ export class DojoGame {
   }
 
   private grab() {
-    if (this.actionCooldown > 0 || this.player.position.distanceTo(this.dummy.position) > 2.1) return;
+    if (this.actionCooldown > 0) return;
+
+    let distance = this.player.position.distanceTo(this.dummy.position);
+    // Tutorial assist: after the block step, keyboard players can end up a little
+    // outside the old 2.1-unit grab radius even though they are visibly beside the
+    // dummy. During the dedicated grab step, close that final gap automatically.
+    if (this.currentStep() === 'grab' && distance > 2.1 && distance <= 4.4) {
+      const towardDummy = this.dummy.position.clone().sub(this.player.position).setY(0);
+      if (towardDummy.lengthSq() > 0.001) {
+        towardDummy.normalize();
+        this.player.position.addScaledVector(towardDummy, Math.max(0, distance - 1.8));
+        this.clampPlayerToDojo();
+        distance = this.player.position.distanceTo(this.dummy.position);
+      }
+    }
+
+    if (distance > 2.1) return;
     this.actionCooldown = 0.7;
     const direction = this.dummy.position.clone().sub(this.player.position).setY(0).normalize();
     this.dummy.position.addScaledVector(direction, 2.2);
