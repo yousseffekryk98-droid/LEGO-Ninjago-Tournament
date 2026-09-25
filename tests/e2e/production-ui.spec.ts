@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ROSTER } from '../../src/features/characters';
 
 const POWERUP_KEY = 'ninja-tournament-powerups-v1';
 const SAVE_KEY = 'ninja-tournament-fan-remake-v1';
@@ -8,7 +9,7 @@ test('Temple Gallery exposes the full clean-room collection archive', async ({ p
   await page.goto('/');
   await page.getByRole('button', { name: /TEMPLE GALLERY/i }).click();
   await expect(page.getByRole('heading', { name: 'Temple Gallery' })).toBeVisible();
-  await expect(page.locator('.gallery-card')).toHaveCount(51);
+  await expect(page.locator('.gallery-card')).toHaveCount(ROSTER.length);
   await expect(page.locator('.gallery-codex')).toContainText('Anacondrai');
   await expect(page.locator('.gallery-codex')).toContainText('Nindroids');
   await expect(page.locator('.gallery-codex')).toContainText('Bombers');
@@ -56,7 +57,7 @@ test('tournament HUD exposes collectible stud economy and stage presentation', a
 test('all fighters are open and free play starts with unlimited Spinjitzu', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /FIGHTERS/i }).click();
-  await expect(page.locator('.fighter-card')).toHaveCount(51);
+  await expect(page.locator('.fighter-card')).toHaveCount(ROSTER.length);
   await expect(page.locator('.fighter-card.locked')).toHaveCount(0);
   await expect(page.locator('[data-unlock]')).toHaveCount(0);
 
@@ -81,7 +82,7 @@ test('banked money is mirrored into the recovery save cache', async ({ page }) =
 
   expect(snapshots.primary.bankStuds).toBeGreaterThan(0);
   expect(snapshots.cache.bankStuds).toBe(snapshots.primary.bankStuds);
-  expect(snapshots.cache.unlocked).toHaveLength(51);
+  expect(snapshots.cache.unlocked).toHaveLength(ROSTER.length);
 });
 
 
@@ -222,7 +223,7 @@ test('elemental master gauntlet starts with a roster fighter boss', async ({ pag
 test('fighter cards upgrade from CSS fallbacks to rendered 3D portraits when WebGL is available', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /FIGHTERS/i }).click();
-  await expect(page.locator('.fighter-card')).toHaveCount(51);
+  await expect(page.locator('.fighter-card')).toHaveCount(ROSTER.length);
 
   const firstPortrait = page.locator('.fighter-avatar-render').first();
   await expect(firstPortrait).toBeAttached({ timeout: 6000 });
