@@ -1,7 +1,9 @@
 import * as THREE from 'three';
+import { replaceWithStaticGlb } from '../../shared/three/gltf-assets';
 
 export const CENTER_PILLAR_RADIUS = 1.62;
 export const CENTER_PILLAR_CLEARANCE = 0.78;
+export const CENTER_PILLAR_AUTHORED_ASSET_URL = '/assets/models/arena/chen-center-pillar.glb';
 
 const setShadow = (object: THREE.Object3D) => {
   object.traverse((child) => {
@@ -146,7 +148,20 @@ export function buildLegacyCenterPillar(scene: THREE.Scene) {
   }
 
   setShadow(group);
+  const fallbackParts = [...group.children];
+  group.userData.assetState = 'procedural-fallback';
   scene.add(group);
+
+  if (typeof window !== 'undefined') {
+    group.userData.assetState = 'loading-authored-glb';
+    void replaceWithStaticGlb({
+      holder: group,
+      fallback: fallbackParts,
+      url: CENTER_PILLAR_AUTHORED_ASSET_URL,
+      name: 'centerPillarAuthoredGlb'
+    });
+  }
+
   return group;
 }
 

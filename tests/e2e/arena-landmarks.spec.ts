@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import * as THREE from 'three';
 import {
+  CENTER_PILLAR_AUTHORED_ASSET_URL,
   CENTER_PILLAR_CLEARANCE,
   CENTER_PILLAR_RADIUS,
   buildLegacyCenterPillar,
@@ -20,6 +21,8 @@ test('center serpent pillar is a tall named arena landmark with authored details
   expect(scene.getObjectByName('centerPillarSerpentHead')).toBeTruthy();
   expect(scene.getObjectByName('centerPillarSerpentTail')).toBeTruthy();
   expect(pillar.children.length).toBeGreaterThan(25);
+  expect(CENTER_PILLAR_AUTHORED_ASSET_URL).toBe('/assets/models/arena/chen-center-pillar.glb');
+  expect(pillar.userData.assetState).toBe('procedural-fallback');
 
   const box = new THREE.Box3().setFromObject(pillar);
   expect(box.max.y - box.min.y).toBeGreaterThan(10);

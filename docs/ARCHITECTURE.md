@@ -38,7 +38,8 @@ src/
 └─ shared/
    ├─ three/
    │  ├─ model-types.ts
-   │  └─ minifigure-model.ts
+   │  ├─ minifigure-model.ts
+   │  └─ gltf-assets.ts
    ├─ platform/
    │  ├─ index.ts
    │  └─ styles.css
@@ -113,3 +114,15 @@ The current playable 3D models are generated as original Three.js geometry rathe
 Zane is represented by the documented variants `zane-techno`, `zane-pink`, `zane-zx`, and `zane-teacher`. The UI always renders **Zane** as the primary name and the suit as the secondary variant.
 
 The procedural models are intentionally source-controlled as code. If original/licensed production GLB assets are introduced later, they should plug into the same character model factory rather than bypassing the feature architecture.
+
+## Authored GLB asset pipeline
+
+Static arena art can now be supplied as GLB without making combat wait for model loading.
+
+- `scripts/generate-authored-assets.mjs` produces the current clean-room center-pillar GLB before dev, build, and e2e runs.
+- `src/shared/three/gltf-assets.ts` owns cached GLB loading, material cloning, shadows, and safe fallback behavior.
+- `src/features/combat/arena-landmarks.ts` creates the procedural center pillar immediately, then hot-swaps the authored GLB into the same holder when loading succeeds.
+- Collision, camera occlusion, and gameplay reference the holder/landmark dimensions rather than the render implementation, so changing the art does not change combat rules.
+- If a GLB is missing or malformed, the procedural landmark remains visible and gameplay continues.
+
+This is the same runtime path intended for later Blender-authored arena and character assets.
