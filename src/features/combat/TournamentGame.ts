@@ -3,6 +3,7 @@ import { getElementCombatTheme, ROSTER, type CharacterDef } from '../characters'
 import { createCharacterModel } from '../characters/model';
 import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 import { getKeyBindings, type KeyBindings } from '../controls';
+import { ArenaHazardManager } from './arena-hazards';
 
 export interface HudState {
   health: number;
@@ -123,7 +124,7 @@ export class TournamentGame {
   private shockwaves: Shockwave[] = [];
   private studPickups: StudPickup[] = [];
   private healthPickups: HealthPickup[] = [];
-  private spikePositions: THREE.Vector3[] = [];
+  private hazards!: ArenaHazardManager;
   private callbacks: GameCallbacks;
   private character: CharacterDef;
   private bossRush: boolean;
@@ -160,7 +161,7 @@ export class TournamentGame {
   private dodgeTime = 0;
   private dodgeDirection = new THREE.Vector3();
   private frozenTime = 0;
-  private spikeCooldown = 0;
+  private pitFallActive = false;
   private intermission = 1.8;
   private hudTimer = 0;
   private eventTimer = 7;
@@ -185,6 +186,7 @@ export class TournamentGame {
     this.scene.background = new THREE.Color(0x251a22);
     this.scene.fog = new THREE.FogExp2(0x251a22, 0.0135);
     this.buildArena();
+    this.hazards = new ArenaHazardManager(this.scene);
 
     this.player = createCharacterModel(character, 1);
     this.player.position.set(0, 0, 2.5);
@@ -276,8 +278,12 @@ export class TournamentGame {
     this.dodgeTime = 0;
     this.spinTime = 0;
     this.stopSpinjitzuVfx();
+    this.pitFallActive = false;
+    this.hazards.reset();
     this.player.position.set(0, 0, 2.5);
     this.player.rotation.set(0, 0, 0);
+    this.player.scale.setScalar(1);
+    this.playerShadow.visible = true;
     this.clock.getDelta();
     this.emitHud();
     this.callbacks.onMessage('Continue! Back into the tournament.');
@@ -288,6 +294,7 @@ export class TournamentGame {
     this.running = false;
     cancelAnimationFrame(this.animationFrame);
     this.stopSpinjitzuVfx();
+    this.hazards.destroy();
     for (const pickup of [...this.studPickups]) this.removeStudPickup(pickup);
     for (const pickup of [...this.healthPickups]) this.removeHealthPickup(pickup);
     window.removeEventListener('resize', this.resize);
@@ -385,7 +392,6 @@ export class TournamentGame {
     if (this.unlimitedSpecial && this.spinTime <= 0) this.special = 100;
     this.invulnerable = Math.max(0, this.invulnerable - dt);
     this.frozenTime = Math.max(0, this.frozenTime - dt);
-    this.spikeCooldown = Math.max(0, this.spikeCooldown - dt);
     this.hudTimer -= dt;
     this.intermission -= dt;
     this.eventTimer -= dt;
@@ -397,7 +403,7 @@ export class TournamentGame {
     this.updateShockwaves(dt);
     this.updateStudPickups(dt);
     this.updateHealthPickups(dt);
-    this.updateSpikeHazards();
+    this.updateArenaHazards(dt);
 
     if (this.enemies.length === 0 && this.intermission <= 0) {
       const bossRushTarget = ROSTER.filter((fighter) => fighter.id !== this.character.id).length;
@@ -1610,15 +1616,69 @@ export class TournamentGame {
     }
   }
 
-  private updateSpikeHazards() {
-    if (this.spikeCooldown > 0 || !this.grounded) return;
-    for (const spike of this.spikePositions) {
-      if (spike.distanceTo(this.player.position) < 0.95) {
-        this.spikeCooldown = 1.15;
-        this.damagePlayer(0.55);
-        break;
+  private updateArenaHazards(dt: number) {
+    const targets = [
+      {
+        id: 'player',
+        position: this.player.position,
+        grounded: this.grounded && this.player.position.y <= 0.08
+      },
+      ...this.enemies.map((enemy) => ({
+        id: enemy.mesh.uuid,
+        position: enemy.mesh.position,
+        grounded: enemy.mesh.position.y <= 0.08
+      }))
+    ];
+
+    const frame = this.hazards.update(dt, this.wave, targets);
+    for (const announcement of frame.announcements) this.callbacks.onMessage(announcement);
+
+    for (const impact of frame.impacts) {
+      if (impact.targetId === 'player') {
+        if (impact.lethal) this.triggerPitFall();
+        else this.damagePlayer(0.72);
+        continue;
+      }
+
+      const enemy = this.enemies.find((candidate) => candidate.mesh.uuid === impact.targetId);
+      if (!enemy) continue;
+      if (impact.lethal) {
+        this.defeatEnemy(enemy);
+        this.callbacks.onMessage('Arena pit KO! An enemy fell through the floor.');
+      } else {
+        this.hitEnemy(enemy, 42 + this.wave * 1.8, 4.2, true);
       }
     }
+  }
+
+  private triggerPitFall() {
+    if (this.pitFallActive || this.health <= 0) return;
+    this.pitFallActive = true;
+    this.health = 0;
+    this.combo = 0;
+    this.special = 0;
+    this.spinTime = 0;
+    this.stopSpinjitzuVfx();
+    this.input.block = false;
+    this.paused = true;
+    this.playerShadow.visible = false;
+    this.callbacks.onMessage('THE FLOOR COLLAPSED! You fell into the arena pit.');
+    this.emitHud();
+
+    const startedAt = performance.now();
+    const startY = this.player.position.y;
+    const animateFall = (now: number) => {
+      if (!this.running || !this.pitFallActive) return;
+      const t = Math.min(1, (now - startedAt) / 720);
+      const eased = t * t;
+      this.player.position.y = THREE.MathUtils.lerp(startY, -5.6, eased);
+      this.player.rotation.x += 0.055;
+      this.player.rotation.z += 0.075;
+      this.player.scale.setScalar(1 - t * 0.28);
+      if (t < 1) requestAnimationFrame(animateFall);
+      else this.callbacks.onGameOver(this.studs, this.wave);
+    };
+    requestAnimationFrame(animateFall);
   }
 
   protected spawnStudBurst(origin: THREE.Vector3, totalValue: number, amount: number) {
@@ -1966,10 +2026,6 @@ export class TournamentGame {
 
     this.buildGong(-43.0, 0);
     this.buildGong(43.0, 0);
-    this.buildSpikeTrap(-7.2, -6.4);
-    this.buildSpikeTrap(7.4, 6.2);
-    this.buildSpikeTrap(-15.2, 11.0);
-    this.buildSpikeTrap(14.4, -12.6);
 
     for (const z of [-22.0, -10.5, 10.5, 22.0]) {
       const brazier = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x5b3420, roughness: 0.8 }));
@@ -2319,21 +2375,6 @@ export class TournamentGame {
     gong.position.set(x, 1.75, z);
     gong.castShadow = true;
     this.scene.add(gong);
-  }
-
-  private buildSpikeTrap(x: number, z: number) {
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x292d31, roughness: 0.9 }));
-    base.position.set(x, 0.045, z);
-    base.receiveShadow = true;
-    this.scene.add(base);
-    for (let i = 0; i < 7; i++) {
-      const angle = (i / 7) * Math.PI * 2;
-      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.52, 8), new THREE.MeshStandardMaterial({ color: 0x85898d, metalness: 0.45, roughness: 0.42 }));
-      spike.position.set(x + Math.cos(angle) * 0.5, 0.28, z + Math.sin(angle) * 0.5);
-      spike.castShadow = true;
-      this.scene.add(spike);
-    }
-    this.spikePositions.push(new THREE.Vector3(x, 0, z));
   }
 
   private makeRing(color: number, opacity: number) {
