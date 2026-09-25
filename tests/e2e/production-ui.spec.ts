@@ -63,6 +63,12 @@ test('all fighters are open and free play starts with unlimited Spinjitzu', asyn
   await expect(page.locator('.fighter-card.locked')).toHaveCount(0);
   await expect(page.locator('[data-unlock]')).toHaveCount(0);
 
+  const kaiCard = page.locator('.fighter-card[data-id="kai-tournament"]');
+  await expect(kaiCard.locator('.fighter-avatar-real')).toHaveAttribute('src', /^https:\/\/www\.lego\.com\/cdn\//);
+  await expect(kaiCard.locator('.fighter-reference-badge')).toHaveText('LEGO REF');
+  await expect(kaiCard.locator('.fighter-reference-link')).toHaveAttribute('href', 'https://www.lego.com/en-us/themes/ninjago/characters/kai');
+  await expect(page.locator('.fighter-card[data-id="master-chen"] .fighter-avatar-real')).toHaveCount(0);
+
   await page.getByRole('button', { name: '‹' }).click();
   await page.getByRole('button', { name: /FREE PLAY.*UNLIMITED SPINJITZU/i }).click();
   await expect(page.locator('#game-host canvas')).toBeVisible();
