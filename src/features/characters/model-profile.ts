@@ -42,7 +42,7 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     };
   }
 
-  if (id === 'samukai' || sourceGroup.includes('skeleton army')) {
+  if (id === 'samukai') {
     return {
       archetype: 'skeleton',
       weapon: 'dual-katana',
@@ -59,6 +59,19 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     return {
       archetype: 'skeleton',
       weapon: 'katana',
+      hood: false,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xeee9dd,
+      eyeColor: 0x111111
+    };
+  }
+
+  if (sourceGroup.includes('skeleton army')) {
+    return {
+      archetype: 'skeleton',
+      weapon: character.style === 'heavy' ? 'scythe' : 'katana',
       hood: false,
       shoulderArmor: true,
       extraArms: false,
