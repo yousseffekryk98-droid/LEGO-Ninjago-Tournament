@@ -109,9 +109,9 @@ async function generate(profile) {
   const {id,primary,accent,skin,hair,secondary,eyes,style}=profile;
   const isZane=id.startsWith('zane');
   const materials=[
-    {name:'Primary',pbrMetallicRoughness:{baseColorFactor:rgb(primary),metallicFactor:isZane?.2:.03,roughnessFactor:.3}},
+    {name:'Primary',pbrMetallicRoughness:{baseColorFactor:rgb(primary),metallicFactor:isZane ? .2 : .03,roughnessFactor:.3}},
     {name:'Accent',pbrMetallicRoughness:{baseColorFactor:rgb(accent),metallicFactor:.22,roughnessFactor:.27}},
-    {name:'Skin',pbrMetallicRoughness:{baseColorFactor:rgb(skin),metallicFactor:isZane?.15:0,roughnessFactor:.24}},
+    {name:'Skin',pbrMetallicRoughness:{baseColorFactor:rgb(skin),metallicFactor:isZane ? .15 : 0,roughnessFactor:.24}},
     {name:'Dark',pbrMetallicRoughness:{baseColorFactor:[.045,.047,.052,1],metallicFactor:.05,roughnessFactor:.35}},
     {name:'Hair',pbrMetallicRoughness:{baseColorFactor:rgb(hair),metallicFactor:.02,roughnessFactor:.25}},
     {name:'Secondary',pbrMetallicRoughness:{baseColorFactor:rgb(secondary),metallicFactor:.05,roughnessFactor:.42}},
@@ -238,13 +238,13 @@ async function generate(profile) {
       [-.29,.48,-.08,.16,.52,-.15],[-.13,.56,.02,.17,.6,-.08],[.05,.59,-.03,.18,.65,.02],
       [.22,.53,.02,.17,.56,.14],[.32,.4,-.04,.14,.48,.22],[-.36,.34,.02,.13,.46,-.22]
     ];
-    spikes.forEach((p,idx)=>headChildren.push(node(`hairSpike${idx}`,hairCone,[p[0],p[1],p[2]],[p[3],p[4],p[3]],qZ(p[5])));
+    spikes.forEach((p,idx)=>headChildren.push(node(`hairSpike${idx}`,hairCone,[p[0],p[1],p[2]],[p[3],p[4],p[3]],qZ(p[5]))));
     headChildren.push(node('hairFringeLeft',hairSphere,[-.18,.26,.23],[.18,.18,.16],qZ(.35)));
     headChildren.push(node('hairFringeRight',hairSphere,[.15,.28,.25],[.18,.17,.15],qZ(-.35)));
   } else if(style==='jay') {
     headChildren.push(node('hairCap',hairSphere,[0,.36,-.02],[.43,.23,.43]));
     const locks=[[-.29,.28,.17,.18,.2,.15],[-.14,.38,.24,.18,.18,-.15],[.05,.4,.25,.2,.18,.13],[.23,.34,.2,.18,.2,-.2],[.33,.23,.08,.13,.22,-.28]];
-    locks.forEach((p,idx)=>headChildren.push(node(`hairLock${idx}`,hairSphere,[p[0],p[1],p[2]],[p[3],p[4],p[3]],qZ(p[5])));
+    locks.forEach((p,idx)=>headChildren.push(node(`hairLock${idx}`,hairSphere,[p[0],p[1],p[2]],[p[3],p[4],p[3]],qZ(p[5]))));
     headChildren.push(node('jaySideHairLeft',hairSphere,[-.35,.09,.01],[.12,.27,.17]));
     headChildren.push(node('jaySideHairRight',hairSphere,[.35,.1,.01],[.12,.26,.17]));
   } else {
