@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { TournamentGame as BaseTournamentGame, type HudState, type GameCallbacks } from './TournamentGame';
+import { TournamentGame as BaseTournamentGame, type HudState, type GameCallbacks, type TournamentGameOptions } from './TournamentGame';
 import type { CharacterDef } from '../characters';
 
-export type { HudState, GameCallbacks } from './TournamentGame';
+export type { HudState, GameCallbacks, TournamentGameOptions } from './TournamentGame';
 
 type BaseAction = 'attack' | 'punch' | 'kick' | 'jump' | 'grab' | 'special' | 'ultimate';
 
@@ -65,8 +65,8 @@ export class TournamentGame extends BaseTournamentGame {
   private toxicTick = 0;
   private contentDestroyed = false;
 
-  constructor(host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks) {
-    super(host, character, callbacks);
+  constructor(host: HTMLElement, character: CharacterDef, callbacks: GameCallbacks, options: TournamentGameOptions = {}) {
+    super(host, character, callbacks, options);
     this.contentLoop();
   }
 
