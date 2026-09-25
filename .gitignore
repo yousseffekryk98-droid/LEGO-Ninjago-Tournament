@@ -21,3 +21,6 @@ android/local.properties
 # IDE local state
 .idea/
 .vscode/*.log
+
+# Reproducible generated GLB; source lives in scripts/generate-authored-assets.mjs
+public/assets/models/arena/chen-center-pillar.glb

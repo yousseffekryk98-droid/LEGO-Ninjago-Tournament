@@ -13,7 +13,10 @@
     "android:init": "npm run build && cap add android && cap sync android",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
-    "android:run": "npm run android:sync && cap run android"
+    "android:run": "npm run android:sync && cap run android",
+    "generate:assets": "node scripts/generate-authored-assets.mjs",
+    "predev": "npm run generate:assets",
+    "prebuild": "npm run generate:assets"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",
