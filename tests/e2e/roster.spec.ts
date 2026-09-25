@@ -18,7 +18,7 @@ import { applyFighterXp, fighterLevelFromXp } from '../../src/features/progressi
 
 test('every fighter exposes the complete chronological design timeline available to it', () => {
   for (const fighter of ROSTER) {
-    expect(getCharacterDesigns(fighter.id).length, `${fighter.id} should have historical designs`).toBeGreaterThanOrEqual(9);
+    expect(getCharacterDesigns(fighter.id).length, `${fighter.id} should have historical designs`).toBeGreaterThanOrEqual(14);
   }
 
   expect(getCharacterDesigns('tox').map((design) => design.id)).toEqual([
@@ -29,10 +29,15 @@ test('every fighter exposes the complete chronological design timeline available
     'commit-d11705e6',
     'commit-cae32dc0',
     'commit-3dfe70cb',
+    'commit-26b198d6',
     'commit-8c67c327',
-    'commit-67a0ba97'
+    'commit-ae6277d2',
+    'commit-cf2f6329',
+    'commit-67a0ba97',
+    'commit-99837226',
+    'commit-b5994b44'
   ]);
-  expect(getDefaultCharacterDesignId('tox')).toBe('commit-67a0ba97');
+  expect(getDefaultCharacterDesignId('tox')).toBe('commit-b5994b44');
 
   expect(getCharacterDesigns('kai-tournament').map((design) => design.id)).toEqual([
     'commit-998d2fce',
@@ -42,8 +47,13 @@ test('every fighter exposes the complete chronological design timeline available
     'commit-d11705e6',
     'commit-cae32dc0',
     'commit-3dfe70cb',
+    'commit-26b198d6',
     'commit-8c67c327',
+    'commit-ae6277d2',
+    'commit-cf2f6329',
     'commit-67a0ba97',
+    'commit-99837226',
+    'commit-b5994b44',
     'commit-0170de08',
     'commit-0bfc3094'
   ]);
@@ -57,8 +67,13 @@ test('every fighter exposes the complete chronological design timeline available
     'commit-d11705e6',
     'commit-cae32dc0',
     'commit-3dfe70cb',
+    'commit-26b198d6',
     'commit-8c67c327',
+    'commit-ae6277d2',
+    'commit-cf2f6329',
     'commit-67a0ba97',
+    'commit-99837226',
+    'commit-b5994b44',
     'commit-0170de08',
     'commit-0bfc3094',
     'commit-425c89d4',
