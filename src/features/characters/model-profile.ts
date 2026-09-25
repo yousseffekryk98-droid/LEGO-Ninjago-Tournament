@@ -9,8 +9,10 @@ function ninjaWeapon(id: string): CharacterWeapon {
 }
 
 export function getCharacterModelProfile(character: CharacterDef): CharacterModelProfile {
-  const id = character.id;
-  const element = character.element.toLowerCase();
+  const id = character.id.replace(/^catalog-/, '');
+  const power = (character.power ?? character.element).toLowerCase();
+  const sourceGroup = (character.sourceGroup ?? '').toLowerCase();
+  const element = `${character.element} ${power} ${sourceGroup}`.toLowerCase();
 
   if (id.startsWith('zane') || id === 'pixal' || id === 'min-droid') {
     return {
@@ -40,7 +42,7 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     };
   }
 
-  if (id === 'samukai') {
+  if (id === 'samukai' || sourceGroup.includes('skeleton army')) {
     return {
       archetype: 'skeleton',
       weapon: 'dual-katana',
@@ -343,7 +345,7 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     };
   }
 
-  if (id === 'techno-wu') {
+  if (id === 'techno-wu' || id === 'master-wu' || character.name === 'Master Wu') {
     return {
       archetype: 'master',
       weapon: 'staff',
@@ -356,8 +358,8 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     };
   }
 
-  const coreNinja = /^(lloyd|kai|jay|cole)-/.test(id);
-  if (coreNinja || id.startsWith('lloyd')) {
+  const coreNinja = /^(lloyd|kai|jay|cole)(-|$)/.test(id);
+  if (coreNinja || id.startsWith('lloyd') || id === 'nya') {
     return {
       archetype: 'ninja',
       weapon: ninjaWeapon(id),
