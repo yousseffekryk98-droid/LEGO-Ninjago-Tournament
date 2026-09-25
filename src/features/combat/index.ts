@@ -4,3 +4,5 @@ export type { HudState, GameCallbacks, TournamentGameOptions, CameraMode } from 
 
 export * from './arena-hazards';
 export * from './element-vfx';
+
+export * from './arena-floor';
