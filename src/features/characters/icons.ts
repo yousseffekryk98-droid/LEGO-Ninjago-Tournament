@@ -29,6 +29,13 @@ function identityDecoration(style: ReturnType<typeof getCharacterModelProfile>['
   if (style === 'skylor') return `<path d="M25 32Q32 8 48 9q20 1 24 23Z" fill="${dark}"/><circle cx="74" cy="33" r="9" fill="${dark}"/><path d="M26 40h44v4H26Z" fill="${accent}"/>`;
   if (style === 'chamille') return `<path d="m27 29 7-20 8 16 7-22 8 22 9-17 5 21Z" fill="${accent}"/><path d="m61 38 4 28" stroke="${accent}" stroke-width="4"/>`;
   if (style === 'ash') return `<path d="M25 31Q27 9 43 12q6-10 12 0 16-5 18 19Z" fill="${accent}" opacity=".75"/>`;
+  if (style === 'jacob') return `<circle cx="24" cy="47" r="7" fill="${accent}"/><circle cx="72" cy="47" r="7" fill="${accent}"/><path d="M30 60q18 12 36 0" fill="none" stroke="${accent}" stroke-width="4"/>`;
+  if (style === 'bolobo') return `<path d="m28 29 5-17 9 13 6-20 8 20 9-13 4 17Z" fill="${accent}"/><path d="M48 57q-10 5-13 16 10-3 13-10 3 7 13 10-3-11-13-16Z" fill="${accent}"/>`;
+  if (style === 'gravis') return `<circle cx="48" cy="47" r="30" fill="none" stroke="${accent}" stroke-width="4"/><circle cx="28" cy="29" r="5" fill="${accent}"/><circle cx="69" cy="35" r="4" fill="${accent}"/>`;
+  if (style === 'kapau') return `<path d="M25 39h46v6H25Z" fill="${accent}"/><path d="m37 36-6 26" stroke="${dark}" stroke-width="4"/>`;
+  if (style === 'chope') return `<path d="M25 39h46v6H25Z" fill="${accent}"/><path d="m28 27 7-16 8 14 7-19 8 19 9-14 4 16Z" fill="${dark}"/>`;
+  if (style === 'krait') return `<path d="m33 25 7-16 8 15 8-15 7 16" fill="none" stroke="${accent}" stroke-width="6"/><path d="M31 43h34v5H31Z" fill="${dark}"/>`;
+  if (style === 'sleven') return `<path d="M48 4 57 28H39Z" fill="${accent}"/><path d="m29 58 8 8m30-8-8 8" stroke="${accent}" stroke-width="4"/>`;
   return '';
 }
 
