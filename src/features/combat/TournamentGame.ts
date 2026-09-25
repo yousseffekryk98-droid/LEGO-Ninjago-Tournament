@@ -112,8 +112,8 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 
 export class TournamentGame {
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 230);
-  private cameraBasePosition = new THREE.Vector3(21.5, 18.2, 24.0);
+  private camera = new THREE.PerspectiveCamera(48, 1, 0.1, 230);
+  private cameraBasePosition = new THREE.Vector3(20.8, 16.9, 23.6);
   private cameraTarget = new THREE.Vector3(0, 0.85, -0.35);
   private cameraMode: CameraMode = 'classic';
   private cameraShakeTime = 0;
@@ -192,8 +192,8 @@ export class TournamentGame {
     this.renderer.toneMappingExposure = 1.08;
     this.host.appendChild(this.renderer.domElement);
 
-    this.scene.background = new THREE.Color(0x251a22);
-    this.scene.fog = new THREE.FogExp2(0x251a22, 0.0135);
+    this.scene.background = new THREE.Color(0x211a21);
+    this.scene.fog = new THREE.FogExp2(0x211a21, 0.0122);
     this.buildArena();
     this.hazards = new ArenaHazardManager(this.scene);
     this.elementVfx = new ElementVfxSystem(this.scene);
@@ -2304,6 +2304,68 @@ export class TournamentGame {
     const purple = new THREE.MeshStandardMaterial({ color: 0x563365, roughness: 0.76 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xb8892e, roughness: 0.38, metalness: 0.48 });
 
+    // The legacy arena reads as an enclosed stone bowl, especially behind Chen.
+    // Build a faceted curved retaining wall and parapet around the far half so
+    // the player never sees a flat empty horizon behind the combat ring.
+    for (let i = 0; i < 19; i++) {
+      const angle = Math.PI + (i / 18) * Math.PI;
+      const radius = 48.45;
+      const height = 2.65 + (i % 4) * 0.16;
+      const wallBlock = new THREE.Mesh(
+        new THREE.BoxGeometry(4.25, height, 0.95),
+        i % 3 === 0 ? darkStone : stone
+      );
+      wallBlock.name = `arenaFarWall:${i}`;
+      wallBlock.position.set(Math.cos(angle) * radius, height * 0.5, Math.sin(angle) * radius);
+      wallBlock.rotation.y = -angle + Math.PI / 2;
+      wallBlock.castShadow = true;
+      wallBlock.receiveShadow = true;
+      this.scene.add(wallBlock);
+
+      const parapet = new THREE.Mesh(
+        new THREE.BoxGeometry(4.35, 0.34, 1.16),
+        i % 2 ? stone : darkStone
+      );
+      parapet.name = `arenaFarParapet:${i}`;
+      parapet.position.set(Math.cos(angle) * 48.42, height + 0.1, Math.sin(angle) * 48.42);
+      parapet.rotation.y = wallBlock.rotation.y;
+      parapet.castShadow = true;
+      this.scene.add(parapet);
+    }
+
+    // Three shallow terrace rows follow the same curve. They stay outside the
+    // playable radius but add the layered stone/crowd depth visible in footage.
+    for (let row = 0; row < 3; row++) {
+      const radius = 44.8 + row * 1.15;
+      const y = 0.2 + row * 0.48;
+      for (let i = 0; i < 15; i++) {
+        const angle = Math.PI + 0.16 + (i / 14) * (Math.PI - 0.32);
+        const terrace = new THREE.Mesh(
+          new THREE.BoxGeometry(3.5, 0.46, 1.55),
+          row % 2 ? darkStone : stone
+        );
+        terrace.name = `arenaCurvedTerrace:${row}:${i}`;
+        terrace.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+        terrace.rotation.y = -angle + Math.PI / 2;
+        terrace.castShadow = true;
+        terrace.receiveShadow = true;
+        this.scene.add(terrace);
+      }
+    }
+
+    // Broad stone steps lead from the fighting floor up into Chen's gate.
+    for (let step = 0; step < 5; step++) {
+      const stair = new THREE.Mesh(
+        new THREE.BoxGeometry(9.2 - step * 0.72, 0.24, 1.16),
+        step % 2 ? darkStone : stone
+      );
+      stair.name = `arenaGateStep:${step}`;
+      stair.position.set(0, 0.12 + step * 0.16, -41.6 - step * 0.76);
+      stair.castShadow = true;
+      stair.receiveShadow = true;
+      this.scene.add(stair);
+    }
+
     // Low stepped spectator terraces outside the playable ring.
     for (const side of [-1, 1] as const) {
       for (let level = 0; level < 3; level++) {
@@ -2340,6 +2402,29 @@ export class TournamentGame {
       }
     }
 
+    // Continue the crowd around the curved far stand without creating hundreds
+    // of expensive minifigures. Simple LEGO-sized silhouettes give depth.
+    for (let row = 0; row < 2; row++) {
+      const radius = 44.35 + row * 1.02;
+      for (let i = 0; i < 18; i++) {
+        const angle = Math.PI + 0.2 + (i / 17) * (Math.PI - 0.4);
+        const spectator = new THREE.Group();
+        spectator.name = `arenaFarSpectator:${row}:${i}`;
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.44, 0.25), crowdMaterial);
+        body.position.y = 0.32;
+        const head = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.2, 10), crowdMaterial);
+        head.position.y = 0.66;
+        spectator.add(body, head);
+        spectator.position.set(
+          Math.cos(angle) * radius,
+          1.2 + row * 0.54 + (i % 3) * 0.03,
+          Math.sin(angle) * radius
+        );
+        spectator.rotation.y = -angle - Math.PI / 2;
+        this.scene.add(spectator);
+      }
+    }
+
     // Tournament banners echo the red/purple/gold architecture in reference footage.
     const bannerPoints: Array<[number, number, number, THREE.Material]> = [
       [-43.0, 4.0, -23.0, red],
@@ -2361,6 +2446,30 @@ export class TournamentGame {
         object.castShadow = true;
         this.scene.add(object);
       }
+    }
+
+    // Warm wall torches punctuate the dark stone bowl and mirror the orange
+    // practical lights visible around the legacy arena perimeter.
+    for (const angle of [3.52, 3.86, 4.2, 5.22, 5.56, 5.9]) {
+      const x = Math.cos(angle) * 47.0;
+      const z = Math.sin(angle) * 47.0;
+      const holder = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 0.62, 8), gold);
+      holder.position.set(x, 2.55, z);
+      holder.rotation.z = Math.PI / 2;
+      holder.castShadow = true;
+      this.scene.add(holder);
+
+      const flame = new THREE.Mesh(
+        new THREE.ConeGeometry(0.17, 0.56, 8),
+        new THREE.MeshBasicMaterial({ color: 0xff9e36, transparent: true, opacity: 0.9 })
+      );
+      flame.position.set(x, 3.02, z);
+      flame.rotation.z = (angle % 2) * 0.03;
+      this.scene.add(flame);
+
+      const torchLight = new THREE.PointLight(0xff7930, 2.9, 7.2, 2);
+      torchLight.position.set(x, 3.0, z);
+      this.scene.add(torchLight);
     }
 
     // Chen's elevated viewing throne above the far gate.

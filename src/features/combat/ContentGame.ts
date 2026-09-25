@@ -664,10 +664,10 @@ export class TournamentGame extends StableContentGame {
   private spawnTrainingProps() {
     const state = this.productionRuntime();
     const positions = [
-      new THREE.Vector3(-6.4, 0, -3.1),
-      new THREE.Vector3(6.2, 0, 3.4),
-      new THREE.Vector3(-5.7, 0, 5.1),
-      new THREE.Vector3(5.4, 0, -5.2)
+      new THREE.Vector3(-9.4, 0, -10.2),
+      new THREE.Vector3(10.0, 0, -9.7),
+      new THREE.Vector3(-10.1, 0, 9.6),
+      new THREE.Vector3(9.5, 0, 10.3)
     ];
 
     for (const position of positions) {
