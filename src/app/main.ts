@@ -637,6 +637,7 @@ function startGame() {
     onHud: updateHud,
     onMessage: showArenaMessage,
     onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id),
+    onVictory: (runStuds, fights) => finalizeRun(runStuds, fights, baseFighter.id, true),
     onCameraModeChange: syncCameraButton
   }, { bossRush: bossRushMode });
   activeGame = game;
@@ -837,7 +838,7 @@ function showDefeatScreen(game: TournamentGame, runStuds: number, wave: number, 
   finalizeRun(runStuds, wave, fighterId);
 }
 
-function finalizeRun(runStuds: number, wave: number, fighterId: string) {
+function finalizeRun(runStuds: number, wave: number, fighterId: string, victory = false) {
   const beforeLevel = fighterLevel(fighterId);
   const previousBestRun = save.bestRun;
   const previousBestWave = save.bestWave;
@@ -861,17 +862,17 @@ function finalizeRun(runStuds: number, wave: number, fighterId: string) {
   overlay.classList.remove('hidden');
   overlay.innerHTML = `
     <section class="legacy-result-card">
-      <small>${newStudRecord || newWaveRecord ? 'NEW RECORD!' : 'CURRENT SCORE'}</small>
-      <h2>${formatStuds(runStuds)}</h2>
+      <small>${victory ? 'GAUNTLET COMPLETE!' : newStudRecord || newWaveRecord ? 'NEW RECORD!' : 'CURRENT SCORE'}</small>
+      <h2>${victory ? 'ALL CHALLENGERS DEFEATED' : formatStuds(runStuds)}</h2>
       <div class="result-stud-line"><span class="stud-icon"></span><b>STUDS</b></div>
       <div class="result-score-grid">
-        <span><small>WAVE</small><b>${wave}</b>${newWaveRecord ? '<em>NEW</em>' : ''}</span>
+        <span><small>${victory ? 'FIGHTS' : 'WAVE'}</small><b>${wave}</b>${newWaveRecord ? '<em>NEW</em>' : ''}</span>
         <span><small>BEST SCORE</small><b>${formatStuds(save.bestRun)}</b>${newStudRecord ? '<em>NEW</em>' : ''}</span>
       </div>
       <p class="xp-award">+${formatStuds(xpEarned)} FIGHTER XP · LEVEL ${afterLevel}${afterLevel > beforeLevel ? ' · TRUE POTENTIAL RISING!' : ''}</p>
       <div class="menu-actions"><button class="gold-button primary" id="retry-btn">RETRY</button><button class="gold-button" id="rewards-btn">DAILY REWARDS</button><button class="gold-button" id="menu-btn">MAIN MENU</button></div>
     </section>`;
-  document.querySelector('#retry-btn')?.addEventListener('click', freePlayMode ? startFreePlay : startTournament);
+  document.querySelector('#retry-btn')?.addEventListener('click', bossRushMode ? startBossRush : freePlayMode ? startFreePlay : startTournament);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
   document.querySelector('#menu-btn')?.addEventListener('click', showHome);
 }
