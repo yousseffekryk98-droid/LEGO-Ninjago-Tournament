@@ -9,6 +9,9 @@ This fan remake keeps shipped game art clean-room or openly licensed. Do not cop
 - `public/icons/minifigure-silhouette.svg` — original clean-room block-toy/minifigure silhouette. Covered by this repository's MIT license.
 - Procedural Three.js fighter geometry in `src/shared/three/minifigure-model.ts` — original project geometry.
 - `scripts/generate-authored-assets.mjs` — original clean-room source that generates the local Chen center-pillar GLB used by the arena GLB pipeline. The generated binary is intentionally not committed.
+- `scripts/generate-chen-gate.mjs` — original clean-room Chen gate GLB generator.
+- `scripts/generate-arena-props.mjs` — original clean-room serpent-column and gong GLB generator.
+- `scripts/generate-core-fighters.mjs` — original clean-room authored-body GLB generator for the main ninja, Garmadon, Chen and Skylor; procedural accessories remain the fallback/secondary detail layer.
 
 ## Open-license references approved for future additions
 

@@ -1,13 +1,14 @@
 import type { CharacterDef } from './types';
 import { getCharacterModelProfile } from './model-profile';
 import { createMinifigureModel } from '../../shared/three/minifigure-model';
+import { attachAuthoredCharacterBody } from './authored-model';
 
 export function createCharacterModel(character: CharacterDef, scale = 1) {
   const baseProfile = getCharacterModelProfile(character);
   const isTruePotential = (character.potentialLevel ?? 1) >= 5;
   const obsidianWeapon = isTruePotential && ['kai-dx', 'jay-zx', 'zane-zx', 'cole-zukin'].includes(character.id);
 
-  return createMinifigureModel({
+  const model = createMinifigureModel({
     primary: character.color,
     accent: character.accent,
     scale,
@@ -17,4 +18,7 @@ export function createCharacterModel(character: CharacterDef, scale = 1) {
       weaponColor: obsidianWeapon ? 0x252434 : undefined
     }
   });
+
+  if (typeof window !== 'undefined') void attachAuthoredCharacterBody(model, character.id);
+  return model;
 }

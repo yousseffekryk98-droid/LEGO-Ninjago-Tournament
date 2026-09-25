@@ -6,7 +6,7 @@ import { getKeyBindings, type KeyBindings } from '../controls';
 import { ArenaHazardManager } from './arena-hazards';
 import { ElementVfxSystem } from './element-vfx';
 import { buildTournamentFloorDetails } from './arena-floor';
-import { CENTER_PILLAR_CLEARANCE, attachAuthoredArenaGate, buildLegacyCenterPillar, resolveCenterPillarCollision, updateCenterPillarOcclusion } from './arena-landmarks';
+import { CENTER_PILLAR_CLEARANCE, attachAuthoredArenaGate, attachAuthoredArenaGong, attachAuthoredSerpentColumn, buildLegacyCenterPillar, resolveCenterPillarCollision, updateCenterPillarOcclusion } from './arena-landmarks';
 
 export interface HudState {
   health: number;
@@ -59,6 +59,8 @@ interface Enemy {
   bossCharacter?: CharacterDef;
   bossSpinTime: number;
   bossSpinHitCooldown: number;
+  introTime: number;
+  introDuration: number;
   specialCount: number;
   hitFlash: number;
 }
@@ -119,6 +121,7 @@ export class TournamentGame {
   private cameraShakeTime = 0;
   private cameraShakeStrength = 0;
   private hitStopTime = 0;
+  private arenaFlames: Array<{ mesh: THREE.Mesh; light: THREE.PointLight; phase: number }> = [];
   private renderer: THREE.WebGLRenderer;
   private clock = new THREE.Clock();
   private player: THREE.Group;
@@ -402,6 +405,15 @@ export class TournamentGame {
     this.camera.position.lerp(desiredPosition, cameraAlpha);
     this.camera.up.set(0, this.cameraMode === 'overhead' ? 0 : 1, this.cameraMode === 'overhead' ? -1 : 0);
 
+    const desiredFov = this.cameraMode === 'overhead'
+      ? 45
+      : 48 + (this.spinTime > 0 ? 2.4 : 0) + (this.dodgeTime > 0 ? 1.2 : 0) + (this.cameraShakeTime > 0 ? 0.7 : 0);
+    const nextFov = THREE.MathUtils.lerp(this.camera.fov, desiredFov, dt <= 0 ? 1 : 1 - Math.exp(-dt * 7.5));
+    if (Math.abs(nextFov - this.camera.fov) > 0.01) {
+      this.camera.fov = nextFov;
+      this.camera.updateProjectionMatrix();
+    }
+
     if (this.cameraShakeTime > 0) {
       this.cameraShakeTime = Math.max(0, this.cameraShakeTime - dt);
       const fade = Math.min(1, this.cameraShakeTime / 0.1);
@@ -443,6 +455,7 @@ export class TournamentGame {
     this.updateStudPickups(dt);
     this.updateHealthPickups(dt);
     this.updateArenaHazards(dt);
+    this.updateArenaAtmosphere();
 
     if (this.enemies.length === 0 && this.intermission <= 0) {
       const bossRushTarget = getBossRushRoster(this.character.id).length;
@@ -1033,6 +1046,45 @@ export class TournamentGame {
       enemy.specialCooldown -= dt;
       enemy.bossSpinHitCooldown = Math.max(0, enemy.bossSpinHitCooldown - dt);
       enemy.hitFlash -= dt;
+
+      if (enemy.introTime > 0) {
+        enemy.introTime = Math.max(0, enemy.introTime - dt);
+        const progress = enemy.introDuration > 0
+          ? THREE.MathUtils.clamp(1 - enemy.introTime / enemy.introDuration, 0, 1)
+          : 1;
+        const eased = progress * progress * (3 - 2 * progress);
+        const baseScale = Number(enemy.mesh.userData.bossBaseScale ?? enemy.mesh.scale.x);
+        enemy.mesh.scale.setScalar(baseScale * (0.68 + eased * 0.32));
+        enemy.mesh.position.y = Math.sin(progress * Math.PI) * 0.42;
+        enemy.mesh.rotation.y += dt * (7.5 - eased * 5.2);
+
+        const aura = enemy.mesh.getObjectByName('bossEntranceAura');
+        if (aura) {
+          aura.visible = true;
+          aura.rotation.y += dt * 3.8;
+          const ring = aura.getObjectByName('bossEntranceRing');
+          if (ring instanceof THREE.Mesh && ring.material instanceof THREE.MeshBasicMaterial) {
+            ring.scale.setScalar(0.82 + eased * 0.52);
+            ring.material.opacity = Math.max(0, 0.62 * (1 - Math.max(0, progress - 0.68) / 0.32));
+          }
+          const beam = aura.getObjectByName('bossEntranceBeam');
+          if (beam instanceof THREE.Mesh && beam.material instanceof THREE.MeshBasicMaterial) {
+            beam.scale.y = 0.6 + Math.sin(progress * Math.PI) * 0.72;
+            beam.material.opacity = 0.1 + Math.sin(progress * Math.PI) * 0.2;
+          }
+          const light = aura.getObjectByName('bossEntranceLight');
+          if (light instanceof THREE.PointLight) light.intensity = 2.2 + Math.sin(progress * Math.PI) * 5.4;
+        }
+
+        if (enemy.introTime <= 0) {
+          enemy.mesh.position.y = 0;
+          enemy.mesh.scale.setScalar(baseScale);
+          if (aura) aura.visible = false;
+          this.addImpactFeedback(1.35, 0.025);
+        }
+        continue;
+      }
+
       if (enemy.hiddenTime > 0) {
         enemy.hiddenTime -= dt;
         if (enemy.hiddenTime <= 0) this.setEnemyOpacity(enemy, 1);
@@ -1530,6 +1582,53 @@ export class TournamentGame {
     }
 
     mesh.position.set(x, 0, z);
+    if (kind === 'boss') {
+      const baseScale = mesh.scale.x;
+      mesh.userData.bossBaseScale = baseScale;
+      mesh.scale.setScalar(baseScale * 0.68);
+
+      const entranceAura = new THREE.Group();
+      entranceAura.name = 'bossEntranceAura';
+      const color = bossCharacter?.color ?? colors.boss[0];
+      const accent = bossCharacter?.accent ?? colors.boss[1];
+
+      const floorRing = new THREE.Mesh(
+        new THREE.RingGeometry(1.35, 2.75, 64),
+        new THREE.MeshBasicMaterial({
+          color: accent,
+          transparent: true,
+          opacity: 0.62,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      floorRing.name = 'bossEntranceRing';
+      floorRing.rotation.x = -Math.PI / 2;
+      floorRing.position.y = 0.05;
+      entranceAura.add(floorRing);
+
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.4, 2.25, 5.6, 36, 1, true),
+        new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.16,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      beam.name = 'bossEntranceBeam';
+      beam.position.y = 2.45;
+      entranceAura.add(beam);
+
+      const light = new THREE.PointLight(accent, 5.2, 9.5, 2);
+      light.name = 'bossEntranceLight';
+      light.position.y = 2.1;
+      entranceAura.add(light);
+      mesh.add(entranceAura);
+    }
     this.scene.add(mesh);
     const waveScale = 1 + this.wave * 0.065;
     const bossBaseHp = bossCharacter ? 190 + bossCharacter.maxHealth * 20 : 230;
@@ -1549,6 +1648,8 @@ export class TournamentGame {
       bossCharacter,
       bossSpinTime: 0,
       bossSpinHitCooldown: 0,
+      introTime: kind === 'boss' ? 1.55 : 0,
+      introDuration: kind === 'boss' ? 1.55 : 0,
       specialCount: 0,
       hitFlash: 0
     };
@@ -2224,9 +2325,25 @@ export class TournamentGame {
       const flame = new THREE.PointLight(0xff7a2d, 4.8, 8.5, 2);
       flame.position.set(0, 1.5, z);
       this.scene.add(flame);
+      this.arenaFlames.push({ mesh: flameMesh, light: flame, phase: z * 0.37 });
     }
 
     this.buildTournamentBackdrop();
+  }
+
+  private updateArenaAtmosphere() {
+    for (const flame of this.arenaFlames) {
+      const flicker = 0.88 + Math.sin(this.elapsed * 13.5 + flame.phase) * 0.08 + Math.sin(this.elapsed * 23.2 + flame.phase * 1.7) * 0.045;
+      flame.mesh.scale.set(0.92 + flicker * 0.08, flicker, 0.92 + flicker * 0.08);
+      flame.mesh.rotation.y += 0.018;
+      flame.mesh.position.y = 1.2 + Math.sin(this.elapsed * 9 + flame.phase) * 0.045;
+      flame.light.intensity = 4.25 + flicker * 1.25;
+      flame.light.position.y = 1.48 + Math.sin(this.elapsed * 8.3 + flame.phase) * 0.055;
+    }
+
+    const boss = this.enemies.find((enemy) => enemy.kind === 'boss');
+    const targetExposure = boss ? 1.13 : 1.08;
+    this.renderer.toneMappingExposure = THREE.MathUtils.lerp(this.renderer.toneMappingExposure, targetExposure, 0.018);
   }
 
   private buildLegacyFloorMarkings() {
@@ -2629,50 +2746,84 @@ export class TournamentGame {
   }
 
   private buildSerpentPillar(x: number, z: number, lean: number) {
+    const group = new THREE.Group();
+    group.name = 'arenaSerpentColumn';
+    group.position.set(x, 0, z);
+    group.rotation.z = lean * 0.06;
+
     const stone = new THREE.MeshStandardMaterial({ color: 0x35383e, roughness: 0.92 });
-    const serpent = new THREE.MeshStandardMaterial({
-      color: 0x612846,
-      roughness: 0.58,
-      metalness: 0.05
-    });
+    const darkStone = new THREE.MeshStandardMaterial({ color: 0x23262b, roughness: 0.97 });
+    const serpent = new THREE.MeshStandardMaterial({ color: 0x612846, roughness: 0.58, metalness: 0.05 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xa97928, roughness: 0.38, metalness: 0.45 });
 
-    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.9, 5.5, 14), stone);
-    pillar.position.set(x, 2.45, z);
-    pillar.rotation.z = lean * 0.12;
+    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.08, 1.18, 0.38, 14), darkStone);
+    plinth.position.y = 0.18;
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.9, 5.1, 14), stone);
+    pillar.position.y = 2.75;
     pillar.castShadow = true;
     pillar.receiveShadow = true;
-    this.scene.add(pillar);
+    group.add(plinth, pillar);
 
     for (let i = 0; i < 5; i++) {
       const coil = new THREE.Mesh(new THREE.TorusGeometry(0.81, 0.14, 8, 28), serpent);
-      coil.position.set(x, 0.8 + i * 0.88, z);
-      coil.rotation.x = Math.PI / 2 + lean;
+      coil.position.y = 0.95 + i * 0.86;
+      coil.rotation.x = Math.PI / 2 + lean * 0.25;
       coil.rotation.z = i * 0.5;
       coil.castShadow = true;
-      this.scene.add(coil);
+      group.add(coil);
     }
 
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.3, 14), gold);
-    crown.position.set(x, 5.25, z);
+    crown.position.y = 5.35;
     crown.castShadow = true;
-    this.scene.add(crown);
+    group.add(crown);
+
+    for (let i = 0; i < 4; i++) {
+      const angle = i * Math.PI / 2 + Math.PI / 4;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.52, 8), darkStone);
+      spike.position.set(Math.cos(angle) * 0.62, 5.76, Math.sin(angle) * 0.62);
+      spike.rotation.z = Math.cos(angle) * 0.22;
+      spike.castShadow = true;
+      group.add(spike);
+    }
+
+    const fallbackParts = [...group.children];
+    this.scene.add(group);
+    attachAuthoredSerpentColumn(group, fallbackParts);
   }
 
   private buildGong(x: number, z: number) {
+    const group = new THREE.Group();
+    group.name = 'arenaGong';
+    group.position.set(x, 0, z);
+
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x4a2b18, roughness: 0.84 });
     const gongMat = new THREE.MeshStandardMaterial({ color: 0xb38431, roughness: 0.35, metalness: 0.55 });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0x6e2028, roughness: 0.72 });
+
     for (const dx of [-0.9, 0.9]) {
       const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.4, 0.22), frameMat);
-      post.position.set(x + (x < 0 ? dx : -dx), 1.7, z + dx * 0.04);
+      post.position.set(dx, 1.7, 0);
       post.castShadow = true;
-      this.scene.add(post);
+      group.add(post);
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.2, 0.72), frameMat);
+      foot.position.set(dx, 0.1, 0);
+      group.add(foot);
     }
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.22, 0.24), frameMat);
+    beam.position.y = 3.3;
+    const banner = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.44, 0.08), redMat);
+    banner.position.y = 3.63;
     const gong = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.12, 32), gongMat);
+    gong.name = 'arenaGongDisc';
     gong.rotation.z = Math.PI / 2;
-    gong.position.set(x, 1.75, z);
+    gong.position.y = 1.75;
     gong.castShadow = true;
-    this.scene.add(gong);
+    group.add(beam, banner, gong);
+
+    const fallbackParts = [...group.children];
+    this.scene.add(group);
+    attachAuthoredArenaGong(group, fallbackParts);
   }
 
   private makeRing(color: number, opacity: number) {

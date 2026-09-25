@@ -14,7 +14,7 @@
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
     "android:run": "npm run android:sync && cap run android",
-    "generate:assets": "node scripts/generate-authored-assets.mjs && node scripts/generate-chen-gate.mjs",
+    "generate:assets": "node scripts/generate-authored-assets.mjs && node scripts/generate-chen-gate.mjs && node scripts/generate-arena-props.mjs && node scripts/generate-core-fighters.mjs",
     "predev": "npm run generate:assets",
     "prebuild": "npm run generate:assets",
     "pretest:e2e": "npm run generate:assets"
