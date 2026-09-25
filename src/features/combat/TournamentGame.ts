@@ -6,7 +6,7 @@ import { getKeyBindings, type KeyBindings } from '../controls';
 import { ArenaHazardManager } from './arena-hazards';
 import { ElementVfxSystem } from './element-vfx';
 import { buildTournamentFloorDetails } from './arena-floor';
-import { CENTER_PILLAR_CLEARANCE, attachAuthoredArenaGate, buildLegacyCenterPillar, resolveCenterPillarCollision, updateCenterPillarOcclusion } from './arena-landmarks';
+import { CENTER_PILLAR_CLEARANCE, attachAuthoredArenaGate, attachAuthoredArenaGong, attachAuthoredSerpentColumn, buildLegacyCenterPillar, resolveCenterPillarCollision, updateCenterPillarOcclusion } from './arena-landmarks';
 
 export interface HudState {
   health: number;
@@ -2719,50 +2719,84 @@ export class TournamentGame {
   }
 
   private buildSerpentPillar(x: number, z: number, lean: number) {
+    const group = new THREE.Group();
+    group.name = 'arenaSerpentColumn';
+    group.position.set(x, 0, z);
+    group.rotation.z = lean * 0.06;
+
     const stone = new THREE.MeshStandardMaterial({ color: 0x35383e, roughness: 0.92 });
-    const serpent = new THREE.MeshStandardMaterial({
-      color: 0x612846,
-      roughness: 0.58,
-      metalness: 0.05
-    });
+    const darkStone = new THREE.MeshStandardMaterial({ color: 0x23262b, roughness: 0.97 });
+    const serpent = new THREE.MeshStandardMaterial({ color: 0x612846, roughness: 0.58, metalness: 0.05 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xa97928, roughness: 0.38, metalness: 0.45 });
 
-    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.9, 5.5, 14), stone);
-    pillar.position.set(x, 2.45, z);
-    pillar.rotation.z = lean * 0.12;
+    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.08, 1.18, 0.38, 14), darkStone);
+    plinth.position.y = 0.18;
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.9, 5.1, 14), stone);
+    pillar.position.y = 2.75;
     pillar.castShadow = true;
     pillar.receiveShadow = true;
-    this.scene.add(pillar);
+    group.add(plinth, pillar);
 
     for (let i = 0; i < 5; i++) {
       const coil = new THREE.Mesh(new THREE.TorusGeometry(0.81, 0.14, 8, 28), serpent);
-      coil.position.set(x, 0.8 + i * 0.88, z);
-      coil.rotation.x = Math.PI / 2 + lean;
+      coil.position.y = 0.95 + i * 0.86;
+      coil.rotation.x = Math.PI / 2 + lean * 0.25;
       coil.rotation.z = i * 0.5;
       coil.castShadow = true;
-      this.scene.add(coil);
+      group.add(coil);
     }
 
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.3, 14), gold);
-    crown.position.set(x, 5.25, z);
+    crown.position.y = 5.35;
     crown.castShadow = true;
-    this.scene.add(crown);
+    group.add(crown);
+
+    for (let i = 0; i < 4; i++) {
+      const angle = i * Math.PI / 2 + Math.PI / 4;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.52, 8), darkStone);
+      spike.position.set(Math.cos(angle) * 0.62, 5.76, Math.sin(angle) * 0.62);
+      spike.rotation.z = Math.cos(angle) * 0.22;
+      spike.castShadow = true;
+      group.add(spike);
+    }
+
+    const fallbackParts = [...group.children];
+    this.scene.add(group);
+    attachAuthoredSerpentColumn(group, fallbackParts);
   }
 
   private buildGong(x: number, z: number) {
+    const group = new THREE.Group();
+    group.name = 'arenaGong';
+    group.position.set(x, 0, z);
+
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x4a2b18, roughness: 0.84 });
     const gongMat = new THREE.MeshStandardMaterial({ color: 0xb38431, roughness: 0.35, metalness: 0.55 });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0x6e2028, roughness: 0.72 });
+
     for (const dx of [-0.9, 0.9]) {
       const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.4, 0.22), frameMat);
-      post.position.set(x + (x < 0 ? dx : -dx), 1.7, z + dx * 0.04);
+      post.position.set(dx, 1.7, 0);
       post.castShadow = true;
-      this.scene.add(post);
+      group.add(post);
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.2, 0.72), frameMat);
+      foot.position.set(dx, 0.1, 0);
+      group.add(foot);
     }
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.22, 0.24), frameMat);
+    beam.position.y = 3.3;
+    const banner = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.44, 0.08), redMat);
+    banner.position.y = 3.63;
     const gong = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.12, 32), gongMat);
+    gong.name = 'arenaGongDisc';
     gong.rotation.z = Math.PI / 2;
-    gong.position.set(x, 1.75, z);
+    gong.position.y = 1.75;
     gong.castShadow = true;
-    this.scene.add(gong);
+    group.add(beam, banner, gong);
+
+    const fallbackParts = [...group.children];
+    this.scene.add(group);
+    attachAuthoredArenaGong(group, fallbackParts);
   }
 
   private makeRing(color: number, opacity: number) {
