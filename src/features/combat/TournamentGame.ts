@@ -4,6 +4,7 @@ import { createCharacterModel } from '../characters/model';
 import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 import { getKeyBindings, type KeyBindings } from '../controls';
 import { ArenaHazardManager } from './arena-hazards';
+import { ElementVfxSystem } from './element-vfx';
 
 export interface HudState {
   health: number;
@@ -125,6 +126,7 @@ export class TournamentGame {
   private studPickups: StudPickup[] = [];
   private healthPickups: HealthPickup[] = [];
   private hazards!: ArenaHazardManager;
+  private elementVfx!: ElementVfxSystem;
   private callbacks: GameCallbacks;
   private character: CharacterDef;
   private bossRush: boolean;
@@ -187,6 +189,7 @@ export class TournamentGame {
     this.scene.fog = new THREE.FogExp2(0x251a22, 0.0135);
     this.buildArena();
     this.hazards = new ArenaHazardManager(this.scene);
+    this.elementVfx = new ElementVfxSystem(this.scene);
 
     this.player = createCharacterModel(character, 1);
     this.player.position.set(0, 0, 2.5);
@@ -295,6 +298,7 @@ export class TournamentGame {
     cancelAnimationFrame(this.animationFrame);
     this.stopSpinjitzuVfx();
     this.hazards.destroy();
+    this.elementVfx.destroy();
     for (const pickup of [...this.studPickups]) this.removeStudPickup(pickup);
     for (const pickup of [...this.healthPickups]) this.removeHealthPickup(pickup);
     window.removeEventListener('resize', this.resize);
@@ -396,6 +400,7 @@ export class TournamentGame {
     this.intermission -= dt;
     this.eventTimer -= dt;
 
+    this.elementVfx.update(dt);
     this.updatePlayer(dt);
     this.updateEnemies(dt);
     this.updateProjectiles(dt);
@@ -596,23 +601,8 @@ export class TournamentGame {
   private performElementalKick(forward: THREE.Vector3) {
     const theme = getElementCombatTheme(this.character.element);
     const origin = this.player.position.clone().addScaledVector(forward, 1.45).setY(0.05);
-    const ring = this.makeRing(theme.color, 0.82);
-    ring.position.copy(origin);
-    ring.scale.setScalar(0.18);
-    this.scene.add(ring);
+    this.elementVfx.spawnKick(theme, origin, forward);
     this.spawnHitSpark(origin.clone().setY(0.85), theme.accent, 0.9);
-
-    const started = performance.now();
-    const animate = () => {
-      if (!this.running) { this.scene.remove(ring); return; }
-      const t = Math.min(1, (performance.now() - started) / 300);
-      ring.scale.setScalar(0.18 + t * 2.7);
-      (ring.material as THREE.MeshBasicMaterial).opacity = 0.82 * (1 - t);
-      ring.rotation.z += 0.08;
-      if (t >= 1) this.scene.remove(ring);
-      else requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
 
     const targets = [...this.enemies]
       .filter((enemy) => {
@@ -627,7 +617,9 @@ export class TournamentGame {
       if (!this.enemies.includes(enemy)) return;
       enemy.hp -= Math.max(1, this.character.damage * multiplier);
       enemy.hitFlash = Math.max(enemy.hitFlash, 0.12);
+      const impactOrigin = enemy.mesh.position.clone().add(new THREE.Vector3(0, 0.62, 0));
       this.spawnHitSpark(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.05, 0)), theme.color, 0.72);
+      this.elementVfx.spawnImpact(theme, impactOrigin);
       if (knockback > 0) {
         const direction = enemy.mesh.position.clone().sub(this.player.position).setY(0).normalize();
         enemy.knock.add(direction.multiplyScalar(knockback));
@@ -704,6 +696,7 @@ export class TournamentGame {
     this.special = this.unlimitedSpecial ? 100 : 0;
     this.spinTime = 2.65;
     this.spinTick = 0;
+    this.elementVfx.spawnSpinjitzuBurst(getElementCombatTheme(this.character.element), this.player.position.clone());
     this.startSpinjitzuVfx();
     this.callbacks.onMessage(`${this.character.element} Spinjitzu!`);
   }
