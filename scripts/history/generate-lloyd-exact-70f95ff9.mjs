@@ -66,7 +66,7 @@ function toWorldMm([x,y,z]) {
   return [x * SCALE, -y * SCALE, z * SCALE];
 }
 async function readAsciiStl(part) {
-  const text = await readFile(resolve(\`third_party/ldraw-stl/\${part}.stl\`), 'utf8');
+  const text = await readFile(resolve(`third_party/ldraw-stl/${part}.stl`), 'utf8');
   const positions = [];
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
@@ -75,7 +75,7 @@ async function readAsciiStl(part) {
     if (values.length === 3 && values.every(Number.isFinite)) positions.push(...values);
   }
   if (positions.length < 9 || positions.length % 9 !== 0) {
-    throw new Error(\`Invalid ASCII STL for LDraw mould \${part}: \${positions.length / 3} vertices\`);
+    throw new Error(`Invalid ASCII STL for LDraw mould ${part}: ${positions.length / 3} vertices`);
   }
   const indices = Array.from({ length: positions.length / 3 }, (_, index) => index);
   return [positions, indices];
@@ -212,7 +212,7 @@ async function generate() {
   async function exactNode(name, part, material, translationMm, rotation, rigOrigin) {
     const [raw,idx]=await readAsciiStl(part);
     const transformed=transformExactPositions(raw,translationMm,rotation,rigOrigin);
-    return node(name,mesh(\`\${name}Mesh\`,transformed,idx,material));
+    return node(name,mesh(`${name}Mesh`,transformed,idx,material));
   }
 
   // Exact torso + hips under one torso animation pivot.
@@ -233,7 +233,7 @@ async function generate() {
     [.11,-.01,.09,.035,-.34], [.17,-.17,.11,.035,.15]
   ];
   glyphs.forEach((g,index)=>{
-    torsoKids.push(node(\`sashGlyph\${index}\`,unit.goldBox,[g[0],g[1],frontZ+.045],[g[2],g[3],.018],qEuler(0,0,g[4])));
+    torsoKids.push(node(`sashGlyph${index}`,unit.goldBox,[g[0],g[1],frontZ+.045],[g[2],g[3],.018],qEuler(0,0,g[4])));
   });
 
   // Lloyd power emblem: layered circular badge on viewer-left chest.
@@ -316,7 +316,7 @@ async function generate() {
       generator:'Ninjago Tournament exact-mould Lloyd generator (LDraw-derived geometry; see third_party/ldraw-stl/LICENSE)'
     },
     scene:0,
-    scenes:[{name:\`Fighter_\${id}\`,nodes:roots}],
+    scenes:[{name:`Fighter_${id}`,nodes:roots}],
     nodes,meshes,materials,
     buffers:[{byteLength:bin.byteLength}],
     bufferViews,accessors
