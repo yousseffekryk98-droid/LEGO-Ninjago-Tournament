@@ -10,9 +10,36 @@ import {
   getCharacterReferenceImage,
   getCharacterSvgIcon,
   OFFICIAL_REFERENCE_IMAGE_COUNT,
-  getElementCombatTheme
+  getElementCombatTheme,
+  getCharacterDesigns,
+  getDefaultCharacterDesignId
 } from '../../src/features/characters';
 import { applyFighterXp, fighterLevelFromXp } from '../../src/features/progression';
+
+test('every fighter exposes a selectable design and historical core generations are preserved', () => {
+  for (const fighter of ROSTER) {
+    expect(getCharacterDesigns(fighter.id).length, \`\${fighter.id} should have a design choice\`).toBeGreaterThanOrEqual(1);
+  }
+
+  expect(getCharacterDesigns('lloyd-tournament').map((design) => design.id)).toEqual([
+    'procedural',
+    'authored-v1',
+    'authored-v2',
+    'lloyd-detailed',
+    'lloyd-exact'
+  ]);
+  expect(getDefaultCharacterDesignId('lloyd-tournament')).toBe('lloyd-detailed');
+
+  expect(getCharacterDesigns('kai-tournament').map((design) => design.id)).toEqual([
+    'procedural',
+    'authored-v1',
+    'authored-v2'
+  ]);
+  expect(getDefaultCharacterDesignId('kai-tournament')).toBe('authored-v2');
+
+  expect(getCharacterDesigns('tox').map((design) => design.id)).toEqual(['procedural']);
+  expect(getDefaultCharacterDesignId('tox')).toBe('procedural');
+});
 
 test('roster data is complete, unique, and playable', () => {
   expect(ROSTER.length).toBe(58 + EXPANDED_CHARACTER_CATALOG.length);

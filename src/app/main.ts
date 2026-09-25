@@ -15,6 +15,9 @@ import {
   getCharacterSvgIcon,
   getBossRushRoster,
   renderCharacterPortraits,
+  getCharacterDesigns,
+  getSelectedCharacterDesignId,
+  setSelectedCharacterDesign,
   type CharacterDef
 } from '../features/characters';
 import {
@@ -202,6 +205,7 @@ function showHome() {
   bossRushMode = false;
   const selected = findCharacter(save.selected);
   const selectedIdentity = getCharacterIdentity(selected);
+  const selectedDesign = getCharacterDesigns(selected.id).find((design) => design.id === getSelectedCharacterDesignId(selected.id)) ?? getCharacterDesigns(selected.id)[0];
   const level = fighterLevel(selected.id);
   app.innerHTML = `
     <main class="menu-screen">
@@ -215,7 +219,7 @@ function showHome() {
         <div class="selected-fighter">
           <span class="fighter-dot" style="--fighter:#${selected.color.toString(16).padStart(6, '0')}"></span>
           <div>
-            <small>SELECTED FIGHTER · LEVEL ${level}</small>
+            <small>SELECTED FIGHTER · LEVEL ${level} · ${selectedDesign.shortLabel}</small>
             <b class="fighter-primary-name">${selectedIdentity.name}</b>
             ${selectedIdentity.variant ? `<span class="fighter-variant">${selectedIdentity.variant}</span>` : ''}
             <em>${selected.element} · ${selected.style} · ${selected.special.replace('-', ' ')}</em>
@@ -378,6 +382,9 @@ function showRoster() {
     const reference = getCharacterReferenceImage(fighter);
     const suppliedLook = getUserCharacterPortrait(fighter.id);
     const showRemoteReference = suppliedLook ? null : reference;
+    const fighterDesigns = getCharacterDesigns(fighter.id);
+    const selectedDesignId = getSelectedCharacterDesignId(fighter.id);
+    const selectedDesign = fighterDesigns.find((design) => design.id === selectedDesignId) ?? fighterDesigns[0];
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
         <button class="fighter-avatar preview-character-btn ${suppliedLook ? 'has-user-look' : showRemoteReference ? 'has-reference' : ''}" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
@@ -390,6 +397,7 @@ function showRoster() {
         <div class="fighter-copy">
           <h3><span class="fighter-primary-name">${identity.name}</span> <small>LV ${progress.level}</small></h3>
           ${identity.variant ? `<span class="fighter-variant">${identity.variant}</span>` : ''}
+          <small class="fighter-design-summary" data-design-summary="${fighter.id}">${selectedDesign.shortLabel} · ${fighterDesigns.length} DESIGN${fighterDesigns.length === 1 ? '' : 'S'}</small>
           <p>${fighter.power ?? fighter.element} · ${fighter.style} · ${fighter.specialAttack ?? fighter.special.replace('-', ' ')}</p>
           <small class="fighter-ability-line">NORMAL ${fighter.normalAttack ?? 'Ninja Combo'} · SPIN ${fighter.spinjitzu ?? 'Spinjitzu'} · ULT ${fighter.ultimateSpinjitzu ?? 'Ultimate'} · PASSIVE ${fighter.passive ?? 'Battle Focus'}</small>
           ${fighter.sourceEra ? `<small class="fighter-source-line">${fighter.sourceEra}${fighter.sourceGroup ? ` · ${fighter.sourceGroup}` : ''}</small>` : ''}
@@ -398,7 +406,7 @@ function showRoster() {
           ${unlocked ? `<div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'MAX POTENTIAL' : `${progress.current}/${progress.target} XP`}</em><small class="upgrade-copy">${nextUpgradeCopy(fighter.id)}</small>` : ''}
         </div>
         ${unlocked
-          ? `<div class="fighter-card-actions"><button class="mini-button select-btn" data-select="${fighter.id}">${selected ? 'SELECTED' : 'SELECT'}</button><button class="mini-button upgrade-btn" data-upgrade="${fighter.id}" ${progress.level >= 5 || !canUpgrade ? 'disabled' : ''}>${progress.level >= 5 ? 'MAX LEVEL' : `UPGRADE ◉ ${formatStuds(upgradeCost)}`}</button></div>`
+          ? `<div class="fighter-card-actions"><button class="mini-button select-btn" data-select="${fighter.id}">${selected ? 'SELECTED' : 'SELECT'}</button><button class="mini-button fighter-design-btn" data-design-preview="${fighter.id}">DESIGNS ${fighterDesigns.length}</button><button class="mini-button upgrade-btn" data-upgrade="${fighter.id}" ${progress.level >= 5 || !canUpgrade ? 'disabled' : ''}>${progress.level >= 5 ? 'MAX LEVEL' : `UPGRADE ◉ ${formatStuds(upgradeCost)}`}</button></div>`
           : `<button class="mini-button unlock-btn" data-unlock="${fighter.id}" ${canBuy ? '' : 'disabled'}>◉ ${formatStuds(fighter.cost)}</button>`}
       </article>`;
   }).join('');
@@ -417,7 +425,8 @@ function showRoster() {
           <h3 id="preview-character-name"></h3>
           <span id="preview-character-variant" class="fighter-variant"></span>
           <p id="preview-character-meta"></p>
-          <p class="preview-help">Select the 3D badge on any fighter card to inspect that model. The same character model is used in the arena and Dojo.</p>
+          <div class="fighter-design-picker" id="preview-design-picker" aria-label="Character design variants"></div>
+          <p class="preview-help">Choose a historical design, then inspect it in 3D. Your choice is remembered per fighter and is used in the arena and Dojo.</p>
         </div>
       </section>
       <section class="roster-grid">${cards}</section>
@@ -427,12 +436,31 @@ function showRoster() {
   const previewName = document.querySelector<HTMLElement>('#preview-character-name')!;
   const previewVariant = document.querySelector<HTMLElement>('#preview-character-variant')!;
   const previewMeta = document.querySelector<HTMLElement>('#preview-character-meta')!;
+  const previewDesignPicker = document.querySelector<HTMLElement>('#preview-design-picker')!;
+  let previewFighterId = save.selected;
 
   const setPreview = (fighter: CharacterDef) => {
     const identity = getCharacterIdentity(fighter);
     previewName.textContent = identity.name;
     previewVariant.textContent = identity.variant ?? 'BASE';
+    previewFighterId = fighter.id;
     previewMeta.textContent = `${fighter.power ?? fighter.element} · ${fighter.style.toUpperCase()} · ${fighter.specialAttack ?? fighter.special.replace('-', ' ').toUpperCase()} · ULT: ${fighter.ultimateSpinjitzu ?? 'Ultimate'} · PASSIVE: ${fighter.passive ?? 'Battle Focus'}`;
+    const designs = getCharacterDesigns(fighter.id);
+    const selectedDesignId = getSelectedCharacterDesignId(fighter.id);
+    previewDesignPicker.innerHTML = designs.map((design) => `
+      <button class="fighter-design-option ${design.id === selectedDesignId ? 'active' : ''}" type="button" data-character-design="${design.id}" title="${design.description}">
+        <b>${design.shortLabel}</b><span>${design.label}</span>
+      </button>`).join('');
+    previewDesignPicker.querySelectorAll<HTMLButtonElement>('[data-character-design]').forEach((designButton) => {
+      designButton.addEventListener('click', () => {
+        const designId = designButton.dataset.characterDesign!;
+        setSelectedCharacterDesign(fighter.id, designId);
+        const selectedDesign = designs.find((design) => design.id === designId) ?? designs[0];
+        const summary = document.querySelector<HTMLElement>(`[data-design-summary="${fighter.id}"]`);
+        if (summary) summary.textContent = `${selectedDesign.shortLabel} · ${designs.length} DESIGN${designs.length === 1 ? '' : 'S'}`;
+        setPreview(upgradedCharacter(findCharacter(previewFighterId)));
+      });
+    });
     if (activeCharacterPreview) activeCharacterPreview.setCharacter(fighter);
     else activeCharacterPreview = new CharacterPreview(previewHost, fighter);
 
@@ -490,6 +518,14 @@ function showRoster() {
       const fighter = findCharacter(button.dataset.preview!);
       setPreview(upgradedCharacter(fighter));
       document.querySelector('.character-showcase')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-design-preview]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const fighter = findCharacter(button.dataset.designPreview!);
+      setPreview(upgradedCharacter(fighter));
+      document.querySelector('.character-showcase')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   });
 
