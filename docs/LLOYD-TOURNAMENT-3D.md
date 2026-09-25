@@ -1,5 +1,17 @@
 # Lloyd Tournament 3D Fidelity Pipeline
 
+## Production status
+
+The production `lloyd-tournament.glb` is now generated from **vendored LDraw-derived exact minifigure mould geometry** on every normal web build. Blender is no longer required for the production Lloyd asset.
+
+Build order:
+
+1. `scripts/generate-core-fighters.mjs` creates the generic fighter set.
+2. `scripts/generate-lloyd-fighter.mjs` creates the earlier detailed Lloyd fallback.
+3. `scripts/generate-lloyd-exact-production.mjs` runs last and overwrites Lloyd with the exact-mould Tournament version.
+
+The exact production route uses the real 61183 hair, 15619 ninja bandana, 3626b head, 973 torso, 3815 hips, 3816/3817 legs, 3818/3819 arms, and 3820 hand moulds. The Tournament robe print is recreated with project-authored geometry over those moulds.
+
 ## Which Lloyd this targets
 
 The game entry \`lloyd-tournament\` now has two authoring routes:
