@@ -24,3 +24,4 @@ android/local.properties
 
 # Reproducible generated GLB; source lives in scripts/generate-authored-assets.mjs
 public/assets/models/arena/chen-center-pillar.glb
+public/assets/models/arena/chen-gate.glb

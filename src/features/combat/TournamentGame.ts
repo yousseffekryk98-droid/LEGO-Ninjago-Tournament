@@ -6,7 +6,7 @@ import { getKeyBindings, type KeyBindings } from '../controls';
 import { ArenaHazardManager } from './arena-hazards';
 import { ElementVfxSystem } from './element-vfx';
 import { buildTournamentFloorDetails } from './arena-floor';
-import { CENTER_PILLAR_CLEARANCE, buildLegacyCenterPillar, resolveCenterPillarCollision, updateCenterPillarOcclusion } from './arena-landmarks';
+import { CENTER_PILLAR_CLEARANCE, attachAuthoredArenaGate, buildLegacyCenterPillar, resolveCenterPillarCollision, updateCenterPillarOcclusion } from './arena-landmarks';
 
 export interface HudState {
   health: number;
@@ -2573,52 +2573,59 @@ export class TournamentGame {
   }
 
   private buildArenaGate() {
+    const gate = new THREE.Group();
+    gate.name = 'legacyArenaGate';
+    gate.position.set(0, 0, -45.95);
+
     const stone = new THREE.MeshStandardMaterial({ color: 0x3b3d42, roughness: 0.94 });
     const darkStone = new THREE.MeshStandardMaterial({ color: 0x292c31, roughness: 0.97 });
     const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x661e24, roughness: 0.72, metalness: 0.06 });
     const gold = new THREE.MeshStandardMaterial({ color: 0xb8872c, roughness: 0.38, metalness: 0.52 });
 
-    const z = -45.95;
     const leftTower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 5.4, 2.1), stone);
-    leftTower.position.set(-4.05, 2.4, z);
+    leftTower.position.set(-4.05, 2.4, 0);
     const rightTower = leftTower.clone();
     rightTower.position.x = 4.05;
     const lintel = new THREE.Mesh(new THREE.BoxGeometry(10.3, 1.2, 2.25), darkStone);
-    lintel.position.set(0, 5.0, z);
+    lintel.position.set(0, 5.0, 0);
     const roof = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.38, 3.0), stone);
-    roof.position.set(0, 5.78, z);
+    roof.position.set(0, 5.78, 0);
     roof.rotation.z = 0.015;
 
     for (const mesh of [leftTower, rightTower, lintel, roof]) {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      this.scene.add(mesh);
+      gate.add(mesh);
     }
 
     for (const side of [-1, 1]) {
       const door = new THREE.Mesh(new THREE.BoxGeometry(3.45, 4.3, 0.28), doorMaterial);
-      door.position.set(side * 1.76, 2.12, z + 1.18);
+      door.position.set(side * 1.76, 2.12, 1.18);
       door.castShadow = true;
       door.receiveShadow = true;
-      this.scene.add(door);
+      gate.add(door);
 
       for (let row = 0; row < 4; row++) {
         for (let col = 0; col < 3; col++) {
           const stud = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.08, 10), gold);
           stud.rotation.x = Math.PI / 2;
-          stud.position.set(side * (0.72 + col * 0.55), 0.75 + row * 0.88, z + 1.36);
-          this.scene.add(stud);
+          stud.position.set(side * (0.72 + col * 0.55), 0.75 + row * 0.88, 1.36);
+          gate.add(stud);
         }
       }
     }
 
     const crestRing = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.12, 10, 32), gold);
-    crestRing.position.set(0, 5.0, z + 1.25);
-    this.scene.add(crestRing);
+    crestRing.position.set(0, 5.0, 1.25);
+    gate.add(crestRing);
     const crestCore = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.14, 18), doorMaterial);
     crestCore.rotation.x = Math.PI / 2;
-    crestCore.position.set(0, 5.0, z + 1.25);
-    this.scene.add(crestCore);
+    crestCore.position.set(0, 5.0, 1.25);
+    gate.add(crestCore);
+
+    const fallbackParts = [...gate.children];
+    this.scene.add(gate);
+    attachAuthoredArenaGate(gate, fallbackParts);
   }
 
   private buildSerpentPillar(x: number, z: number, lean: number) {
