@@ -100,17 +100,6 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
     };
   }
 
-  if (id === 'master-chen' || id === 'clouse' || id === 'clouse-robe' || id === 'eyezor' || id === 'zugu') {
-    return {
-      archetype: 'villain',
-      weapon: id === 'master-chen' || id.startsWith('clouse') ? 'staff' : 'katana',
-      hood: id.startsWith('clouse'),
-      shoulderArmor: true,
-      extraArms: false,
-      metallic: false
-    };
-  }
-
   if (id === 'techno-wu') {
     return {
       archetype: 'master',
@@ -123,6 +112,169 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
       eyeColor: 0x17191c
     };
   }
+
+  const tournamentIdentity: Record<string, CharacterModelProfile> = {
+    'master-chen': {
+      archetype: 'villain',
+      weapon: 'staff',
+      hood: false,
+      shoulderArmor: true,
+      armorStyle: 'heavy',
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x17191c,
+      identityStyle: 'chen'
+    },
+    clouse: {
+      archetype: 'villain',
+      weapon: 'staff',
+      hood: true,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xe0c58f,
+      eyeColor: 0x2a2024,
+      identityStyle: 'clouse'
+    },
+    'clouse-robe': {
+      archetype: 'villain',
+      weapon: 'staff',
+      hood: true,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xd8c49c,
+      eyeColor: 0x2a2024,
+      identityStyle: 'clouse'
+    },
+    eyezor: {
+      archetype: 'villain',
+      weapon: 'katana',
+      hood: false,
+      shoulderArmor: true,
+      armorStyle: 'heavy',
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf0c248,
+      eyeColor: 0x24181b,
+      identityStyle: 'eyezor'
+    },
+    zugu: {
+      archetype: 'villain',
+      weapon: 'scythe',
+      hood: false,
+      shoulderArmor: true,
+      armorStyle: 'heavy',
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xe2b84a,
+      eyeColor: 0x22191d,
+      identityStyle: 'zugu'
+    },
+    karlof: {
+      archetype: 'elemental',
+      weapon: 'scythe',
+      hood: false,
+      shoulderArmor: true,
+      armorStyle: 'heavy',
+      extraArms: false,
+      metallic: true,
+      faceColor: 0x8a9299,
+      eyeColor: 0xcceeff,
+      identityStyle: 'karlof'
+    },
+    'griffin-turner': {
+      archetype: 'elemental',
+      weapon: 'katana',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x17191c,
+      identityStyle: 'griffin'
+    },
+    shade: {
+      archetype: 'elemental',
+      weapon: 'katana',
+      hood: true,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xc0b5aa,
+      eyeColor: 0x9b7cc5,
+      identityStyle: 'shade'
+    },
+    neuro: {
+      archetype: 'elemental',
+      weapon: 'staff',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x5b2c83,
+      identityStyle: 'neuro'
+    },
+    paleman: {
+      archetype: 'elemental',
+      weapon: 'staff',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf8f1d8,
+      eyeColor: 0xf7e58a,
+      identityStyle: 'paleman'
+    },
+    tox: {
+      archetype: 'elemental',
+      weapon: 'staff',
+      hood: false,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xdac34d,
+      eyeColor: 0x2e2a2f,
+      identityStyle: 'tox'
+    },
+    skylor: {
+      archetype: 'elemental',
+      weapon: 'katana',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x3b2118,
+      identityStyle: 'skylor'
+    },
+    chamille: {
+      archetype: 'elemental',
+      weapon: 'katana',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x36202f,
+      identityStyle: 'chamille'
+    },
+    ash: {
+      archetype: 'elemental',
+      weapon: 'katana',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xd7c8b5,
+      eyeColor: 0x28292d,
+      identityStyle: 'ash'
+    }
+  };
+
+  if (tournamentIdentity[id]) return tournamentIdentity[id];
 
   const coreNinja = /^(lloyd|kai|jay|cole)-/.test(id);
   if (coreNinja || id.startsWith('lloyd')) {
