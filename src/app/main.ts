@@ -385,7 +385,6 @@ function showRoster() {
             ? `<img class="fighter-avatar-render" src="${getCachedCharacterPortrait(fighter.id)}" alt="" aria-hidden="true" />`
             : `<img class="fighter-avatar-svg" src="${getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />`}
           ${showRemoteReference ? `<img class="fighter-avatar-real" data-reference-image src="${showRemoteReference.imageUrl}" alt="" aria-hidden="true" referrerpolicy="no-referrer" loading="lazy" /><span class="fighter-reference-badge">LEGO REF</span>` : ''}
-          ${suppliedLook ? '<span class="fighter-reference-badge user-look-badge">GAME LOOK</span>' : ''}
           <span class="fighter-avatar-fallback"></span><i class="fighter-avatar-body"></i><small>${suppliedLook ? 'LOOK' : reference ? 'REF' : '3D'}</small>
         </button>
         <div class="fighter-copy">

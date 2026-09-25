@@ -70,7 +70,7 @@ test('all fighters are open and free play starts with unlimited Spinjitzu', asyn
   await expect(kaiCard.locator('.fighter-avatar-render')).toHaveAttribute('src', '/assets/reference/kai-user-reference.webp');
   await expect(jayCard.locator('.fighter-avatar-render')).toHaveAttribute('src', '/assets/reference/jay-user-reference.webp');
   await expect(kaiCard.locator('.fighter-avatar-real')).toHaveCount(0);
-  await expect(kaiCard.locator('.fighter-reference-badge')).toHaveText('GAME LOOK');
+  await expect(kaiCard.locator('.user-look-badge')).toHaveCount(0);
   await expect(kaiCard.locator('.fighter-reference-link')).toHaveAttribute('href', 'https://www.lego.com/en-us/themes/ninjago/characters/kai');
   await expect(page.locator('.fighter-card[data-id="master-chen"] .fighter-avatar-real')).toHaveCount(0);
 
