@@ -1966,6 +1966,11 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   gap:.48rem;
   margin:.7rem 0 .35rem;
   max-width:100%;
+  max-height:230px;
+  overflow:auto;
+  padding:.1rem .25rem .25rem .05rem;
+  scrollbar-width:thin;
+  overscroll-behavior:contain;
 }
 .fighter-design-option {
   appearance:none;
