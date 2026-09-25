@@ -271,8 +271,7 @@ function addIdentityDetails(
   profile: FighterModelProfile,
   primary: THREE.Material,
   accent: THREE.Material,
-  dark: THREE.Material,
-  skin: THREE.Material
+  dark: THREE.Material
 ) {
   const style = profile.identityStyle;
   if (!style) return;
@@ -611,7 +610,7 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
   addEyes(group, eye);
   addFacePrint(group, dark, profile.hood, serpentine);
   addHeadgear(group, profile, primary, accent);
-  addIdentityDetails(group, profile, primary, accent, dark, skin);
+  addIdentityDetails(group, profile, primary, accent, dark);
 
   if (profile.extraArms) addExtraArms(group, primary, skin);
   const weaponRig = new THREE.Group();
