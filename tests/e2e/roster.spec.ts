@@ -4,6 +4,8 @@ import {
   createCharacterModel,
   findCharacter,
   getCharacterIdentity,
+  getCharacterModelProfile,
+  getCharacterSvgIcon,
   getElementCombatTheme
 } from '../../src/features/characters';
 import { applyFighterXp, fighterLevelFromXp } from '../../src/features/progression';
@@ -139,4 +141,39 @@ test('fighter levels add permanent stats and extra heart capacity', () => {
   expect(level3.maxHealth).toBe(kai.maxHealth + 1);
   const level5 = applyFighterXp(kai, 8000);
   expect(level5.maxHealth).toBe(kai.maxHealth + 2);
+});
+
+
+test('wave-one tournament fighters have distinct identity geometry and SVG icons', () => {
+  const expectedParts: Record<string, string> = {
+    'master-chen': 'chenHatCrown',
+    clouse: 'clouseForeheadGem',
+    eyezor: 'eyezorPatch',
+    zugu: 'zuguHeadBand',
+    karlof: 'karlofGauntlet1',
+    'griffin-turner': 'griffinHairSpike2',
+    shade: 'shadeScarfTailLeft',
+    neuro: 'neuroMindGem',
+    paleman: 'palemanHalo',
+    tox: 'toxCanister1',
+    skylor: 'skylorPonytail',
+    chamille: 'chamilleHair0',
+    ash: 'ashHairCap'
+  };
+
+  const svgIcons = new Set<string>();
+  for (const [id, part] of Object.entries(expectedParts)) {
+    const fighter = findCharacter(id);
+    const profile = getCharacterModelProfile(fighter);
+    expect(profile.identityStyle, `${id} missing identity style`).toBeTruthy();
+
+    const model = createCharacterModel(fighter);
+    expect(model.getObjectByName(part), `${id} missing identity geometry ${part}`).toBeTruthy();
+
+    const icon = getCharacterSvgIcon(fighter);
+    expect(icon.startsWith('data:image/svg+xml;charset=utf-8,')).toBeTruthy();
+    svgIcons.add(icon);
+  }
+
+  expect(svgIcons.size).toBe(Object.keys(expectedParts).length);
 });

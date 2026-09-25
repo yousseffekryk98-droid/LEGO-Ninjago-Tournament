@@ -5,6 +5,7 @@ import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 import { getKeyBindings, type KeyBindings } from '../controls';
 import { ArenaHazardManager } from './arena-hazards';
 import { ElementVfxSystem } from './element-vfx';
+import { buildTournamentFloorDetails } from './arena-floor';
 
 export interface HudState {
   health: number;
@@ -1983,8 +1984,7 @@ export class TournamentGame {
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.04;
     this.scene.add(ring);
-    this.buildCenterSigil();
-    this.buildLegacyFloorMarkings();
+    buildTournamentFloorDetails(this.scene);
 
     for (let i = 0; i < 24; i++) {
       const angle = (i / 24) * Math.PI * 2;

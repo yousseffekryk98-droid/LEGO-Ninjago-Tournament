@@ -10,6 +10,7 @@ import {
   getCharacterIdentity,
   getElementCombatTheme,
   getCachedCharacterPortrait,
+  getCharacterSvgIcon,
   renderCharacterPortraits,
   type CharacterDef
 } from '../features/characters';
@@ -260,7 +261,9 @@ function showRoster() {
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
         <button class="fighter-avatar preview-character-btn" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
-          ${getCachedCharacterPortrait(fighter.id) ? `<img class="fighter-avatar-render" src="${getCachedCharacterPortrait(fighter.id)}" alt="" aria-hidden="true" />` : ''}
+          ${getCachedCharacterPortrait(fighter.id)
+            ? `<img class="fighter-avatar-render" src="${getCachedCharacterPortrait(fighter.id)}" alt="" aria-hidden="true" />`
+            : `<img class="fighter-avatar-svg" src="${getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />`}
           <span class="fighter-avatar-fallback"></span><i class="fighter-avatar-body"></i><small>3D</small>
         </button>
         <div class="fighter-copy">

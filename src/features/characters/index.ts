@@ -10,3 +10,5 @@ export * from './elemental';
 export * from './portraits';
 
 export * from './expanded-catalog';
+
+export * from './icons';
