@@ -1,10 +1,10 @@
 /**
  * Extended NINJAGO character planning catalog.
  *
- * This is intentionally separate from the live ROSTER in roster.ts.
- * Entries here are staged candidates and do not automatically become playable.
  * Names/powers come from the project owner's supplied roster notes.
- * Wave numbers and asset strategy are implementation planning decisions.
+ * Every entry is promoted into the live playable roster by catalog-playable.ts.
+ * Wave numbers are retained as balancing/progression metadata and asset strategy
+ * remains clean-room/procedural until a bespoke model is implemented.
  */
 export type RosterImplementationWave = 1 | 2 | 3 | 4;
 
