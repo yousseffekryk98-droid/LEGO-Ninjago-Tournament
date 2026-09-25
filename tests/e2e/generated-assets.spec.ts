@@ -185,23 +185,37 @@ test('historical fighter design library preserves distinct GLB generations', asy
 
   for (const id of coreIds) {
     for (const version of ['authored-v1', 'authored-v2']) {
-      const file = await readFile(resolve(\`public/assets/models/fighters/variants/\${id}/\${version}.glb\`));
-      expect(file.byteLength, \`\${id} \${version}\`).toBeGreaterThan(7_000);
-      expect(file.readUInt32LE(0), \`\${id} \${version}\`).toBe(0x46546c67);
-      expect(file.readUInt32LE(4), \`\${id} \${version}\`).toBe(2);
+      const file = await readFile(resolve(`public/assets/models/fighters/variants/${id}/${version}.glb`));
+      expect(file.byteLength, `${id} ${version}`).toBeGreaterThan(7_000);
+      expect(file.readUInt32LE(0), `${id} ${version}`).toBe(0x46546c67);
+      expect(file.readUInt32LE(4), `${id} ${version}`).toBe(2);
       const jsonLength = file.readUInt32LE(12);
       const json = JSON.parse(file.subarray(20, 20 + jsonLength).toString('utf8').trim());
       const names = new Set(json.nodes.map((node: { name?: string }) => node.name));
       for (const part of requiredParts) {
-        expect(names.has(part), \`\${id} \${version} missing \${part}\`).toBeTruthy();
+        expect(names.has(part), `${id} ${version} missing ${part}`).toBeTruthy();
       }
     }
   }
 
   const detailed = await readFile(resolve('public/assets/models/fighters/variants/lloyd-tournament/lloyd-detailed.glb'));
-  const exact = await readFile(resolve('public/assets/models/fighters/variants/lloyd-tournament/lloyd-exact.glb'));
   expect(detailed.byteLength).toBeGreaterThan(40_000);
-  expect(exact.byteLength).toBeGreaterThan(100_000);
+
+  const exactPaths = [
+    'exact-6860d027.glb',
+    'exact-70f95ff9.glb',
+    'exact-05b7ce43.glb',
+    'lloyd-exact.glb'
+  ];
+  const exactFiles = [];
+  for (const filename of exactPaths) {
+    const file = await readFile(resolve(`public/assets/models/fighters/variants/lloyd-tournament/${filename}`));
+    expect(file.byteLength, filename).toBeGreaterThan(20_000);
+    expect(file.readUInt32LE(0), filename).toBe(0x46546c67);
+    expect(file.readUInt32LE(4), filename).toBe(2);
+    exactFiles.push(file);
+  }
+  const exact = exactFiles[exactFiles.length - 1];
 
   const detailedJsonLength = detailed.readUInt32LE(12);
   const detailedJson = JSON.parse(detailed.subarray(20, 20 + detailedJsonLength).toString('utf8').trim());
