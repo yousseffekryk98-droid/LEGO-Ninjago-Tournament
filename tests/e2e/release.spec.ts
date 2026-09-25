@@ -228,8 +228,13 @@ test('a tournament run renders, accepts controls, survives sustained play, and r
   await page.keyboard.press('q');
 
   // Leave the low-health fighter exposed after exercising controls; enemy AI must
-  // be able to complete the run without any test-only hooks.
-  await expect(page.getByText('TOURNAMENT RUN COMPLETE')).toBeVisible({ timeout: 100_000 });
+  // be able to end the run without any test-only hooks. The current production
+  // result UI is the score card (or a Continue prompt when the account has enough
+  // banked studs), so assert the real overlay rather than an obsolete heading.
+  const gameOver = page.locator('#game-over');
+  await expect(gameOver).toBeVisible({ timeout: 100_000 });
+  const finishRun = page.getByRole('button', { name: 'End run' });
+  if (await finishRun.isVisible().catch(() => false)) await finishRun.click();
   await expect(page.getByRole('button', { name: 'RETRY' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'DAILY REWARDS' })).toBeVisible();
 
