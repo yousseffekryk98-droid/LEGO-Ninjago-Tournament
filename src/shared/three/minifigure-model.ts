@@ -266,6 +266,138 @@ function addExtraArms(group: THREE.Group, primary: THREE.Material, hand: THREE.M
   }
 }
 
+function addIdentityDetails(
+  group: THREE.Group,
+  profile: FighterModelProfile,
+  primary: THREE.Material,
+  accent: THREE.Material,
+  dark: THREE.Material,
+  skin: THREE.Material
+) {
+  const style = profile.identityStyle;
+  if (!style) return;
+
+  if (style === 'chen') {
+    addMesh(group, 'chenHatBrim', new THREE.CylinderGeometry(0.58, 0.58, 0.09, 28), dark, [0, 2.42, 0]);
+    const crown = addMesh(group, 'chenHatCrown', new THREE.CylinderGeometry(0.31, 0.4, 0.42, 20), primary, [0, 2.62, -0.02]);
+    crown.rotation.z = -0.06;
+    addMesh(group, 'chenHatBand', new THREE.CylinderGeometry(0.405, 0.405, 0.08, 20), accent, [0, 2.48, -0.02]);
+    addMesh(group, 'chenBeardLeft', new THREE.BoxGeometry(0.12, 0.28, 0.055), dark, [-0.13, 1.84, 0.34], [0, 0, -0.18]);
+    addMesh(group, 'chenBeardRight', new THREE.BoxGeometry(0.12, 0.28, 0.055), dark, [0.13, 1.84, 0.34], [0, 0, 0.18]);
+    addMesh(group, 'chenCollarGem', new THREE.OctahedronGeometry(0.12, 0), accent, [0, 1.6, 0.36]);
+    return;
+  }
+
+  if (style === 'clouse') {
+    addMesh(group, 'clouseForeheadGem', new THREE.OctahedronGeometry(0.09, 0), accent, [0, 2.19, 0.365]);
+    addMesh(group, 'clouseHoodPeak', new THREE.ConeGeometry(0.18, 0.52, 10), primary, [0, 2.66, -0.08], [0.08, 0, 0]);
+    for (const side of [-1, 1] as const) {
+      addMesh(group, `clouseShoulderCharm${side}`, new THREE.TorusGeometry(0.12, 0.025, 7, 18), accent, [side * 0.62, 1.58, 0.12], [Math.PI / 2, 0, 0]);
+    }
+    return;
+  }
+
+  if (style === 'eyezor') {
+    addMesh(group, 'eyezorPatch', new THREE.BoxGeometry(0.2, 0.12, 0.045), dark, [-0.13, 2.08, 0.365], [0, 0, 0.14]);
+    addMesh(group, 'eyezorPatchStrap', new THREE.BoxGeometry(0.52, 0.035, 0.025), dark, [0, 2.12, 0.355], [0, 0, -0.12]);
+    addMesh(group, 'eyezorScar', new THREE.BoxGeometry(0.035, 0.22, 0.026), accent, [0.17, 2.02, 0.36], [0, 0, 0.25]);
+    return;
+  }
+
+  if (style === 'zugu') {
+    addMesh(group, 'zuguHeadBand', new THREE.BoxGeometry(0.66, 0.08, 0.05), accent, [0, 2.17, 0.35]);
+    addMesh(group, 'zuguJawGuard', new THREE.BoxGeometry(0.46, 0.16, 0.065), dark, [0, 1.91, 0.35]);
+    for (const side of [-1, 1] as const) {
+      addMesh(group, `zuguArmorHorn${side}`, new THREE.ConeGeometry(0.09, 0.34, 8), accent, [side * 0.72, 1.84, -0.02], [0, 0, side * -0.45]);
+    }
+    return;
+  }
+
+  if (style === 'karlof') {
+    addMesh(group, 'karlofJawPlate', new THREE.BoxGeometry(0.54, 0.19, 0.06), accent, [0, 1.91, 0.36]);
+    addMesh(group, 'karlofBrowPlate', new THREE.BoxGeometry(0.62, 0.08, 0.055), accent, [0, 2.17, 0.355]);
+    for (const side of [-1, 1] as const) {
+      addMesh(group, `karlofGauntlet${side}`, new THREE.CylinderGeometry(0.19, 0.16, 0.32, 12), accent, [side * 0.72, 0.95, 0.04], [0, 0, Math.PI / 2]);
+      addMesh(group, `karlofChestRivet${side}`, new THREE.CylinderGeometry(0.055, 0.055, 0.035, 10), accent, [side * 0.24, 1.48, 0.335], [Math.PI / 2, 0, 0]);
+    }
+    return;
+  }
+
+  if (style === 'griffin') {
+    for (let i = 0; i < 5; i++) {
+      const x = (i - 2) * 0.13;
+      const spike = addMesh(group, `griffinHairSpike${i}`, new THREE.ConeGeometry(0.095, 0.42 + Math.abs(i - 2) * 0.04, 8), dark, [x, 2.48 + (i % 2) * 0.05, -0.02], [0.12, 0, x * -0.8]);
+      spike.rotation.x = -0.18;
+    }
+    addMesh(group, 'griffinSpeedBand', new THREE.BoxGeometry(0.62, 0.055, 0.03), accent, [0, 2.14, 0.365]);
+    return;
+  }
+
+  if (style === 'shade') {
+    addMesh(group, 'shadeEyeGlow', new THREE.BoxGeometry(0.5, 0.045, 0.028), accent, [0, 2.1, 0.38]);
+    addMesh(group, 'shadeScarfTailLeft', new THREE.BoxGeometry(0.1, 0.62, 0.1), primary, [-0.14, 1.58, -0.42], [0.18, 0, -0.2]);
+    addMesh(group, 'shadeScarfTailRight', new THREE.BoxGeometry(0.1, 0.5, 0.1), primary, [0.12, 1.58, -0.42], [-0.14, 0, 0.18]);
+    return;
+  }
+
+  if (style === 'neuro') {
+    const temple = material(0x73e0d1, false, 0.22);
+    for (const side of [-1, 1] as const) {
+      addMesh(group, `neuroTempleDisc${side}`, new THREE.CylinderGeometry(0.12, 0.12, 0.045, 14), temple, [side * 0.35, 2.08, 0.02], [0, 0, Math.PI / 2]);
+    }
+    addMesh(group, 'neuroMindGem', new THREE.OctahedronGeometry(0.105, 0), accent, [0, 2.26, 0.28]);
+    return;
+  }
+
+  if (style === 'paleman') {
+    const glow = material(0xfff4a5, false, 0.16);
+    const halo = addMesh(group, 'palemanHalo', new THREE.TorusGeometry(0.46, 0.035, 8, 30), glow, [0, 2.15, -0.24], [0, 0, 0]);
+    halo.material.transparent = true;
+    halo.material.opacity = 0.62;
+    const light = new THREE.PointLight(0xfff0a8, 1.2, 3.4, 2);
+    light.name = 'palemanLight';
+    light.position.set(0, 2.08, 0.15);
+    group.add(light);
+    return;
+  }
+
+  if (style === 'tox') {
+    const toxic = material(0x82bf45, false, 0.25);
+    for (const side of [-1, 1] as const) {
+      addMesh(group, `toxCanister${side}`, new THREE.CylinderGeometry(0.12, 0.12, 0.58, 12), toxic, [side * 0.28, 1.48, -0.42]);
+      addMesh(group, `toxHairSpike${side}`, new THREE.ConeGeometry(0.1, 0.45, 8), dark, [side * 0.18, 2.5, 0], [0.08, 0, side * -0.22]);
+    }
+    addMesh(group, 'toxHairCenter', new THREE.ConeGeometry(0.11, 0.52, 8), dark, [0, 2.57, -0.02], [0.08, 0, 0]);
+    return;
+  }
+
+  if (style === 'skylor') {
+    const hair = material(0x5b2b1e, false, 0.38);
+    addMesh(group, 'skylorHairCap', new THREE.SphereGeometry(0.37, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.62), hair, [0, 2.34, -0.02]);
+    addMesh(group, 'skylorPonytail', new THREE.CapsuleGeometry(0.09, 0.48, 4, 10), hair, [0.27, 2.13, -0.3], [0.35, 0, -0.35]);
+    addMesh(group, 'skylorAmberBand', new THREE.BoxGeometry(0.58, 0.055, 0.03), accent, [0, 2.15, 0.365]);
+    return;
+  }
+
+  if (style === 'chamille') {
+    const hair = material(0xb23d78, false, 0.34);
+    for (let i = 0; i < 4; i++) {
+      addMesh(group, `chamilleHair${i}`, new THREE.ConeGeometry(0.09, 0.42, 8), hair, [(i - 1.5) * 0.14, 2.5 + (i % 2) * 0.04, -0.02], [0.05, 0, (i - 1.5) * -0.12]);
+    }
+    addMesh(group, 'chamilleFaceStripe', new THREE.BoxGeometry(0.055, 0.3, 0.028), accent, [0.2, 2.02, 0.36], [0, 0, 0.18]);
+    return;
+  }
+
+  if (style === 'ash') {
+    const smoke = material(0x8a8c91, false, 0.5);
+    addMesh(group, 'ashHairCap', new THREE.SphereGeometry(0.38, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.58), smoke, [0, 2.35, -0.02]);
+    for (let i = 0; i < 3; i++) {
+      addMesh(group, `ashSmokeTuft${i}`, new THREE.ConeGeometry(0.08 + i * 0.015, 0.38 + i * 0.08, 8), smoke, [(i - 1) * 0.16, 2.55 + i * 0.03, -0.06], [0.12, 0, (i - 1) * -0.18]);
+    }
+    addMesh(group, 'ashScarf', new THREE.TorusGeometry(0.37, 0.07, 8, 24), accent, [0, 1.8, 0], [Math.PI / 2, 0, 0]);
+  }
+}
+
 function addHeadgear(group: THREE.Group, profile: FighterModelProfile, primary: THREE.Material, accent: THREE.Material) {
   if (profile.hood) {
     addMesh(group, 'hoodTop', new THREE.CylinderGeometry(0.43, 0.39, 0.34, 24), primary, [0, 2.3, -0.005]);
@@ -479,6 +611,7 @@ export function createMinifigureModel(options: MinifigureModelOptions) {
   addEyes(group, eye);
   addFacePrint(group, dark, profile.hood, serpentine);
   addHeadgear(group, profile, primary, accent);
+  addIdentityDetails(group, profile, primary, accent, dark, skin);
 
   if (profile.extraArms) addExtraArms(group, primary, skin);
   const weaponRig = new THREE.Group();
