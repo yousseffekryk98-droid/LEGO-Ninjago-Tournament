@@ -261,12 +261,12 @@ export class ArenaHazardManager {
   private buildPit(hazard: RuntimeHazard) {
     const { radius } = hazard.anchor;
     const stoneMaterial = new THREE.MeshStandardMaterial({
-      color: 0x626e79,
+      color: 0x66727d,
       roughness: 0.9,
-      metalness: 0.01
+      metalness: 0.012
     });
     const edgeMaterial = new THREE.MeshStandardMaterial({
-      color: 0x262b31,
+      color: 0x242b31,
       roughness: 0.96,
       metalness: 0.02
     });
@@ -310,6 +310,17 @@ export class ArenaHazardManager {
       panel.castShadow = true;
       panel.userData.hazardAngle = angle + Math.PI / panelCount;
       panel.userData.hazardTiltSign = i % 2 === 0 ? 1 : -1;
+      const seam = new THREE.Mesh(
+        new THREE.BoxGeometry(radius * 0.7, 0.012, 0.035),
+        new THREE.MeshBasicMaterial({ color: 0x343d45, transparent: true, opacity: 0.58, depthWrite: false })
+      );
+      seam.position.set(
+        Math.cos(angle + Math.PI / panelCount) * radius * 0.36,
+        0.128,
+        Math.sin(angle + Math.PI / panelCount) * radius * 0.36
+      );
+      seam.rotation.y = -(angle + Math.PI / panelCount);
+      panel.add(seam);
       hazard.group.add(panel);
       hazard.panels.push(panel);
     }
@@ -329,9 +340,9 @@ export class ArenaHazardManager {
   private buildSpikes(hazard: RuntimeHazard) {
     const { radius } = hazard.anchor;
     const plateMaterial = new THREE.MeshStandardMaterial({
-      color: 0x30353a,
-      roughness: 0.88,
-      metalness: 0.08,
+      color: 0x596570,
+      roughness: 0.9,
+      metalness: 0.04,
       emissive: 0x000000
     });
     const metalMaterial = new THREE.MeshStandardMaterial({
@@ -345,6 +356,25 @@ export class ArenaHazardManager {
     plate.position.y = 0.055;
     plate.receiveShadow = true;
     hazard.group.add(plate);
+
+    const plateRim = new THREE.Mesh(
+      new THREE.RingGeometry(radius * 0.78, radius * 0.93, 28),
+      new THREE.MeshBasicMaterial({ color: 0x303941, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false })
+    );
+    plateRim.rotation.x = -Math.PI / 2;
+    plateRim.position.y = 0.102;
+    hazard.group.add(plateRim);
+
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const groove = new THREE.Mesh(
+        new THREE.BoxGeometry(0.035, 0.01, radius * 0.48),
+        new THREE.MeshBasicMaterial({ color: 0x2b3238, transparent: true, opacity: 0.5, depthWrite: false })
+      );
+      groove.position.set(Math.cos(angle) * radius * 0.5, 0.104, Math.sin(angle) * radius * 0.5);
+      groove.rotation.y = -angle;
+      hazard.group.add(groove);
+    }
 
     const locations: Array<[number, number]> = [[0, 0]];
     for (let ring = 0; ring < 2; ring++) {
