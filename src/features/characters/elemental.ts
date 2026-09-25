@@ -11,6 +11,9 @@ export type ElementKickEffect =
   | 'mind'
   | 'metal'
   | 'shadow'
+  | 'sound'
+  | 'nature'
+  | 'gravity'
   | 'force';
 
 export type ElementParticleShape =
@@ -23,7 +26,10 @@ export type ElementParticleShape =
   | 'toxic-cloud'
   | 'wind-streak'
   | 'metal-shard'
-  | 'shadow-wisp';
+  | 'shadow-wisp'
+  | 'sound-wave'
+  | 'leaf'
+  | 'gravity-orb';
 
 export type ElementTrailStyle =
   | 'flame'
@@ -38,6 +44,9 @@ export type ElementTrailStyle =
   | 'psychic'
   | 'metal'
   | 'smoke'
+  | 'resonance'
+  | 'vine'
+  | 'orbit'
   | 'force';
 
 export interface ElementCombatTheme {
@@ -68,6 +77,9 @@ const VISUALS: Record<ElementKickEffect, VisualTheme> = {
   mind: { particleShape: 'orb', trailStyle: 'psychic', impactStyle: 'pulse', groundStyle: 'glow', lightIntensity: 2.1 },
   metal: { particleShape: 'metal-shard', trailStyle: 'metal', impactStyle: 'slam', groundStyle: 'crack', lightIntensity: 1.1 },
   shadow: { particleShape: 'shadow-wisp', trailStyle: 'smoke', impactStyle: 'blink', groundStyle: 'shadow', lightIntensity: 0.7 },
+  sound: { particleShape: 'sound-wave', trailStyle: 'resonance', impactStyle: 'pulse', groundStyle: 'ripple', lightIntensity: 1.9 },
+  nature: { particleShape: 'leaf', trailStyle: 'vine', impactStyle: 'burst', groundStyle: 'glow', lightIntensity: 1.4 },
+  gravity: { particleShape: 'gravity-orb', trailStyle: 'orbit', impactStyle: 'pulse', groundStyle: 'shadow', lightIntensity: 2.3 },
   force: { particleShape: 'orb', trailStyle: 'force', impactStyle: 'burst', groundStyle: 'glow', lightIntensity: 1.8 }
 };
 
@@ -86,6 +98,10 @@ const THEMES: Record<string, ElementCombatTheme> = {
   Speed: theme({ icon: '»', color: 0xe78b31, accent: 0xffdf75, effect: 'wind' }),
   Light: theme({ icon: '☀', color: 0xf0d467, accent: 0xffffff, effect: 'light' }),
   Mind: theme({ icon: '◎', color: 0x825dd7, accent: 0xcbb4ff, effect: 'mind' }),
+  Sound: theme({ icon: '◌', color: 0xb84f52, accent: 0xffd37a, effect: 'sound' }),
+  Nature: theme({ icon: '❧', color: 0x4f8f43, accent: 0xbfd96a, effect: 'nature' }),
+  Gravity: theme({ icon: '◉', color: 0x5e46a9, accent: 0xa8d5ff, effect: 'gravity' }),
+  Combat: theme({ icon: '⚔', color: 0x8b3343, accent: 0xe0b35d, effect: 'force' }),
   Metal: theme({ icon: '⬢', color: 0x7d858d, accent: 0xd1d6db, effect: 'metal' }),
   'Stone Army': theme({ icon: '⬢', color: 0x686d72, accent: 0xb5b9bd, effect: 'metal' }),
   Shadow: theme({ icon: '◐', color: 0x3c2f53, accent: 0x9b7cc5, effect: 'shadow' }),

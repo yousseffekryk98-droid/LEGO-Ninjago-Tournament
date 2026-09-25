@@ -49,12 +49,21 @@ export const ROSTER: CharacterDef[] = [
   { id: 'griffin-turner', name: 'Griffin Turner', element: 'Speed', style: 'speed', special: 'boost', color: 0x355c8a, accent: 0xff6e40, speed: 7.4, damage: 15, maxHealth: 4, cost: 11000 },
   { id: 'neuro', name: 'Neuro', element: 'Mind', style: 'ranged', special: 'shout', color: 0x5b2c83, accent: 0x73e0d1, speed: 5.4, damage: 20, maxHealth: 4, cost: 10000 },
 
+  { id: 'jacob-pevsner', name: 'Jacob Pevsner', element: 'Sound', style: 'ranged', special: 'shout', color: 0x7c3038, accent: 0xe6b86a, speed: 5.8, damage: 20, maxHealth: 4, cost: 8800 },
+  { id: 'bolobo', name: 'Bolobo', element: 'Nature', style: 'balanced', special: 'charge', color: 0x4a7a3d, accent: 0xb6cf68, speed: 5.7, damage: 21, maxHealth: 5, cost: 9200 },
+  { id: 'gravis', name: 'Gravis', element: 'Gravity', style: 'ranged', special: 'overload', color: 0x4f3c91, accent: 0x9ecff2, speed: 5.5, damage: 22, maxHealth: 4, cost: 10800 },
+
   { id: 'clouse', name: 'Clouse', element: 'Dark Magic', style: 'ranged', special: 'toxic-cloud', color: 0x3a2d46, accent: 0xb4252d, speed: 5.2, damage: 23, maxHealth: 5, cost: 13000 },
   { id: 'clouse-robe', name: 'Clouse (Anacondrai)', element: 'Dark Magic', style: 'ranged', special: 'airstrike', color: 0x2f2638, accent: 0xd7c49c, speed: 5.0, damage: 24, maxHealth: 5, cost: 15000 },
   { id: 'chope-anacondrai', name: "Chop'rai (Anacondrai)", element: 'Anacondrai', style: 'speed', special: 'charge', color: 0x63334f, accent: 0xe0b35d, speed: 6.3, damage: 20, maxHealth: 5, cost: 10500 },
   { id: 'eyezor', name: 'Eyezor', element: 'Anacondrai', style: 'heavy', special: 'shout', color: 0x563246, accent: 0xc89a45, speed: 5.0, damage: 27, maxHealth: 5, cost: 11500 },
   { id: 'silvereye', name: 'Silvereye (Anacondrai)', element: 'Anacondrai', style: 'balanced', special: 'charge', color: 0x6d4b65, accent: 0xd8d8d8, speed: 5.9, damage: 22, maxHealth: 5, cost: 12000 },
   { id: 'zugu', name: 'Zugu', element: 'Cultist', style: 'heavy', special: 'charge', color: 0x5a2630, accent: 0xbb8b44, speed: 4.8, damage: 28, maxHealth: 6, cost: 9000 },
+
+  { id: 'kapau', name: 'Kapau', element: 'Combat', style: 'balanced', special: 'charge', color: 0x6f2d38, accent: 0xd6a650, speed: 5.9, damage: 22, maxHealth: 5, cost: 8200 },
+  { id: 'chope', name: 'Chope', element: 'Combat', style: 'speed', special: 'charge', color: 0x763343, accent: 0xe0b35d, speed: 6.3, damage: 19, maxHealth: 4, cost: 8400 },
+  { id: 'krait', name: 'Krait', element: 'Anacondrai', style: 'speed', special: 'charge', color: 0x4f3650, accent: 0xb98158, speed: 6.4, damage: 20, maxHealth: 5, cost: 11200 },
+  { id: 'sleven', name: 'Sleven', element: 'Anacondrai', style: 'heavy', special: 'charge', color: 0x5c3a55, accent: 0xc69a62, speed: 5.1, damage: 26, maxHealth: 6, cost: 11800 },
 
   { id: 'min-droid', name: 'Min-Droid', element: 'Nindroid', style: 'ranged', special: 'overload', color: 0x20242a, accent: 0xc9292d, speed: 5.8, damage: 22, maxHealth: 5, cost: 13000 },
   { id: 'snike', name: 'Snike', element: 'Constrictai', style: 'heavy', special: 'charge', color: 0x3f4548, accent: 0xc98a2e, speed: 5.0, damage: 27, maxHealth: 5, cost: 9000 },

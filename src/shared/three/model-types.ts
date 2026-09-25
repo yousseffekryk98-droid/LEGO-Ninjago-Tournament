@@ -32,7 +32,14 @@ export type FighterIdentityStyle =
   | 'tox'
   | 'skylor'
   | 'chamille'
-  | 'ash';
+  | 'ash'
+  | 'jacob'
+  | 'bolobo'
+  | 'gravis'
+  | 'kapau'
+  | 'chope'
+  | 'krait'
+  | 'sleven';
 
 export interface FighterModelProfile {
   archetype: FighterArchetype;

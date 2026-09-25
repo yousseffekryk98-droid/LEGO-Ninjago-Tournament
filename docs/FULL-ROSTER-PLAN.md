@@ -4,7 +4,7 @@ This document turns the supplied all-era NINJAGO character list into an implemen
 
 ## Current state
 
-- Live playable `ROSTER`: 51 entries/variants.
+- Live playable `ROSTER`: 58 entries/variants.
 - Extended planning catalog: 284 source appearances in `src/features/characters/expanded-catalog.ts`.
 - The expanded catalog is intentionally **not** injected into the live roster automatically.
 - Every catalog entry has a unique appearance ID, era/group metadata and an implementation wave.
@@ -63,6 +63,8 @@ Highest-priority playable/boss set:
 - Sleven
 
 Promotion rule: reuse an existing live fighter when it already represents the same character/suit well; otherwise add a new variant deliberately.
+
+**Wave 1 live promotion status:** the planned Tournament priority set is now represented in the live roster, including Jacob Pevsner, Bolobo, Gravis, Kapau, Chope, Krait and Sleven.
 
 ### Wave 2 — Classic expansion
 

@@ -53,3 +53,26 @@ test('element VFX system spawns and cleans short-lived effects without WebGL', (
   expect(vfx.getActiveCount()).toBe(0);
   vfx.destroy();
 });
+
+
+test('Wave-1 sound, nature, and gravity powers spawn visibly different effect families', () => {
+  const scene = new THREE.Scene();
+  const vfx = new ElementVfxSystem(scene, () => 0.5);
+  const origin = new THREE.Vector3(0, 0, 0);
+  const forward = new THREE.Vector3(0, 0, 1);
+
+  vfx.spawnKick(getElementCombatTheme('Sound'), origin, forward);
+  const afterSound = vfx.getActiveCount();
+  expect(afterSound).toBeGreaterThan(4);
+
+  vfx.spawnKick(getElementCombatTheme('Nature'), origin, forward);
+  const afterNature = vfx.getActiveCount();
+  expect(afterNature).toBeGreaterThan(afterSound + 5);
+
+  vfx.spawnKick(getElementCombatTheme('Gravity'), origin, forward);
+  expect(vfx.getActiveCount()).toBeGreaterThan(afterNature + 1);
+
+  vfx.update(3);
+  expect(vfx.getActiveCount()).toBe(0);
+  vfx.destroy();
+});

@@ -11,11 +11,11 @@ import {
 import { applyFighterXp, fighterLevelFromXp } from '../../src/features/progression';
 
 test('roster data is complete, unique, and playable', () => {
-  expect(ROSTER.length).toBe(51);
+  expect(ROSTER.length).toBe(58);
   expect(new Set(ROSTER.map((fighter) => fighter.id)).size).toBe(ROSTER.length);
   expect(ROSTER.filter((fighter) => fighter.unlockedByDefault).length).toBeGreaterThanOrEqual(4);
 
-  for (const requiredId of ['master-chen', 'techno-wu', 'tox', 'karlof', 'paleman', 'neuro', 'griffin-turner', 'zane-techno', 'zane-battle-damaged', 'snike', 'bytar', 'skales', 'kai-zx']) {
+  for (const requiredId of ['master-chen', 'techno-wu', 'tox', 'karlof', 'paleman', 'neuro', 'griffin-turner', 'jacob-pevsner', 'bolobo', 'gravis', 'kapau', 'chope', 'krait', 'sleven', 'zane-techno', 'zane-battle-damaged', 'snike', 'bytar', 'skales', 'kai-zx']) {
     expect(ROSTER.some((fighter) => fighter.id === requiredId), `missing documented fighter ${requiredId}`).toBeTruthy();
   }
   expect(ROSTER.some((fighter) => fighter.id === 'ronin'), 'Ronin should remain boss-only').toBeFalsy();
@@ -158,7 +158,14 @@ test('wave-one tournament fighters have distinct identity geometry and SVG icons
     tox: 'toxCanister1',
     skylor: 'skylorPonytail',
     chamille: 'chamilleHair0',
-    ash: 'ashHairCap'
+    ash: 'ashHairCap',
+    'jacob-pevsner': 'jacobSoundDisc1',
+    bolobo: 'boloboLeaf0',
+    gravis: 'gravisHalo',
+    kapau: 'kapauHeadBand',
+    chope: 'chopeHairSpike1',
+    krait: 'kraitCrestForkLeft',
+    sleven: 'slevenCrestBlade'
   };
 
   const svgIcons = new Set<string>();
@@ -176,4 +183,17 @@ test('wave-one tournament fighters have distinct identity geometry and SVG icons
   }
 
   expect(svgIcons.size).toBe(Object.keys(expectedParts).length);
+});
+
+
+test('remaining Wave-1 powers have distinct combat themes', () => {
+  expect(getElementCombatTheme('Sound').effect).toBe('sound');
+  expect(getElementCombatTheme('Nature').effect).toBe('nature');
+  expect(getElementCombatTheme('Gravity').effect).toBe('gravity');
+  expect(getElementCombatTheme('Combat').effect).toBe('force');
+  expect(new Set([
+    getElementCombatTheme('Sound').trailStyle,
+    getElementCombatTheme('Nature').trailStyle,
+    getElementCombatTheme('Gravity').trailStyle
+  ]).size).toBe(3);
 });
