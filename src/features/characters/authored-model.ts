@@ -25,16 +25,26 @@ function disposeObject(root: THREE.Object3D) {
   });
 }
 
+function keepProceduralChildVisible(object: THREE.Object3D) {
+  return object.name === 'weaponRig'
+    || object.name === 'truePotentialAura'
+    || object.name === 'truePotentialLight'
+    || object.userData.truePotential === true;
+}
+
 export async function attachAuthoredCharacterBody(holder: THREE.Group, characterId: string) {
   const url = AUTHORED_CHARACTER_ASSETS[characterId];
   if (!url || typeof window === 'undefined') return null;
+
+  const fallbackStates = holder.children.map((object) => ({ object, visible: object.visible }));
+  let replacements: Array<{ name: typeof ANIMATED_BODY_PARTS[number]; fallback: THREE.Object3D; replacement: THREE.Object3D }> = [];
 
   holder.userData.characterAssetState = 'loading-authored-glb';
   try {
     const authored = await loadStaticGlb(url);
     authored.name = 'authoredCharacterBody';
 
-    const replacements = ANIMATED_BODY_PARTS.map((name) => {
+    replacements = ANIMATED_BODY_PARTS.map((name) => {
       const fallback = holder.getObjectByName(name);
       const replacement = authored.getObjectByName(name);
       if (!fallback || !replacement) throw new Error(`Authored fighter ${characterId} is missing animation part ${name}`);
@@ -42,6 +52,16 @@ export async function attachAuthoredCharacterBody(holder: THREE.Group, character
     });
 
     holder.add(authored);
+
+    // Authored GLBs are complete body replacements. Previously only the six
+    // animated fallback nodes were hidden, leaving procedural masks, belts,
+    // eyes, hood pieces and armor visible around the authored body. Hide the
+    // whole procedural visual body while preserving gameplay-owned weapons
+    // and True Potential VFX.
+    for (const { object } of fallbackStates) {
+      if (!keepProceduralChildVisible(object)) object.visible = false;
+    }
+
     for (const { name, fallback } of replacements) {
       fallback.name = `fallback:${name}`;
       fallback.visible = false;
@@ -56,6 +76,10 @@ export async function attachAuthoredCharacterBody(holder: THREE.Group, character
       holder.remove(partial);
       disposeObject(partial);
     }
+
+    for (const { object, visible } of fallbackStates) object.visible = visible;
+    for (const { name, fallback } of replacements) fallback.name = name;
+
     holder.userData.characterAssetState = 'procedural-fallback';
     holder.userData.characterAssetError = error instanceof Error ? error.message : String(error);
     console.warn(`Failed to load authored fighter GLB ${url}; keeping procedural model.`, error);

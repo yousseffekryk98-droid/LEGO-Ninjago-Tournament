@@ -1,11 +1,22 @@
 # Lloyd Tournament 3D Fidelity Pipeline
 
+## Production status
+
+The production `lloyd-tournament.glb` is now generated from **vendored LDraw-derived exact minifigure mould geometry** on every normal web build. Blender is no longer required for the production Lloyd asset.
+
+Build order:
+
+1. `scripts/generate-core-fighters.mjs` creates the generic fighter set.
+2. `scripts/generate-lloyd-exact-production.mjs` runs last and replaces only Lloyd with the exact-mould Tournament version.
+
+The exact production route uses the real 61183 hair, 15619 ninja bandana, 3626b head, 973 torso, 3815 hips, 3816/3817 legs, 3818/3819 arms, and 3820 hand moulds. The Tournament robe print is recreated with project-authored geometry over those moulds.
+
 ## Which Lloyd this targets
 
-The game entry \`lloyd-tournament\` now has two authoring routes:
+The game entry \`lloyd-tournament\` has one production route plus one optional offline authoring route:
 
-1. **Runtime/default generator** — \`scripts/generate-lloyd-fighter.mjs\`, which creates the GLB on every web build and is the current production asset.
-2. **Exact-mould Blender route** — \`scripts/blender/build_lloyd_tournament_exact.py\`, which reconstructs the Tournament Robe Lloyd using official LDraw mould geometry.
+1. **Production generator** — \`scripts/generate-lloyd-exact-production.mjs\`. It runs during every normal web build and writes \`public/assets/models/fighters/lloyd-tournament.glb\`.
+2. **Optional Blender route** — \`scripts/blender/build_lloyd_tournament_exact.py\`, useful for manual inspection or future sculpting passes.
 
 The Tournament Robe reference is BrickLink minifigure **njo0123**. The inventory identifies the characteristic pieces as a green torso with yellow arms and black hands, green ninja bandana, tan swept-back hair, yellow head, and decorated green hips/legs.
 
@@ -17,7 +28,7 @@ This repository is public and intended to remain redistributable, so committed g
 
 ## Exact mould source used instead
 
-The Blender route uses the official **LDraw Parts Library**, whose approved parts are redistributable under Creative Commons Attribution licensing.
+The production and Blender routes use the official **LDraw Parts Library**, whose approved parts are redistributable under Creative Commons Attribution licensing.
 
 Relevant moulds:
 
