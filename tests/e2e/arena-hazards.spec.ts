@@ -35,6 +35,10 @@ test('collapsing pit warns, opens, becomes lethal, and later restores', () => {
 
   for (let i = 0; i < 13; i++) hazards.update(0.1, 2, []);
   expect(hazards.getSnapshot()[0].phase).toBe('active');
+  expect(scene.getObjectByName('hazardPitPanel0')).toBeTruthy();
+  expect(scene.getObjectByName('hazardPitPanel5')).toBeTruthy();
+  expect(scene.getObjectByName('hazardPitDust0')).toBeTruthy();
+  expect(scene.getObjectByName('hazardPitDust11')).toBeTruthy();
 
   const impact = hazards.update(0.5, 2, [{
     id: 'player',
