@@ -4,11 +4,12 @@ This document turns the supplied all-era NINJAGO character list into an implemen
 
 ## Current state
 
-- Live playable `ROSTER`: 58 entries/variants.
-- Extended planning catalog: 284 source appearances in `src/features/characters/expanded-catalog.ts`.
-- The expanded catalog is intentionally **not** injected into the live roster automatically.
-- Every catalog entry has a unique appearance ID, era/group metadata and an implementation wave.
-- Duplicate characters across eras are preserved as separate appearances so later we can choose whether they become variants, skins, bosses or separate fighters.
+- Live playable `ROSTER`: **342** entries/appearances.
+- Legacy roster: 58 Tournament/legacy fighters with hand-tuned identities.
+- Expanded catalog: all **284** supplied source appearances in `src/features/characters/expanded-catalog.ts` are now promoted into gameplay by `catalog-playable.ts`.
+- Every catalog fighter carries the supplied power plus generated normal attack, special attack, Spinjitzu, Ultimate Spinjitzu and passive metadata.
+- Duplicate characters across eras remain separate playable appearances via the `catalog-` ID namespace.
+- Catalog fighters use power-matched combat VFX and clean-room procedural model/icon fallbacks; bespoke model-detail passes can replace those fallbacks incrementally without removing playability.
 
 ## Required asset set per implemented fighter
 
