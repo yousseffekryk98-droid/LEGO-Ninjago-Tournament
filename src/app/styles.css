@@ -1155,6 +1155,18 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
   font-size:7px;
 }
 
+.fighter-avatar-svg {
+  position:absolute;
+  inset:1px;
+  z-index:1;
+  width:calc(100% - 2px);
+  height:calc(100% - 2px);
+  object-fit:cover;
+  border-radius:50%;
+  filter:saturate(1.06) contrast(1.04) drop-shadow(0 2px 2px #0008);
+  transition:opacity .18s ease;
+}
+
 .fighter-avatar-render {
   position:absolute;
   inset:1px;
@@ -1170,7 +1182,8 @@ h1, h2, h3, .hud { font-family: 'Barlow Condensed', Impact, sans-serif; }
     linear-gradient(145deg,#4d315e,#211727);
 }
 .fighter-avatar.has-render .fighter-avatar-fallback,
-.fighter-avatar.has-render .fighter-avatar-body {
+.fighter-avatar.has-render .fighter-avatar-body,
+.fighter-avatar.has-render .fighter-avatar-svg {
   opacity:0;
 }
 .fighter-avatar-fallback,
