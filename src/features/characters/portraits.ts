@@ -17,9 +17,9 @@ function buildPortraitScene(character: CharacterDef) {
   const scene = new THREE.Scene();
   scene.background = null;
 
-  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 30);
-  camera.position.set(0, 2.45, 5.25);
-  camera.lookAt(0, 1.35, 0);
+  const camera = new THREE.PerspectiveCamera(25, 1, 0.1, 30);
+  camera.position.set(0, 2.26, 4.05);
+  camera.lookAt(0, 1.78, 0);
 
   const hemi = new THREE.HemisphereLight(0xfff3d6, 0x272032, 2.15);
   scene.add(hemi);
@@ -32,9 +32,9 @@ function buildPortraitScene(character: CharacterDef) {
   rim.position.set(4.1, 3.2, -3.4);
   scene.add(rim);
 
-  const fighter = createCharacterModel(character, 1.16);
-  fighter.position.set(0, -0.18, 0);
-  fighter.rotation.y = -0.14;
+  const fighter = createCharacterModel(character, 1.24);
+  fighter.position.set(0, -0.3, 0);
+  fighter.rotation.y = -0.16;
   scene.add(fighter);
 
   return { scene, camera, fighter };
