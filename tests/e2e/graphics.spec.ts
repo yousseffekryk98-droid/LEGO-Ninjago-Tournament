@@ -6,9 +6,13 @@ const GUARD_KEY = 'ninja-tournament-render-guard-v2';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(({ pref, recovery, guard }) => {
+    // Run the reset once per Playwright page. sessionStorage survives reloads,
+    // so the persistence test can actually verify the next document.
+    if (sessionStorage.getItem('__graphics_test_initialized') === '1') return;
     localStorage.removeItem(pref);
     localStorage.removeItem(recovery);
     localStorage.removeItem(guard);
+    sessionStorage.setItem('__graphics_test_initialized', '1');
   }, { pref: PREF_KEY, recovery: RECOVERY_KEY, guard: GUARD_KEY });
 });
 
