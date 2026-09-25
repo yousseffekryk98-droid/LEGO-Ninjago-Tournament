@@ -19,3 +19,19 @@ test('generated Chen center pillar is a valid GLB 2.0 asset', async () => {
   expect(json.materials.map((material: { name?: string }) => material.name)).toContain('SerpentRed');
   expect(json.nodes.length).toBeGreaterThan(100);
 });
+
+test('generated Chen arena gate is a valid GLB 2.0 asset', async () => {
+  const path = resolve('public/assets/models/arena/chen-gate.glb');
+  const file = await readFile(path);
+
+  expect(file.byteLength).toBeGreaterThan(15_000);
+  expect(file.readUInt32LE(0)).toBe(0x46546c67);
+  expect(file.readUInt32LE(4)).toBe(2);
+  expect(file.readUInt32LE(8)).toBe(file.byteLength);
+
+  const jsonLength = file.readUInt32LE(12);
+  const json = JSON.parse(file.subarray(20, 20 + jsonLength).toString('utf8').trim());
+  expect(json.scenes[0].name).toBe('ChenArenaGate');
+  expect(json.materials.map((material: { name?: string }) => material.name)).toContain('DoorRed');
+  expect(json.nodes.length).toBeGreaterThan(45);
+});

@@ -4,6 +4,7 @@ import { replaceWithStaticGlb } from '../../shared/three/gltf-assets';
 export const CENTER_PILLAR_RADIUS = 1.62;
 export const CENTER_PILLAR_CLEARANCE = 0.78;
 export const CENTER_PILLAR_AUTHORED_ASSET_URL = '/assets/models/arena/chen-center-pillar.glb';
+export const ARENA_GATE_AUTHORED_ASSET_URL = '/assets/models/arena/chen-gate.glb';
 
 const setShadow = (object: THREE.Object3D) => {
   object.traverse((child) => {
@@ -163,6 +164,19 @@ export function buildLegacyCenterPillar(scene: THREE.Scene) {
   }
 
   return group;
+}
+
+export function attachAuthoredArenaGate(holder: THREE.Group, fallback: readonly THREE.Object3D[]) {
+  holder.userData.assetState = 'procedural-fallback';
+  if (typeof window === 'undefined') return;
+
+  holder.userData.assetState = 'loading-authored-glb';
+  void replaceWithStaticGlb({
+    holder,
+    fallback,
+    url: ARENA_GATE_AUTHORED_ASSET_URL,
+    name: 'arenaGateAuthoredGlb'
+  });
 }
 
 export function resolveCenterPillarCollision(position: THREE.Vector3, padding = CENTER_PILLAR_CLEARANCE) {

@@ -8,6 +8,10 @@ Static authored assets are loaded through `src/shared/three/gltf-assets.ts`. The
 
 `/assets/models/arena/chen-center-pillar.glb`
 
+Chen's gate uses the same pipeline at:
+
+`/assets/models/arena/chen-gate.glb`
+
 The procedural version is created first. When the GLB loads successfully it is inserted into the same landmark group and the procedural render parts are hidden. Collision and camera behavior do not depend on the GLB mesh topology.
 
 ## Current generated model
