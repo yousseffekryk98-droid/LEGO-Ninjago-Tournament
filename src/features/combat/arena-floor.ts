@@ -162,6 +162,8 @@ function buildOuterGlyphRing(group: THREE.Group, dark: THREE.Material, fine: THR
 function buildHazardInlays(group: THREE.Group, anchors: readonly ArenaHazardAnchor[], dark: THREE.Material, bronze: THREE.Material) {
   const plateStone = lineMaterial(0x4d5963, 0.38);
   const hinge = lineMaterial(0x20252b, 0.7);
+  const fireMark = lineMaterial(0x8a4821, 0.58);
+  const poisonMark = lineMaterial(0x55763a, 0.58);
 
   for (const anchor of anchors) {
     const marker = new THREE.Group();
@@ -170,7 +172,13 @@ function buildHazardInlays(group: THREE.Group, anchors: readonly ArenaHazardAnch
 
     const border = new THREE.Mesh(
       new THREE.RingGeometry(anchor.radius + 0.05, anchor.radius + 0.18, 36),
-      anchor.kind === 'pit' ? dark : bronze
+      anchor.kind === 'pit'
+        ? dark
+        : anchor.kind === 'fire-jet'
+          ? fireMark
+          : anchor.kind === 'poison'
+            ? poisonMark
+            : bronze
     );
     border.rotation.x = -Math.PI / 2;
     border.position.y = FLOOR_Y + 0.005;
@@ -211,7 +219,7 @@ function buildHazardInlays(group: THREE.Group, anchors: readonly ArenaHazardAnch
         );
         marker.add(hingeStud);
       }
-    } else {
+    } else if (anchor.kind === 'spikes') {
       for (let ring = 0; ring < 2; ring++) {
         const count = ring === 0 ? 6 : 8;
         const radius = ring === 0 ? anchor.radius * 0.42 : anchor.radius * 0.72;
@@ -229,6 +237,44 @@ function buildHazardInlays(group: THREE.Group, anchors: readonly ArenaHazardAnch
           );
           marker.add(slot);
         }
+      }
+    } else if (anchor.kind === 'fire-jet') {
+      for (let i = -3; i <= 3; i++) {
+        const grate = new THREE.Mesh(
+          new THREE.BoxGeometry(anchor.radius * 1.34, 0.012, 0.07),
+          i % 2 === 0 ? fireMark : hinge
+        );
+        grate.position.set(0, FLOOR_Y + 0.014, i * 0.27);
+        marker.add(grate);
+      }
+      const core = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.46, 20), fireMark);
+      core.rotation.x = -Math.PI / 2;
+      core.position.y = FLOOR_Y + 0.016;
+      marker.add(core);
+    } else {
+      const holes: Array<[number, number]> = [[0, 0]];
+      for (let ring = 0; ring < 2; ring++) {
+        const count = ring === 0 ? 6 : 10;
+        const radius = ring === 0 ? anchor.radius * 0.38 : anchor.radius * 0.72;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2 + ring * 0.15;
+          holes.push([Math.cos(angle) * radius, Math.sin(angle) * radius]);
+        }
+      }
+      for (const [x, z] of holes) {
+        const vent = new THREE.Mesh(new THREE.RingGeometry(0.075, 0.125, 10), poisonMark);
+        vent.rotation.x = -Math.PI / 2;
+        vent.position.set(x, FLOOR_Y + 0.014, z);
+        marker.add(vent);
+      }
+      for (let i = 0; i < 3; i++) {
+        const arc = new THREE.Mesh(
+          new THREE.RingGeometry(anchor.radius * (0.34 + i * 0.17), anchor.radius * (0.38 + i * 0.17), 28, 1, i * 0.7, Math.PI * 1.15),
+          poisonMark
+        );
+        arc.rotation.x = -Math.PI / 2;
+        arc.position.y = FLOOR_Y + 0.012;
+        marker.add(arc);
       }
     }
 
