@@ -394,6 +394,68 @@ function addIdentityDetails(
       addMesh(group, `ashSmokeTuft${i}`, new THREE.ConeGeometry(0.08 + i * 0.015, 0.38 + i * 0.08, 8), smoke, [(i - 1) * 0.16, 2.55 + i * 0.03, -0.06], [0.12, 0, (i - 1) * -0.18]);
     }
     addMesh(group, 'ashScarf', new THREE.TorusGeometry(0.37, 0.07, 8, 24), accent, [0, 1.8, 0], [Math.PI / 2, 0, 0]);
+    return;
+  }
+
+  if (style === 'jacob') {
+    const hair = material(0x30231f, false, 0.42);
+    addMesh(group, 'jacobHairCap', new THREE.SphereGeometry(0.38, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.58), hair, [0, 2.35, -0.02]);
+    for (const side of [-1, 1] as const) {
+      addMesh(group, `jacobSoundDisc${side}`, new THREE.CylinderGeometry(0.13, 0.13, 0.05, 16), accent, [side * 0.37, 2.08, 0.03], [0, 0, Math.PI / 2]);
+    }
+    addMesh(group, 'jacobWaveBadge', new THREE.TorusGeometry(0.13, 0.025, 7, 22), accent, [0.18, 1.48, 0.34], [Math.PI / 2, 0, 0]);
+    return;
+  }
+
+  if (style === 'bolobo') {
+    const leafMat = material(0x6f9a45, false, 0.5);
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
+      addMesh(group, `boloboLeaf${i}`, new THREE.ConeGeometry(0.085, 0.42, 7), leafMat, [Math.cos(angle) * 0.26, 2.48 + (i % 2) * 0.05, Math.sin(angle) * 0.15 - 0.03], [0.25, 0, -angle]);
+    }
+    addMesh(group, 'boloboVineBelt', new THREE.TorusGeometry(0.42, 0.045, 8, 28), accent, [0, 0.93, 0], [Math.PI / 2, 0, 0]);
+    return;
+  }
+
+  if (style === 'gravis') {
+    const grav = material(0x9ecff2, false, 0.18);
+    addMesh(group, 'gravisHalo', new THREE.TorusGeometry(0.46, 0.035, 8, 30), grav, [0, 2.38, -0.08], [Math.PI / 2, 0, 0]);
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2;
+      addMesh(group, `gravisOrb${i}`, new THREE.IcosahedronGeometry(0.085, 0), accent, [Math.cos(angle) * 0.48, 1.55 + i * 0.12, Math.sin(angle) * 0.32]);
+    }
+    addMesh(group, 'gravisChestLens', new THREE.TorusGeometry(0.14, 0.03, 8, 22), accent, [0, 1.48, 0.35], [Math.PI / 2, 0, 0]);
+    return;
+  }
+
+  if (style === 'kapau') {
+    addMesh(group, 'kapauHeadBand', new THREE.BoxGeometry(0.64, 0.075, 0.045), accent, [0, 2.17, 0.35]);
+    addMesh(group, 'kapauFaceMark', new THREE.BoxGeometry(0.04, 0.22, 0.025), dark, [-0.19, 2.01, 0.36], [0, 0, -0.18]);
+    addMesh(group, 'kapauChestPlate', new THREE.BoxGeometry(0.46, 0.12, 0.04), accent, [0, 1.46, 0.34], [0, 0, -0.12]);
+    return;
+  }
+
+  if (style === 'chope') {
+    addMesh(group, 'chopeHeadBand', new THREE.BoxGeometry(0.64, 0.075, 0.045), accent, [0, 2.17, 0.35]);
+    addMesh(group, 'chopeFaceMark', new THREE.BoxGeometry(0.04, 0.22, 0.025), dark, [0.19, 2.01, 0.36], [0, 0, 0.18]);
+    for (let i = 0; i < 3; i++) {
+      addMesh(group, `chopeHairSpike${i}`, new THREE.ConeGeometry(0.075, 0.32 + i * 0.04, 7), dark, [(i - 1) * 0.13, 2.5 + i * 0.02, -0.03], [0.08, 0, (i - 1) * -0.16]);
+    }
+    return;
+  }
+
+  if (style === 'krait') {
+    addMesh(group, 'kraitCrestForkLeft', new THREE.ConeGeometry(0.075, 0.42, 8), accent, [-0.13, 2.68, -0.06], [0.05, 0, -0.18]);
+    addMesh(group, 'kraitCrestForkRight', new THREE.ConeGeometry(0.075, 0.42, 8), accent, [0.13, 2.68, -0.06], [0.05, 0, 0.18]);
+    addMesh(group, 'kraitBrowMark', new THREE.BoxGeometry(0.44, 0.04, 0.025), dark, [0, 2.16, 0.56], [0, 0, 0.08]);
+    return;
+  }
+
+  if (style === 'sleven') {
+    addMesh(group, 'slevenCrestBlade', new THREE.ConeGeometry(0.11, 0.62, 8), accent, [0, 2.72, -0.09], [0.12, 0, 0]);
+    for (const side of [-1, 1] as const) {
+      addMesh(group, `slevenJawSpike${side}`, new THREE.ConeGeometry(0.055, 0.24, 7), accent, [side * 0.27, 1.96, 0.48], [Math.PI / 2, 0, side * 0.35]);
+    }
   }
 }
 
