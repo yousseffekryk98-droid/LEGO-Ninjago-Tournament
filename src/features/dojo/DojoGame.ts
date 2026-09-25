@@ -382,12 +382,15 @@ export class DojoGame {
     // the old 2.55-unit hit radius, making correct attacks appear unresponsive.
     // A nearby strike now faces the dummy and takes a short lunge, while attacks
     // from genuinely far away still miss and require movement.
-    if (this.currentStep() === 'attack' && distance > 2.55 && distance <= 3.8) {
+    if (this.currentStep() === 'attack' && distance > 2.55 && distance <= 8.0) {
       const towardDummy = this.dummy.position.clone().sub(this.player.position).setY(0);
       if (towardDummy.lengthSq() > 0.001) {
         towardDummy.normalize();
         this.player.rotation.y = Math.atan2(towardDummy.x, towardDummy.z);
-        this.player.position.addScaledVector(towardDummy, Math.min(0.9, Math.max(0, distance - 2.35)));
+        // Step toward the target on each deliberate training strike. This is
+        // large enough to recover from keyboard overshoot but still requires the
+        // player to be in the dummy's half of the dojo before attacks connect.
+        this.player.position.addScaledVector(towardDummy, Math.min(1.35, Math.max(0, distance - 2.35)));
         this.clampPlayerToDojo();
         distance = this.player.position.distanceTo(this.dummy.position);
       }
