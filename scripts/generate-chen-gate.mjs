@@ -24,6 +24,7 @@ function cone(seg=10){const p=[],i=[];for(let s=0;s<seg;s++){const a=2*Math.PI*s
 const [bp,bi]=box(),[cp,ci]=cylinder(),[tp,ti]=torus(),[kp,ki]=cone();
 const boxStone=addMesh('StoneBox',bp,bi,0),boxDark=addMesh('DarkBox',bp,bi,1),boxRed=addMesh('RedDoorBox',bp,bi,2),boxGold=addMesh('GoldBox',bp,bi,3),cylGold=addMesh('GoldCylinder',cp,ci,3),cylRed=addMesh('RedCylinder',cp,ci,2),torGold=addMesh('GoldTorus',tp,ti,3),coneDark=addMesh('DarkCone',kp,ki,1),coneSerp=addMesh('SerpentCone',kp,ki,4);
 const qY=a=>[0,Math.sin(a/2),0,Math.cos(a/2)];
+const qX=a=>[Math.sin(a/2),0,0,Math.cos(a/2)];
 function node(name,mesh,t=[0,0,0],s=[1,1,1],r){const n={name,mesh,translation:t,scale:s};if(r)n.rotation=r;nodes.push(n);return nodes.length-1;}
 for(const side of[-1,1]){
   node(side<0?'LeftTower':'RightTower',boxStone,[side*4.15,2.55,0],[2.45,5.5,2.25]);
@@ -38,13 +39,13 @@ node('Roof',boxStone,[0,5.92,0],[11.9,.42,3.25]);
 node('RoofTop',boxDark,[0,6.25,-.08],[9.5,.22,2.4]);
 for(const side of[-1,1]){
  node(side<0?'DoorLeft':'DoorRight',boxRed,[side*1.78,2.14,1.22],[3.48,4.32,.30]);
- for(let row=0;row<4;row++)for(let col=0;col<3;col++)node(`DoorStud_${side}_${row}_${col}`,cylGold,[side*(.72+col*.55),.75+row*.88,1.41],[.085,.09,.085]);
+ for(let row=0;row<4;row++)for(let col=0;col<3;col++)node(`DoorStud_${side}_${row}_${col}`,cylGold,[side*(.72+col*.55),.75+row*.88,1.41],[.085,.09,.085],qX(Math.PI/2));
  node(`DoorBraceH_${side}`,boxDark,[side*1.78,2.13,1.39],[2.9,.13,.08]);
  node(`DoorBraceV_${side}`,boxDark,[side*1.78,2.13,1.39],[.13,3.7,.08]);
 }
-node('CrestRing',torGold,[0,5.08,1.34],[.82,.82,.82]);
-node('CrestCore',cylRed,[0,5.08,1.34],[.45,.15,.45]);
-node('SerpentReliefHead',coneSerp,[0,4.96,1.55],[.42,.92,.42],qY(Math.PI));
+node('CrestRing',torGold,[0,5.08,1.34],[.82,.82,.82],qX(Math.PI/2));
+node('CrestCore',cylRed,[0,5.08,1.34],[.45,.15,.45],qX(Math.PI/2));
+node('SerpentReliefHead',coneSerp,[0,4.96,1.55],[.42,.92,.42],qX(Math.PI/2));
 node('CrestBrow',boxGold,[0,5.4,1.55],[1.25,.12,.12]);
 for(const side of[-1,1]){
   node(`LanternArm_${side}`,boxGold,[side*5.15,3.65,.65],[.9,.12,.12]);
