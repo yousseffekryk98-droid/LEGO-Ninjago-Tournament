@@ -82,11 +82,16 @@ Characters demonstrably shown being controlled in legacy gameplay showcase video
 The arena remains original geometry, but now follows the footage's visual language more closely:
 
 - circular layered stone combat floor;
-- lower diagonal/isometric camera tuned closer to the legacy mobile framing;
+- lower diagonal/isometric camera tuned closer to the legacy mobile framing, with a slightly wider field of view for the enlarged combat floor;
 - spectator terraces, crowd silhouettes, tournament banners and an elevated Chen viewing throne;
+- a curved far-side stone retaining wall, parapet and layered terrace bowl around Chen's gate;
+- broad gate stairs and warm perimeter wall torches to deepen the arena silhouette;
 - denser procedural stone slab seams for the arena floor;
 - authored run, attack, block, jump and dodge poses for procedural minifigures;
 - central radial/sigil markings;
+- a tall central serpent-wrapped stone pillar reconstructed as a real collision landmark rather than a flat decoration;
+- camera-aware pillar fading when the landmark would hide the controlled fighter;
+- a framed stone footprint around the center pillar so the floor composition reads correctly around the obstacle;
 - large stone-and-red tournament gate;
 - gold architectural accents;
 - serpent-wrapped perimeter pillars;

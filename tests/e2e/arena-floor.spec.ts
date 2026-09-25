@@ -16,5 +16,6 @@ test('reconstructed tournament floor includes engraved rings, serpent work, and 
 
   const inlays = floor.children.filter((child) => child.name.startsWith('floorInlay:'));
   expect(inlays).toHaveLength(DEFAULT_ARENA_HAZARD_ANCHORS.length);
+  expect(scene.getObjectByName('centerPillarFootprint')).toBeTruthy();
   expect(floor.children.length).toBeGreaterThan(150);
 });
