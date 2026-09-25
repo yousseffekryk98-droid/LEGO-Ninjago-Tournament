@@ -228,3 +228,23 @@ test('fighter cards upgrade from CSS fallbacks to rendered 3D portraits when Web
   await expect(firstPortrait).toBeAttached({ timeout: 6000 });
   await expect(firstPortrait).toHaveAttribute('src', /^data:image\/png;base64,/);
 });
+
+
+test('expanded arena supports classic and overhead player-follow views', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
+
+  const view = page.locator('#camera-view-btn');
+  await expect(view).toBeVisible();
+  await expect(view).toContainText('CLASSIC');
+  await expect(view).toHaveAttribute('aria-pressed', 'false');
+
+  await view.click();
+  await expect(view).toContainText('OVERHEAD');
+  await expect(view).toHaveAttribute('aria-pressed', 'true');
+
+  await page.keyboard.press('v');
+  await expect(view).toContainText('CLASSIC');
+  await expect(view).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#game-host canvas')).toBeVisible();
+});
