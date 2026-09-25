@@ -293,7 +293,7 @@ function showBossPath() {
     const identity = getCharacterIdentity(fighter);
     const reference = getCharacterReferenceImage(fighter);
     const suppliedLook = getUserCharacterPortrait(fighter.id);
-    const showRemoteReference = reference && !suppliedLook;
+    const showRemoteReference = suppliedLook ? null : reference;
     return `
       <span class="boss-path-mini ${index === 0 ? 'current' : ''}" data-gauntlet-order="${index + 1}" title="${identity.name} · ${identity.variant ?? fighter.element}" style="--node-color:#${fighter.color.toString(16).padStart(6, '0')}">
         <img src="${getCachedCharacterPortrait(fighter.id) ?? getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />
@@ -384,7 +384,7 @@ function showRoster() {
           ${getCachedCharacterPortrait(fighter.id)
             ? `<img class="fighter-avatar-render" src="${getCachedCharacterPortrait(fighter.id)}" alt="" aria-hidden="true" />`
             : `<img class="fighter-avatar-svg" src="${getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />`}
-          ${showRemoteReference ? `<img class="fighter-avatar-real" data-reference-image src="${reference.imageUrl}" alt="" aria-hidden="true" referrerpolicy="no-referrer" loading="lazy" /><span class="fighter-reference-badge">LEGO REF</span>` : ''}
+          ${showRemoteReference ? `<img class="fighter-avatar-real" data-reference-image src="${showRemoteReference.imageUrl}" alt="" aria-hidden="true" referrerpolicy="no-referrer" loading="lazy" /><span class="fighter-reference-badge">LEGO REF</span>` : ''}
           ${suppliedLook ? '<span class="fighter-reference-badge user-look-badge">GAME LOOK</span>' : ''}
           <span class="fighter-avatar-fallback"></span><i class="fighter-avatar-body"></i><small>${suppliedLook ? 'LOOK' : reference ? 'REF' : '3D'}</small>
         </button>
