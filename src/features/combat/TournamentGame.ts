@@ -26,6 +26,7 @@ export interface GameCallbacks {
   onHud: (state: HudState) => void;
   onMessage: (message: string) => void;
   onGameOver: (score: number, wave: number) => void;
+  onVictory?: (score: number, fights: number) => void;
   onCameraModeChange?: (mode: CameraMode) => void;
 }
 
@@ -126,6 +127,7 @@ export class TournamentGame {
   private callbacks: GameCallbacks;
   private character: CharacterDef;
   private bossRush: boolean;
+  private victorySent = false;
   private animationFrame = 0;
   private running = true;
   private paused = false;
@@ -398,11 +400,21 @@ export class TournamentGame {
     this.updateSpikeHazards();
 
     if (this.enemies.length === 0 && this.intermission <= 0) {
-      this.spawnWave();
-      this.intermission = 1.4;
+      const bossRushTarget = ROSTER.filter((fighter) => fighter.id !== this.character.id).length;
+      if (this.bossRush && this.wave >= bossRushTarget) {
+        if (!this.victorySent) {
+          this.victorySent = true;
+          this.paused = true;
+          this.callbacks.onMessage('GAUNTLET COMPLETE — ALL ELEMENTAL MASTERS DEFEATED!');
+          this.callbacks.onVictory?.(this.studs, this.wave);
+        }
+      } else {
+        this.spawnWave();
+        this.intermission = 1.4;
+      }
     }
 
-    if (this.wave >= 2 && this.eventTimer <= 0 && this.enemies.length > 0) {
+    if (!this.bossRush && this.wave >= 2 && this.eventTimer <= 0 && this.enemies.length > 0) {
       this.triggerArenaEvent();
       this.eventTimer = Math.max(7.5, 14 - this.wave * 0.22) + Math.random() * 3;
     }
