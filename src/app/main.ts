@@ -604,6 +604,7 @@ function startGame() {
         <b id="multiplier">1×</b><small id="combo">0 HIT COMBO</small>
       </div>
       <button class="pause-button" id="exit-btn" aria-label="Exit">Ⅱ</button>
+      <button class="camera-view-button" id="camera-view-btn" type="button" aria-label="Switch to overhead camera" aria-pressed="false"><b>VIEW</b><span>CLASSIC</span></button>
       <div id="stage-banner" class="stage-banner" aria-live="polite"><small></small><b></b></div>
       <div id="message" class="arena-message"></div>
       <div class="special-wrap"><button id="special-btn" class="special-button" aria-label="${specialLabel}" title="${specialLabel}"><span class="legacy-icon">${legacyActionIcon('spin')}</span></button><small class="special-name">${specialLabel}</small><div class="meter"><i id="special-meter"></i></div></div>
@@ -616,16 +617,27 @@ function startGame() {
         <button class="action-button attack punch" data-action="punch" aria-label="Punch"><span class="legacy-icon">${legacyActionIcon('punch')}</span></button>
         <button class="action-button kick elemental-kick" data-action="kick" aria-label="${baseFighter.element} elemental kick" title="${baseFighter.element} kick" style="--element-color:${elementColor};--element-accent:${elementAccent}"><span class="legacy-icon">${legacyActionIcon('kick')}</span><span class="element-badge" aria-hidden="true">${elementTheme.icon}</span><small>${baseFighter.element}</small></button>
       </div>
-      <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)}${freePlayMode ? ` · CREATION ${formatKeyLabel(keys.ultimate)}` : ''}</div>
+      <div class="keyboard-hint-bar">MOVE ${formatKeyLabel(keys.moveUp)}/${formatKeyLabel(keys.moveLeft)}/${formatKeyLabel(keys.moveDown)}/${formatKeyLabel(keys.moveRight)} · BOX ${formatKeyLabel(keys.punch)} · KICK ${formatKeyLabel(keys.kick)} · GRAB ${formatKeyLabel(keys.grab)} · BLOCK ${formatKeyLabel(keys.block)} · SPINJITZU ${formatKeyLabel(keys.special)} · VIEW V${freePlayMode ? ` · CREATION ${formatKeyLabel(keys.ultimate)}` : ''}</div>
       <div class="dodge-hint">SWIPE ARENA TO DODGE · ${formatKeyLabel(keys.dodge)}</div>
       <div id="game-over" class="game-over hidden"></div>
     </main>`;
 
   const host = document.querySelector<HTMLElement>('#game-host')!;
+  const syncCameraButton = (mode: 'classic' | 'overhead') => {
+    const cameraButton = document.querySelector<HTMLButtonElement>('#camera-view-btn');
+    if (!cameraButton) return;
+    cameraButton.setAttribute('aria-pressed', String(mode === 'overhead'));
+    cameraButton.setAttribute('aria-label', mode === 'overhead' ? 'Switch to classic camera' : 'Switch to overhead camera');
+    const label = cameraButton.querySelector('span');
+    if (label) label.textContent = mode === 'overhead' ? 'OVERHEAD' : 'CLASSIC';
+    cameraButton.classList.toggle('overhead', mode === 'overhead');
+  };
+
   const game = new TournamentGame(host, fighter, {
     onHud: updateHud,
     onMessage: showArenaMessage,
-    onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id)
+    onGameOver: (runStuds, wave) => showDefeatScreen(game, runStuds, wave, baseFighter.id),
+    onCameraModeChange: syncCameraButton
   }, { bossRush: bossRushMode });
   activeGame = game;
   game.setUnlimitedSpecial(freePlayMode);
@@ -652,6 +664,10 @@ function startGame() {
   document.querySelector<HTMLButtonElement>('#ultimate-btn')?.addEventListener('pointerdown', (event) => {
     event.preventDefault();
     game.action('ultimate');
+  });
+
+  document.querySelector<HTMLButtonElement>('#camera-view-btn')?.addEventListener('click', () => {
+    game.toggleCameraView();
   });
 
   const block = document.querySelector<HTMLButtonElement>('#block-btn')!;
