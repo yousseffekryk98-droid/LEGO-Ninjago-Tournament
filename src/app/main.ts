@@ -205,6 +205,7 @@ function showHome() {
   bossRushMode = false;
   const selected = findCharacter(save.selected);
   const selectedIdentity = getCharacterIdentity(selected);
+  const selectedDesign = getCharacterDesigns(selected.id).find((design) => design.id === getSelectedCharacterDesignId(selected.id)) ?? getCharacterDesigns(selected.id)[0];
   const level = fighterLevel(selected.id);
   app.innerHTML = `
     <main class="menu-screen">
@@ -218,7 +219,7 @@ function showHome() {
         <div class="selected-fighter">
           <span class="fighter-dot" style="--fighter:#${selected.color.toString(16).padStart(6, '0')}"></span>
           <div>
-            <small>SELECTED FIGHTER · LEVEL ${level}</small>
+            <small>SELECTED FIGHTER · LEVEL ${level} · ${selectedDesign.shortLabel}</small>
             <b class="fighter-primary-name">${selectedIdentity.name}</b>
             ${selectedIdentity.variant ? `<span class="fighter-variant">${selectedIdentity.variant}</span>` : ''}
             <em>${selected.element} · ${selected.style} · ${selected.special.replace('-', ' ')}</em>
@@ -405,7 +406,7 @@ function showRoster() {
           ${unlocked ? `<div class="xp-line"><i style="width:${progress.percent}%"></i></div><em>${progress.level >= 5 ? 'MAX POTENTIAL' : `${progress.current}/${progress.target} XP`}</em><small class="upgrade-copy">${nextUpgradeCopy(fighter.id)}</small>` : ''}
         </div>
         ${unlocked
-          ? `<div class="fighter-card-actions"><button class="mini-button select-btn" data-select="${fighter.id}">${selected ? 'SELECTED' : 'SELECT'}</button><button class="mini-button upgrade-btn" data-upgrade="${fighter.id}" ${progress.level >= 5 || !canUpgrade ? 'disabled' : ''}>${progress.level >= 5 ? 'MAX LEVEL' : `UPGRADE ◉ ${formatStuds(upgradeCost)}`}</button></div>`
+          ? `<div class="fighter-card-actions"><button class="mini-button select-btn" data-select="${fighter.id}">${selected ? 'SELECTED' : 'SELECT'}</button><button class="mini-button fighter-design-btn" data-design-preview="${fighter.id}">DESIGNS ${fighterDesigns.length}</button><button class="mini-button upgrade-btn" data-upgrade="${fighter.id}" ${progress.level >= 5 || !canUpgrade ? 'disabled' : ''}>${progress.level >= 5 ? 'MAX LEVEL' : `UPGRADE ◉ ${formatStuds(upgradeCost)}`}</button></div>`
           : `<button class="mini-button unlock-btn" data-unlock="${fighter.id}" ${canBuy ? '' : 'disabled'}>◉ ${formatStuds(fighter.cost)}</button>`}
       </article>`;
   }).join('');
@@ -517,6 +518,14 @@ function showRoster() {
       const fighter = findCharacter(button.dataset.preview!);
       setPreview(upgradedCharacter(fighter));
       document.querySelector('.character-showcase')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-design-preview]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const fighter = findCharacter(button.dataset.designPreview!);
+      setPreview(upgradedCharacter(fighter));
+      document.querySelector('.character-showcase')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   });
 
