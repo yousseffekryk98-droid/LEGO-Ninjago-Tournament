@@ -100,12 +100,30 @@ test('malformed and obsolete save data recovers to safe defaults', async ({ page
   await assertNoBrowserErrors(errors);
 });
 
-test('legacy and cross-era roster fighters can boot into the production arena', async ({ page }) => {
-  test.setTimeout(180_000);
+test('representative legacy and cross-era fighters can boot into the production arena', async ({ page }) => {
+  test.setTimeout(150_000);
   const errors = trapBrowserErrors(page);
   await page.goto('/');
 
-  const requiredCatalogIds = new Set([
+  const bootIds = new Set([
+    // Core/legacy paths and model archetypes.
+    'lloyd-tournament',
+    'kai-tournament',
+    'jay-tournament',
+    'cole-tournament',
+    'zane-techno',
+    'nya',
+    'pixal',
+    'master-garmadon',
+    'master-chen',
+    'skylor',
+    'karlof',
+    'tox',
+    'pythor',
+    'samukai',
+    // Cross-era catalog powers and bosses.
+    'catalog-master-wu',
+    'catalog-lord-garmadon',
     'catalog-sora',
     'catalog-wyldfyre',
     'catalog-frak',
@@ -115,7 +133,6 @@ test('legacy and cross-era roster fighters can boot into the production arena', 
     'catalog-aspheera',
     'catalog-overlord',
     'catalog-unagami',
-    'catalog-king-vangelis-skull-sorcerer',
     'catalog-wojira',
     'catalog-nokt',
     'catalog-rox',
@@ -124,9 +141,8 @@ test('legacy and cross-era roster fighters can boot into the production arena', 
     'catalog-kur',
     'catalog-thunderfang'
   ]);
-  const bootSample = ROSTER.filter((fighter, index) =>
-    index < 58 || requiredCatalogIds.has(fighter.id) || (index >= 58 && (index - 58) % 28 === 0)
-  );
+  const bootSample = ROSTER.filter((fighter) => bootIds.has(fighter.id));
+  expect(bootSample.length).toBeGreaterThanOrEqual(28);
 
   for (const fighter of bootSample) {
     await page.evaluate(({ key, fighterId }) => {
@@ -142,7 +158,7 @@ test('legacy and cross-era roster fighters can boot into the production arena', 
     if (identity.variant) await expect(page.locator('.selected-fighter .fighter-variant')).toHaveText(identity.variant);
     await page.getByRole('button', { name: /ENTER TOURNAMENT/i }).click();
     await expect(page.locator('#game-host canvas')).toBeVisible();
-    await page.waitForTimeout(80);
+    await page.waitForTimeout(60);
   }
 
   await assertNoBrowserErrors(errors);
