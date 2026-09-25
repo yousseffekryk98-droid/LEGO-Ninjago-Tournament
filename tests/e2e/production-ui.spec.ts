@@ -52,7 +52,7 @@ test('tournament HUD exposes collectible stud economy and stage presentation', a
   await expect(page.locator('#stage-banner')).toBeAttached();
   await expect(page.locator('#boss-health')).toBeAttached();
   await expect(page.locator('#player-face-render')).toBeVisible();
-  await expect(page.locator('#player-face-render')).toHaveAttribute('src', /^data:image\/(svg\+xml|png)/);
+  await expect(page.locator('#player-face-render')).toHaveAttribute('src', '/assets/reference/lloyd-user-reference.webp');
 });
 
 
