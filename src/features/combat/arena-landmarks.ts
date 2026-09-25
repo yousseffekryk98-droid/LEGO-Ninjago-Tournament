@@ -5,6 +5,8 @@ export const CENTER_PILLAR_RADIUS = 1.62;
 export const CENTER_PILLAR_CLEARANCE = 0.78;
 export const CENTER_PILLAR_AUTHORED_ASSET_URL = '/assets/models/arena/chen-center-pillar.glb';
 export const ARENA_GATE_AUTHORED_ASSET_URL = '/assets/models/arena/chen-gate.glb';
+export const SERPENT_COLUMN_AUTHORED_ASSET_URL = '/assets/models/arena/serpent-column.glb';
+export const ARENA_GONG_AUTHORED_ASSET_URL = '/assets/models/arena/chen-gong.glb';
 
 const setShadow = (object: THREE.Object3D) => {
   object.traverse((child) => {
@@ -166,17 +168,24 @@ export function buildLegacyCenterPillar(scene: THREE.Scene) {
   return group;
 }
 
-export function attachAuthoredArenaGate(holder: THREE.Group, fallback: readonly THREE.Object3D[]) {
+function attachAuthoredArenaAsset(holder: THREE.Group, fallback: readonly THREE.Object3D[], url: string, name: string) {
   holder.userData.assetState = 'procedural-fallback';
   if (typeof window === 'undefined') return;
 
   holder.userData.assetState = 'loading-authored-glb';
-  void replaceWithStaticGlb({
-    holder,
-    fallback,
-    url: ARENA_GATE_AUTHORED_ASSET_URL,
-    name: 'arenaGateAuthoredGlb'
-  });
+  void replaceWithStaticGlb({ holder, fallback, url, name });
+}
+
+export function attachAuthoredArenaGate(holder: THREE.Group, fallback: readonly THREE.Object3D[]) {
+  attachAuthoredArenaAsset(holder, fallback, ARENA_GATE_AUTHORED_ASSET_URL, 'arenaGateAuthoredGlb');
+}
+
+export function attachAuthoredSerpentColumn(holder: THREE.Group, fallback: readonly THREE.Object3D[]) {
+  attachAuthoredArenaAsset(holder, fallback, SERPENT_COLUMN_AUTHORED_ASSET_URL, 'serpentColumnAuthoredGlb');
+}
+
+export function attachAuthoredArenaGong(holder: THREE.Group, fallback: readonly THREE.Object3D[]) {
+  attachAuthoredArenaAsset(holder, fallback, ARENA_GONG_AUTHORED_ASSET_URL, 'arenaGongAuthoredGlb');
 }
 
 export function resolveCenterPillarCollision(position: THREE.Vector3, padding = CENTER_PILLAR_CLEARANCE) {
