@@ -1759,9 +1759,24 @@ export class TournamentGame {
     for (const announcement of frame.announcements) this.callbacks.onMessage(announcement);
 
     for (const impact of frame.impacts) {
+      const hazardElement = impact.hazardKind === 'fire-jet'
+        ? getElementCombatTheme('Fire')
+        : impact.hazardKind === 'poison'
+          ? getElementCombatTheme('Poison')
+          : null;
+
       if (impact.targetId === 'player') {
-        if (impact.lethal) this.triggerPitFall();
-        else this.damagePlayer(0.72);
+        if (impact.lethal) {
+          this.triggerPitFall();
+        } else {
+          const damage = impact.hazardKind === 'fire-jet'
+            ? 1.0
+            : impact.hazardKind === 'poison'
+              ? 0.45
+              : 0.72;
+          this.damagePlayer(damage);
+          if (hazardElement) this.elementVfx.spawnImpact(hazardElement, this.player.position.clone().add(new THREE.Vector3(0, 0.45, 0)));
+        }
         continue;
       }
 
@@ -1771,7 +1786,14 @@ export class TournamentGame {
         this.defeatEnemy(enemy);
         this.callbacks.onMessage('Arena pit KO! An enemy fell through the floor.');
       } else {
-        this.hitEnemy(enemy, 42 + this.wave * 1.8, 4.2, true);
+        const damage = impact.hazardKind === 'fire-jet'
+          ? 58 + this.wave * 2.0
+          : impact.hazardKind === 'poison'
+            ? 28 + this.wave * 1.2
+            : 42 + this.wave * 1.8;
+        const knockback = impact.hazardKind === 'fire-jet' ? 5.1 : impact.hazardKind === 'poison' ? 2.0 : 4.2;
+        this.hitEnemy(enemy, damage, knockback, true);
+        if (hazardElement) this.elementVfx.spawnImpact(hazardElement, enemy.mesh.position.clone().add(new THREE.Vector3(0, 0.45, 0)));
       }
     }
   }
