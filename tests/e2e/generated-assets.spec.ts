@@ -135,7 +135,7 @@ test('high-fidelity hero GLBs include faces hair and outfit-specific detail', as
     'lloyd-tournament': [
       'leftEye', 'rightEye', 'leftBrow', 'rightBrow',
       'hairMould61183', 'bandanaMould15619',
-      'tournamentSash', 'powerMedallionDisk',
+      'tournamentSash', 'powerMedallionDisk', 'backPowerEmblemRing',
       'leftArmMould3818', 'rightArmMould3819',
       'leftHandMould3820', 'rightHandMould3820'
     ],
@@ -156,6 +156,11 @@ test('high-fidelity hero GLBs include faces hair and outfit-specific detail', as
     const names = new Set(json.nodes.map((node: { name?: string }) => node.name));
     for (const part of required) expect(names.has(part), `${id} missing ${part}`).toBeTruthy();
     expect(json.nodes.length, id).toBeGreaterThan(35);
+    if (id === 'lloyd-tournament') {
+      for (const inaccurateLegacyPart of ['leftShoulderGold', 'rightShoulderGold', 'energyBlade', 'backSwordBlade', 'mouth', 'hairLock0']) {
+        expect(names.has(inaccurateLegacyPart), `Lloyd should not include legacy placeholder ${inaccurateLegacyPart}`).toBeFalsy();
+      }
+    }
     expect(json.materials.map((material: { name?: string }) => material.name), id).toEqual(
       expect.arrayContaining(materialRequirements[id])
     );
