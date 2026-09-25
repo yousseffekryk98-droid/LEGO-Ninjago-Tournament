@@ -11,6 +11,7 @@ import {
   getCharacterReferenceImage,
   getElementCombatTheme,
   getCachedCharacterPortrait,
+  getUserCharacterPortrait,
   getCharacterSvgIcon,
   getBossRushRoster,
   renderCharacterPortraits,
@@ -291,6 +292,8 @@ function showBossPath() {
   const allNodes = challengers.map((fighter, index) => {
     const identity = getCharacterIdentity(fighter);
     const reference = getCharacterReferenceImage(fighter);
+    const suppliedLook = getUserCharacterPortrait(fighter.id);
+    const showRemoteReference = reference && !suppliedLook;
     return `
       <span class="boss-path-mini ${index === 0 ? 'current' : ''}" data-gauntlet-order="${index + 1}" title="${identity.name} · ${identity.variant ?? fighter.element}" style="--node-color:#${fighter.color.toString(16).padStart(6, '0')}">
         <img src="${getCachedCharacterPortrait(fighter.id) ?? getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />
@@ -377,12 +380,13 @@ function showRoster() {
     const reference = getCharacterReferenceImage(fighter);
     return `
       <article class="fighter-card ${selected ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-id="${fighter.id}" data-search="${characterSearchText(fighter)}">
-        <button class="fighter-avatar preview-character-btn ${reference ? 'has-reference' : ''}" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
+        <button class="fighter-avatar preview-character-btn ${suppliedLook ? 'has-user-look' : showRemoteReference ? 'has-reference' : ''}" type="button" data-preview="${fighter.id}" aria-label="View ${identity.name} ${identity.variant ?? ''} 3D model" style="--fighter:#${fighter.color.toString(16).padStart(6, '0')};--accent:#${fighter.accent.toString(16).padStart(6, '0')}">
           ${getCachedCharacterPortrait(fighter.id)
             ? `<img class="fighter-avatar-render" src="${getCachedCharacterPortrait(fighter.id)}" alt="" aria-hidden="true" />`
             : `<img class="fighter-avatar-svg" src="${getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />`}
-          ${reference ? `<img class="fighter-avatar-real" data-reference-image src="${reference.imageUrl}" alt="" aria-hidden="true" referrerpolicy="no-referrer" loading="lazy" /><span class="fighter-reference-badge">LEGO REF</span>` : ''}
-          <span class="fighter-avatar-fallback"></span><i class="fighter-avatar-body"></i><small>${reference ? 'REF' : '3D'}</small>
+          ${showRemoteReference ? `<img class="fighter-avatar-real" data-reference-image src="${reference.imageUrl}" alt="" aria-hidden="true" referrerpolicy="no-referrer" loading="lazy" /><span class="fighter-reference-badge">LEGO REF</span>` : ''}
+          ${suppliedLook ? '<span class="fighter-reference-badge user-look-badge">GAME LOOK</span>' : ''}
+          <span class="fighter-avatar-fallback"></span><i class="fighter-avatar-body"></i><small>${suppliedLook ? 'LOOK' : reference ? 'REF' : '3D'}</small>
         </button>
         <div class="fighter-copy">
           <h3><span class="fighter-primary-name">${identity.name}</span> <small>LV ${progress.level}</small></h3>
