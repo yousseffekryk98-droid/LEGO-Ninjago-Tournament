@@ -224,6 +224,86 @@ export function getCharacterModelProfile(character: CharacterDef): CharacterMode
       faceColor: 0xd7c8b5,
       eyeColor: 0x28292d,
       identityStyle: 'ash'
+    },
+    'jacob-pevsner': {
+      archetype: 'elemental',
+      weapon: 'staff',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x2e1c18,
+      identityStyle: 'jacob'
+    },
+    bolobo: {
+      archetype: 'elemental',
+      weapon: 'staff',
+      hood: false,
+      shoulderArmor: false,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x24341c,
+      identityStyle: 'bolobo'
+    },
+    gravis: {
+      archetype: 'elemental',
+      weapon: 'staff',
+      hood: false,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xf2c64f,
+      eyeColor: 0x2b1d4a,
+      identityStyle: 'gravis'
+    },
+    kapau: {
+      archetype: 'villain',
+      weapon: 'katana',
+      hood: false,
+      shoulderArmor: true,
+      armorStyle: 'heavy',
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xe6b84b,
+      eyeColor: 0x24191b,
+      identityStyle: 'kapau'
+    },
+    chope: {
+      archetype: 'villain',
+      weapon: 'katana',
+      hood: false,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0xe5b64a,
+      eyeColor: 0x24191b,
+      identityStyle: 'chope'
+    },
+    krait: {
+      archetype: 'serpentine',
+      weapon: 'claws',
+      hood: false,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0x4f3650,
+      eyeColor: 0xf4df55,
+      serpentineTail: true,
+      identityStyle: 'krait'
+    },
+    sleven: {
+      archetype: 'serpentine',
+      weapon: 'claws',
+      hood: false,
+      shoulderArmor: true,
+      extraArms: false,
+      metallic: false,
+      faceColor: 0x5c3a55,
+      eyeColor: 0xffcf62,
+      serpentineTail: true,
+      identityStyle: 'sleven'
     }
   };
 
