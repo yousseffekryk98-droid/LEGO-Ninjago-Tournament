@@ -26,6 +26,7 @@ export interface GameCallbacks {
   onHud: (state: HudState) => void;
   onMessage: (message: string) => void;
   onGameOver: (score: number, wave: number) => void;
+  onCameraModeChange?: (mode: CameraMode) => void;
 }
 
 export interface TournamentGameOptions {
@@ -34,6 +35,7 @@ export interface TournamentGameOptions {
 
 type AttackAction = 'attack' | 'punch' | 'kick';
 type Action = AttackAction | 'jump' | 'grab' | 'special' | 'ultimate';
+export type CameraMode = 'classic' | 'overhead';
 type EnemyKind = 'melee' | 'heavy' | 'ranged' | 'boss';
 type ProjectileEffect = 'damage' | 'freeze';
 
@@ -103,9 +105,10 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 
 export class TournamentGame {
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+  private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 150);
   private cameraBasePosition = new THREE.Vector3(19.5, 16.5, 21.5);
   private cameraTarget = new THREE.Vector3(0, 0.85, -0.35);
+  private cameraMode: CameraMode = 'classic';
   private cameraShakeTime = 0;
   private cameraShakeStrength = 0;
   private hitStopTime = 0;
@@ -233,6 +236,13 @@ export class TournamentGame {
     }
   }
 
+  toggleCameraView() {
+    this.cameraMode = this.cameraMode === 'classic' ? 'overhead' : 'classic';
+    this.callbacks.onMessage(this.cameraMode === 'overhead' ? 'Overhead tactical view' : 'Classic tournament view');
+    this.callbacks.onCameraModeChange?.(this.cameraMode);
+    return this.cameraMode;
+  }
+
   dodge(x = 0, y = 0) {
     if (!this.grounded || this.spinTime > 0 || this.dodgeTime > 0 || this.frozenTime > 0) return;
     const direction = new THREE.Vector3(x, 0, y);
@@ -302,6 +312,10 @@ export class TournamentGame {
     if (event.code === this.keyBindings.ultimate) this.action('ultimate');
     if (event.code === this.keyBindings.dodge) this.dodge(this.input.x, this.input.y);
     if (event.code === this.keyBindings.block) this.input.block = true;
+    if (event.code === 'KeyV') {
+      event.preventDefault();
+      this.toggleCameraView();
+    }
   };
 
   private keyUp = (event: KeyboardEvent) => {
@@ -330,11 +344,18 @@ export class TournamentGame {
   };
 
   private updateCameraFeedback(dt: number) {
-    // Follow the player across the expanded arena instead of locking the view to its centre.
-    // The target is smoothed so combat remains readable while the player can explore the larger floor.
-    const desiredTarget = new THREE.Vector3(this.player.position.x * 0.82, 0.85, this.player.position.z * 0.82 - 0.35);
-    this.cameraTarget.lerp(desiredTarget, 1 - Math.exp(-dt * 4.5));
-    this.camera.position.copy(this.cameraBasePosition).add(new THREE.Vector3(this.cameraTarget.x, 0, this.cameraTarget.z + 0.35));
+    // Both views follow the player over the full expanded arena.
+    const desiredTarget = new THREE.Vector3(this.player.position.x, 0.85, this.player.position.z - 0.35);
+    const followAlpha = dt <= 0 ? 1 : 1 - Math.exp(-dt * 6.5);
+    this.cameraTarget.lerp(desiredTarget, followAlpha);
+
+    const desiredPosition = this.cameraMode === 'overhead'
+      ? this.cameraTarget.clone().add(new THREE.Vector3(0.01, 38, 0.01))
+      : this.cameraTarget.clone().add(this.cameraBasePosition);
+    const cameraAlpha = dt <= 0 ? 1 : 1 - Math.exp(-dt * 8.0);
+    this.camera.position.lerp(desiredPosition, cameraAlpha);
+    this.camera.up.set(0, this.cameraMode === 'overhead' ? 0 : 1, this.cameraMode === 'overhead' ? -1 : 0);
+
     if (this.cameraShakeTime > 0) {
       this.cameraShakeTime = Math.max(0, this.cameraShakeTime - dt);
       const fade = Math.min(1, this.cameraShakeTime / 0.1);
