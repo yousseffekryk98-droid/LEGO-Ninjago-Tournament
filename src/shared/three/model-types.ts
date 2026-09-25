@@ -19,6 +19,21 @@ export type FighterWeapon =
   | 'claws'
   | 'none';
 
+export type FighterIdentityStyle =
+  | 'chen'
+  | 'clouse'
+  | 'eyezor'
+  | 'zugu'
+  | 'karlof'
+  | 'griffin'
+  | 'shade'
+  | 'neuro'
+  | 'paleman'
+  | 'tox'
+  | 'skylor'
+  | 'chamille'
+  | 'ash';
+
 export interface FighterModelProfile {
   archetype: FighterArchetype;
   weapon: FighterWeapon;
@@ -33,4 +48,5 @@ export interface FighterModelProfile {
   truePotentialGlow?: number;
   serpentineTail?: boolean;
   battleDamaged?: boolean;
+  identityStyle?: FighterIdentityStyle;
 }
