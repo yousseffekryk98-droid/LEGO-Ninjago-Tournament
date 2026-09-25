@@ -32,8 +32,8 @@ function keepProceduralChildVisible(object: THREE.Object3D) {
     || object.userData.truePotential === true;
 }
 
-export async function attachAuthoredCharacterBody(holder: THREE.Group, characterId: string) {
-  const url = AUTHORED_CHARACTER_ASSETS[characterId];
+export async function attachAuthoredCharacterBody(holder: THREE.Group, characterId: string, assetUrl?: string, designId?: string) {
+  const url = assetUrl ?? AUTHORED_CHARACTER_ASSETS[characterId];
   if (!url || typeof window === 'undefined') return null;
 
   const fallbackStates = holder.children.map((object) => ({ object, visible: object.visible }));
@@ -69,6 +69,7 @@ export async function attachAuthoredCharacterBody(holder: THREE.Group, character
 
     holder.userData.characterAssetState = 'authored-glb';
     holder.userData.characterAssetUrl = url;
+    holder.userData.characterDesignId = designId ?? 'default-authored';
     return authored;
   } catch (error) {
     const partial = holder.getObjectByName('authoredCharacterBody');
