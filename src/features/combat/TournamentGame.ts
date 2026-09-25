@@ -59,6 +59,8 @@ interface Enemy {
   bossCharacter?: CharacterDef;
   bossSpinTime: number;
   bossSpinHitCooldown: number;
+  introTime: number;
+  introDuration: number;
   specialCount: number;
   hitFlash: number;
 }
@@ -1033,6 +1035,45 @@ export class TournamentGame {
       enemy.specialCooldown -= dt;
       enemy.bossSpinHitCooldown = Math.max(0, enemy.bossSpinHitCooldown - dt);
       enemy.hitFlash -= dt;
+
+      if (enemy.introTime > 0) {
+        enemy.introTime = Math.max(0, enemy.introTime - dt);
+        const progress = enemy.introDuration > 0
+          ? THREE.MathUtils.clamp(1 - enemy.introTime / enemy.introDuration, 0, 1)
+          : 1;
+        const eased = progress * progress * (3 - 2 * progress);
+        const baseScale = Number(enemy.mesh.userData.bossBaseScale ?? enemy.mesh.scale.x);
+        enemy.mesh.scale.setScalar(baseScale * (0.68 + eased * 0.32));
+        enemy.mesh.position.y = Math.sin(progress * Math.PI) * 0.42;
+        enemy.mesh.rotation.y += dt * (7.5 - eased * 5.2);
+
+        const aura = enemy.mesh.getObjectByName('bossEntranceAura');
+        if (aura) {
+          aura.visible = true;
+          aura.rotation.y += dt * 3.8;
+          const ring = aura.getObjectByName('bossEntranceRing');
+          if (ring instanceof THREE.Mesh && ring.material instanceof THREE.MeshBasicMaterial) {
+            ring.scale.setScalar(0.82 + eased * 0.52);
+            ring.material.opacity = Math.max(0, 0.62 * (1 - Math.max(0, progress - 0.68) / 0.32));
+          }
+          const beam = aura.getObjectByName('bossEntranceBeam');
+          if (beam instanceof THREE.Mesh && beam.material instanceof THREE.MeshBasicMaterial) {
+            beam.scale.y = 0.6 + Math.sin(progress * Math.PI) * 0.72;
+            beam.material.opacity = 0.1 + Math.sin(progress * Math.PI) * 0.2;
+          }
+          const light = aura.getObjectByName('bossEntranceLight');
+          if (light instanceof THREE.PointLight) light.intensity = 2.2 + Math.sin(progress * Math.PI) * 5.4;
+        }
+
+        if (enemy.introTime <= 0) {
+          enemy.mesh.position.y = 0;
+          enemy.mesh.scale.setScalar(baseScale);
+          if (aura) aura.visible = false;
+          this.addImpactFeedback(1.35, 0.025);
+        }
+        continue;
+      }
+
       if (enemy.hiddenTime > 0) {
         enemy.hiddenTime -= dt;
         if (enemy.hiddenTime <= 0) this.setEnemyOpacity(enemy, 1);
@@ -1530,6 +1571,53 @@ export class TournamentGame {
     }
 
     mesh.position.set(x, 0, z);
+    if (kind === 'boss') {
+      const baseScale = mesh.scale.x;
+      mesh.userData.bossBaseScale = baseScale;
+      mesh.scale.setScalar(baseScale * 0.68);
+
+      const entranceAura = new THREE.Group();
+      entranceAura.name = 'bossEntranceAura';
+      const color = bossCharacter?.color ?? colors.boss[0];
+      const accent = bossCharacter?.accent ?? colors.boss[1];
+
+      const floorRing = new THREE.Mesh(
+        new THREE.RingGeometry(1.35, 2.75, 64),
+        new THREE.MeshBasicMaterial({
+          color: accent,
+          transparent: true,
+          opacity: 0.62,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      floorRing.name = 'bossEntranceRing';
+      floorRing.rotation.x = -Math.PI / 2;
+      floorRing.position.y = 0.05;
+      entranceAura.add(floorRing);
+
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.4, 2.25, 5.6, 36, 1, true),
+        new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.16,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      beam.name = 'bossEntranceBeam';
+      beam.position.y = 2.45;
+      entranceAura.add(beam);
+
+      const light = new THREE.PointLight(accent, 5.2, 9.5, 2);
+      light.name = 'bossEntranceLight';
+      light.position.y = 2.1;
+      entranceAura.add(light);
+      mesh.add(entranceAura);
+    }
     this.scene.add(mesh);
     const waveScale = 1 + this.wave * 0.065;
     const bossBaseHp = bossCharacter ? 190 + bossCharacter.maxHealth * 20 : 230;
@@ -1549,6 +1637,8 @@ export class TournamentGame {
       bossCharacter,
       bossSpinTime: 0,
       bossSpinHitCooldown: 0,
+      introTime: kind === 'boss' ? 1.55 : 0,
+      introDuration: kind === 'boss' ? 1.55 : 0,
       specialCount: 0,
       hitFlash: 0
     };
