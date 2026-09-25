@@ -450,21 +450,33 @@ export class TournamentGame {
     } else if (this.spinTime > 0) {
       this.spinTime = Math.max(0, this.spinTime - dt);
       this.spinTick -= dt;
-      this.player.rotation.y += dt * 24;
-      this.invulnerable = Math.max(this.invulnerable, 0.14);
+      this.player.rotation.y += dt * 29;
+      this.invulnerable = Math.max(this.invulnerable, 0.16);
 
       if (move.lengthSq() > 0.01) {
-        const spinSpeed = this.character.speed * 0.78;
+        const spinSpeed = this.character.speed * 0.92;
         this.player.position.x += move.x * spinSpeed * dt;
         this.player.position.z += move.y * spinSpeed * dt;
       }
 
       this.updateSpinjitzuVfx(dt);
+
+      // The cyclone now has a readable suction zone before the damaging core.
+      // This makes Spinjitzu feel like a moving tornado instead of a circular melee hitbox.
+      for (const enemy of this.enemies) {
+        const pull = this.player.position.clone().sub(enemy.mesh.position).setY(0);
+        const distance = pull.length();
+        if (distance > 1.05 && distance < 8.4) {
+          const strength = (8.4 - distance) * 1.15 * dt;
+          enemy.knock.add(pull.normalize().multiplyScalar(strength));
+        }
+      }
+
       if (this.spinTick <= 0) {
-        this.spinTick = 0.12;
+        this.spinTick = 0.11;
         for (const enemy of [...this.enemies]) {
           const distance = enemy.mesh.position.distanceTo(this.player.position);
-          if (distance < 3.45) this.hitEnemy(enemy, this.character.damage * 0.82, 5.4, true);
+          if (distance < 4.45) this.hitEnemy(enemy, this.character.damage * 0.9, 6.6, true);
         }
       }
       if (this.spinTime <= 0) this.stopSpinjitzuVfx();
@@ -684,7 +696,7 @@ export class TournamentGame {
   private performSpecial() {
     if ((!this.unlimitedSpecial && this.special < 100) || this.spinTime > 0 || !this.grounded || this.dodgeTime > 0) return;
     this.special = this.unlimitedSpecial ? 100 : 0;
-    this.spinTime = 2.1;
+    this.spinTime = 2.65;
     this.spinTick = 0;
     this.startSpinjitzuVfx();
     this.callbacks.onMessage(`${this.character.element} Spinjitzu!`);
@@ -695,98 +707,117 @@ export class TournamentGame {
 
     const aura = new THREE.Group();
     aura.name = 'spinjitzuAura';
+    aura.userData.startedAt = this.elapsed;
+
+    const additive = (color: number, opacity: number) => new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
+    const innerCore = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.42, 1.52, 3.4, 32, 1, true),
+      additive(this.character.accent, 0.16)
+    );
+    innerCore.position.y = 1.45;
+    innerCore.userData.spinRate = 6.8;
+    aura.add(innerCore);
 
     const funnel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.58, 2.12, 3.05, 40, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: this.character.color,
-        transparent: true,
-        opacity: 0.2,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
+      new THREE.CylinderGeometry(0.72, 2.85, 3.75, 48, 1, true),
+      additive(this.character.color, 0.24)
     );
-    funnel.position.y = 1.32;
-    funnel.userData.spinRate = -3.5;
+    funnel.position.y = 1.58;
+    funnel.userData.spinRate = -4.2;
     aura.add(funnel);
 
-    for (let band = 0; band < 3; band++) {
+    for (let band = 0; band < 5; band++) {
       const points: THREE.Vector3[] = [];
-      for (let step = 0; step <= 34; step++) {
-        const t = step / 34;
-        const radius = 0.58 + t * 1.42;
-        const angle = t * Math.PI * 5.4 + band * (Math.PI * 2 / 3);
+      for (let step = 0; step <= 42; step++) {
+        const t = step / 42;
+        const radius = 0.66 + t * 1.95;
+        const angle = t * Math.PI * 6.2 + band * (Math.PI * 2 / 5);
         points.push(new THREE.Vector3(
           Math.cos(angle) * radius,
-          0.12 + t * 2.85,
+          0.12 + t * 3.55,
           Math.sin(angle) * radius
         ));
       }
       const spiral = new THREE.Mesh(
-        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 54, 0.045, 7, false),
-        new THREE.MeshBasicMaterial({
-          color: band === 1 ? this.character.accent : this.character.color,
-          transparent: true,
-          opacity: band === 1 ? 0.86 : 0.68,
-          depthWrite: false
-        })
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 68, 0.048 + band * 0.003, 7, false),
+        additive(band % 2 === 0 ? this.character.color : this.character.accent, band === 2 ? 0.92 : 0.7)
       );
-      spiral.userData.spinRate = band % 2 ? 5.6 : -4.8;
+      spiral.userData.spinRate = band % 2 ? 6.4 : -5.6;
       aura.add(spiral);
     }
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.82 + i * 0.23, 0.045 + i * 0.006, 8, 44),
-        new THREE.MeshBasicMaterial({
-          color: i % 2 === 0 ? this.character.accent : this.character.color,
-          transparent: true,
-          opacity: 0.72 - i * 0.08,
-          depthWrite: false
-        })
+        new THREE.TorusGeometry(0.92 + i * 0.255, 0.046 + i * 0.006, 8, 48),
+        additive(i % 2 === 0 ? this.character.accent : this.character.color, 0.78 - i * 0.065)
       );
       ring.rotation.x = Math.PI / 2;
-      ring.rotation.z = i * 0.37;
-      ring.position.y = 0.26 + i * 0.43;
-      ring.userData.spinRate = i % 2 === 0 ? 5.2 : -5.2;
+      ring.rotation.z = i * 0.31;
+      ring.position.y = 0.22 + i * 0.43;
+      ring.userData.spinRate = i % 2 === 0 ? 6.1 : -6.6;
       aura.add(ring);
     }
 
-    for (let i = 0; i < 18; i++) {
+    // Orbiting energy/debris gives the cyclone depth from both classic and overhead cameras.
+    for (let i = 0; i < 30; i++) {
       const shard = new THREE.Mesh(
-        new THREE.BoxGeometry(0.08, 0.08, 0.34 + (i % 3) * 0.08),
-        new THREE.MeshBasicMaterial({
-          color: i % 2 === 0 ? this.character.color : this.character.accent,
-          transparent: true,
-          opacity: 0.78,
-          depthWrite: false
-        })
+        i % 3 === 0
+          ? new THREE.IcosahedronGeometry(0.085 + (i % 4) * 0.012, 0)
+          : new THREE.BoxGeometry(0.07, 0.09, 0.3 + (i % 4) * 0.07),
+        additive(i % 2 === 0 ? this.character.color : this.character.accent, 0.82)
       );
-      const angle = (i / 18) * Math.PI * 2;
-      const radius = 0.9 + (i % 5) * 0.2;
-      shard.position.set(Math.cos(angle) * radius, 0.22 + (i % 7) * 0.4, Math.sin(angle) * radius);
-      shard.rotation.set(angle * 0.35, angle, angle * 0.6);
-      shard.userData.spinRate = i % 2 === 0 ? 7.2 : -6.2;
+      shard.userData.orbitRadius = 0.95 + (i % 7) * 0.27;
+      shard.userData.orbitSpeed = (i % 2 === 0 ? 1 : -1) * (5.8 + (i % 5) * 0.55);
+      shard.userData.orbitAngle = (i / 30) * Math.PI * 2;
+      shard.userData.baseY = 0.2 + (i % 10) * 0.34;
+      shard.userData.bobSpeed = 8 + (i % 6);
+      shard.position.set(
+        Math.cos(shard.userData.orbitAngle) * shard.userData.orbitRadius,
+        shard.userData.baseY,
+        Math.sin(shard.userData.orbitAngle) * shard.userData.orbitRadius
+      );
       aura.add(shard);
     }
 
     const dust = new THREE.Mesh(
-      new THREE.RingGeometry(0.9, 2.35, 56),
-      new THREE.MeshBasicMaterial({
-        color: this.character.accent,
-        transparent: true,
-        opacity: 0.22,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
+      new THREE.RingGeometry(1.0, 3.2, 64),
+      additive(this.character.accent, 0.24)
     );
     dust.rotation.x = -Math.PI / 2;
     dust.position.y = 0.05;
-    dust.userData.spinRate = 2.5;
+    dust.userData.spinRate = 3.2;
     aura.add(dust);
 
-    const glow = new THREE.PointLight(this.character.color, 3.6, 7.5, 2);
-    glow.position.y = 1.35;
+    const activationWave = new THREE.Mesh(
+      new THREE.RingGeometry(0.76, 1.08, 64),
+      additive(this.character.accent, 0.72)
+    );
+    activationWave.rotation.x = -Math.PI / 2;
+    activationWave.position.y = 0.065;
+    activationWave.scale.setScalar(0.22);
+    activationWave.userData.expandRing = true;
+    activationWave.userData.baseOpacity = 0.72;
+    aura.add(activationWave);
+
+    const crown = new THREE.Mesh(
+      new THREE.TorusGeometry(2.35, 0.08, 8, 54),
+      additive(this.character.color, 0.56)
+    );
+    crown.rotation.x = Math.PI / 2;
+    crown.position.y = 3.55;
+    crown.userData.spinRate = -7.2;
+    aura.add(crown);
+
+    const glow = new THREE.PointLight(this.character.color, 4.8, 10.5, 2);
+    glow.position.y = 1.6;
     aura.add(glow);
 
     aura.position.copy(this.player.position);
@@ -797,11 +828,34 @@ export class TournamentGame {
   private updateSpinjitzuVfx(dt: number) {
     if (!this.spinAura) return;
     this.spinAura.position.copy(this.player.position);
-    this.spinAura.rotation.y += dt * 10.8;
-    const pulse = 1 + Math.sin(this.elapsed * 22) * 0.065;
+    this.spinAura.rotation.y += dt * 12.8;
+    const pulse = 1 + Math.sin(this.elapsed * 24) * 0.07;
     this.spinAura.scale.setScalar(pulse);
 
+    const activationT = clamp((2.65 - this.spinTime) / 0.48, 0, 1);
     this.spinAura.children.forEach((child, index) => {
+      const orbitRadius = Number(child.userData.orbitRadius ?? 0);
+      if (orbitRadius > 0) {
+        const angle = Number(child.userData.orbitAngle ?? 0) + this.elapsed * Number(child.userData.orbitSpeed ?? 6);
+        const baseY = Number(child.userData.baseY ?? 0.5);
+        const bobSpeed = Number(child.userData.bobSpeed ?? 9);
+        child.position.set(
+          Math.cos(angle) * orbitRadius,
+          baseY + Math.sin(this.elapsed * bobSpeed + index) * 0.16,
+          Math.sin(angle) * orbitRadius
+        );
+        child.rotation.x += dt * 9;
+        child.rotation.z += dt * 12;
+        return;
+      }
+
+      if (child.userData.expandRing && child instanceof THREE.Mesh) {
+        child.scale.setScalar(0.22 + activationT * 5.1);
+        const material = child.material as THREE.MeshBasicMaterial;
+        material.opacity = Number(child.userData.baseOpacity ?? 0.72) * (1 - activationT);
+        return;
+      }
+
       const rate = typeof child.userData.spinRate === 'number'
         ? child.userData.spinRate as number
         : (index % 2 === 0 ? 4.5 : -4.5);
@@ -908,8 +962,8 @@ export class TournamentGame {
         enemy.bossSpinTime = Math.max(0, enemy.bossSpinTime - dt);
         const toPlayer = playerPos.clone().sub(enemy.mesh.position).setY(0);
         const distance = toPlayer.length();
-        enemy.mesh.rotation.y += dt * 24;
-        if (distance > 0.45) enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * 1.42 * dt);
+        enemy.mesh.rotation.y += dt * 27;
+        if (distance > 0.45) enemy.mesh.position.addScaledVector(toPlayer.normalize(), enemy.speed * 1.55 * dt);
 
         const aura = enemy.mesh.getObjectByName('bossSpinjitzuAura') as THREE.Group | undefined;
         if (aura) {
@@ -920,8 +974,8 @@ export class TournamentGame {
           aura.scale.setScalar(pulse);
         }
 
-        if (distance < 2.7 && enemy.bossSpinHitCooldown <= 0) {
-          this.damagePlayer(enemy.damage * 0.82);
+        if (distance < 3.45 && enemy.bossSpinHitCooldown <= 0) {
+          this.damagePlayer(enemy.damage * 0.78);
           enemy.bossSpinHitCooldown = 0.3;
         }
 
@@ -1139,7 +1193,7 @@ export class TournamentGame {
   }
 
   private startBossSpinjitzu(enemy: Enemy) {
-    enemy.bossSpinTime = 1.7;
+    enemy.bossSpinTime = 2.05;
     enemy.bossSpinHitCooldown = 0;
     enemy.specialCooldown = 5.5 + Math.random() * 2;
     let aura = enemy.mesh.getObjectByName('bossSpinjitzuAura') as THREE.Group | undefined;
@@ -1147,16 +1201,49 @@ export class TournamentGame {
       aura = new THREE.Group();
       aura.name = 'bossSpinjitzuAura';
       const color = enemy.bossCharacter?.color ?? 0xd7a841;
-      for (let i = 0; i < 4; i++) {
+      const accent = enemy.bossCharacter?.accent ?? color;
+      const addMat = (tone: number, opacity: number) => new THREE.MeshBasicMaterial({
+        color: tone,
+        transparent: true,
+        opacity,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending
+      });
+
+      const funnel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.54, 1.72, 2.7, 32, 1, true),
+        addMat(color, 0.2)
+      );
+      funnel.position.y = 1.18;
+      aura.add(funnel);
+
+      for (let i = 0; i < 6; i++) {
         const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(0.62 + i * 0.18, 0.055 + i * 0.012, 8, 34),
-          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.72 - i * 0.1, depthWrite: false })
+          new THREE.TorusGeometry(0.66 + i * 0.19, 0.05 + i * 0.009, 8, 38),
+          addMat(i % 2 === 0 ? color : accent, 0.78 - i * 0.085)
         );
-        ring.position.y = 0.7 + i * 0.32;
-        ring.rotation.x = Math.PI / 2 + i * 0.16;
-        ring.rotation.z = i * 0.65;
+        ring.position.y = 0.48 + i * 0.34;
+        ring.rotation.x = Math.PI / 2 + i * 0.13;
+        ring.rotation.z = i * 0.58;
         aura.add(ring);
       }
+
+      for (let i = 0; i < 12; i++) {
+        const shard = new THREE.Mesh(
+          new THREE.BoxGeometry(0.06, 0.08, 0.24 + (i % 3) * 0.06),
+          addMat(i % 2 === 0 ? color : accent, 0.74)
+        );
+        const angle = i / 12 * Math.PI * 2;
+        const radius = 0.75 + (i % 4) * 0.19;
+        shard.position.set(Math.cos(angle) * radius, 0.35 + (i % 6) * 0.34, Math.sin(angle) * radius);
+        shard.rotation.set(angle, angle * 0.5, -angle);
+        aura.add(shard);
+      }
+
+      const light = new THREE.PointLight(color, 2.8, 6.5, 2);
+      light.position.y = 1.25;
+      aura.add(light);
       enemy.mesh.add(aura);
     }
     aura.visible = true;
