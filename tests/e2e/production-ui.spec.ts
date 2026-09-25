@@ -51,6 +51,8 @@ test('tournament HUD exposes collectible stud economy and stage presentation', a
   await expect(page.locator('.stud-copy')).toContainText('BANK');
   await expect(page.locator('#stage-banner')).toBeAttached();
   await expect(page.locator('#boss-health')).toBeAttached();
+  await expect(page.locator('#player-face-render')).toBeVisible();
+  await expect(page.locator('#player-face-render')).toHaveAttribute('src', /^data:image\/(svg\+xml|png)/);
 });
 
 
@@ -207,10 +209,17 @@ test('selected fighter element appears on the kick action', async ({ page }) => 
 });
 
 
-test('elemental master gauntlet starts with a roster fighter boss', async ({ page }) => {
+test('elemental master gauntlet shows the boss path before starting the full-roster run', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /ELEMENTAL MASTER GAUNTLET/i }).click();
 
+  await expect(page.locator('.boss-path-screen')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Elemental Master Gauntlet/i })).toBeVisible();
+  await expect(page.locator('[data-boss-node]').first()).toHaveClass(/current/);
+  await expect(page.locator('.boss-path-mini')).toHaveCount(ROSTER.length - 1);
+  await expect(page.locator('.boss-path-footer')).toContainText(`${ROSTER.length - 1} CHALLENGERS`);
+
+  await page.getByRole('button', { name: /START GAUNTLET/i }).click();
   await expect(page.locator('#game-host canvas')).toBeVisible();
   await expect(page.locator('.game-screen')).toHaveClass(/boss-rush-mode/);
   await expect(page.locator('#wave-label')).toContainText('CHALLENGER 1', { timeout: 6000 });

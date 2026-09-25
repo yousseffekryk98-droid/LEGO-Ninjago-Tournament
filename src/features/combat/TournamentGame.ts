@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getElementCombatTheme, ROSTER, type CharacterDef } from '../characters';
+import { getBossRushRoster, getElementCombatTheme, type CharacterDef } from '../characters';
 import { createCharacterModel } from '../characters/model';
 import { createGenericFighterModel } from '../../shared/three/minifigure-model';
 import { getKeyBindings, type KeyBindings } from '../controls';
@@ -413,7 +413,7 @@ export class TournamentGame {
     this.updateArenaHazards(dt);
 
     if (this.enemies.length === 0 && this.intermission <= 0) {
-      const bossRushTarget = ROSTER.filter((fighter) => fighter.id !== this.character.id).length;
+      const bossRushTarget = getBossRushRoster(this.character.id).length;
       if (this.bossRush && this.wave >= bossRushTarget) {
         if (!this.victorySent) {
           this.victorySent = true;
@@ -1434,7 +1434,7 @@ export class TournamentGame {
       // The legacy tournament repeatedly pits the player against named Elemental Masters.
       // Boss Rush turns every round into the next roster fighter, while normal Tournament
       // keeps regular enemy waves between challengers.
-      const bossPool = ROSTER.filter((fighter) => fighter.id !== this.character.id);
+      const bossPool = getBossRushRoster(this.character.id);
       const bossRound = this.bossRush ? this.wave - 1 : Math.floor(this.wave / 5) - 1;
       const bossCharacter = bossPool[((bossRound % bossPool.length) + bossPool.length) % bossPool.length];
       this.enemies.push(this.createEnemy('boss', 0, -22.0, bossCharacter.name, bossCharacter));

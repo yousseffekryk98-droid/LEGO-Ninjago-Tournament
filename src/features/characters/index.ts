@@ -12,3 +12,5 @@ export * from './portraits';
 export * from './expanded-catalog';
 
 export * from './icons';
+
+export * from './boss-rush-order';

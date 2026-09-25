@@ -11,6 +11,7 @@ import {
   getElementCombatTheme,
   getCachedCharacterPortrait,
   getCharacterSvgIcon,
+  getBossRushRoster,
   renderCharacterPortraits,
   type CharacterDef
 } from '../features/characters';
@@ -239,12 +240,125 @@ function showHome() {
     </main>`;
 
   document.querySelector('#play-btn')?.addEventListener('click', startTournament);
-  document.querySelector('#boss-rush-btn')?.addEventListener('click', startBossRush);
+  document.querySelector('#boss-rush-btn')?.addEventListener('click', showBossPath);
   document.querySelector('#fighters-btn')?.addEventListener('click', showRoster);
   document.querySelector('#rewards-btn')?.addEventListener('click', showRewards);
   document.querySelector('#dojo-btn')?.addEventListener('click', showDojo);
   document.querySelector('#controls-btn')?.addEventListener('click', showControlsPanel);
   document.querySelector('#freeplay-btn')?.addEventListener('click', startFreePlay);
+}
+
+function showBossPath() {
+  cleanupGame();
+  freePlayMode = false;
+  bossRushMode = false;
+
+  const selected = findCharacter(save.selected);
+  const selectedIdentity = getCharacterIdentity(selected);
+  const challengers = getBossRushRoster(selected.id);
+  const tournamentNodes = challengers.slice(0, Math.min(20, challengers.length));
+  const guardIds = new Set(['kapau', 'chope', 'eyezor', 'zugu', 'krait', 'sleven']);
+  const guards = challengers.filter((fighter) => guardIds.has(fighter.id));
+
+  const routeNodes = tournamentNodes.map((fighter, index) => {
+    const identity = getCharacterIdentity(fighter);
+    const portrait = getCachedCharacterPortrait(fighter.id) ?? getCharacterSvgIcon(fighter);
+    const state = index === 0 ? 'current' : 'locked';
+    return `
+      <article class="boss-path-node ${state}" data-boss-node="${fighter.id}" style="--node-color:#${fighter.color.toString(16).padStart(6, '0')};--node-accent:#${fighter.accent.toString(16).padStart(6, '0')}">
+        <span class="boss-path-connector" aria-hidden="true"></span>
+        <div class="boss-path-medallion">
+          <img src="${portrait}" alt="" aria-hidden="true" />
+          <i class="boss-path-lock" aria-hidden="true">${index === 0 ? '▶' : '◆'}</i>
+        </div>
+        <small>CHALLENGER ${index + 1}</small>
+        <b>${identity.name}</b>
+        <em>${identity.variant ?? fighter.element}</em>
+      </article>`;
+  }).join('');
+
+  const guardNodes = guards.map((fighter) => {
+    const identity = getCharacterIdentity(fighter);
+    const portrait = getCachedCharacterPortrait(fighter.id) ?? getCharacterSvgIcon(fighter);
+    return `
+      <article class="boss-guard-node" data-guard-node="${fighter.id}" style="--node-color:#${fighter.color.toString(16).padStart(6, '0')}">
+        <div><img src="${portrait}" alt="" aria-hidden="true" /></div>
+        <span><b>${identity.name}</b><small>${fighter.element}</small></span>
+      </article>`;
+  }).join('');
+
+  const allNodes = challengers.map((fighter, index) => {
+    const identity = getCharacterIdentity(fighter);
+    return `
+      <span class="boss-path-mini ${index === 0 ? 'current' : ''}" data-gauntlet-order="${index + 1}" title="${identity.name} · ${identity.variant ?? fighter.element}" style="--node-color:#${fighter.color.toString(16).padStart(6, '0')}">
+        <img src="${getCachedCharacterPortrait(fighter.id) ?? getCharacterSvgIcon(fighter)}" alt="" aria-hidden="true" />
+        <i>${index + 1}</i>
+      </span>`;
+  }).join('');
+
+  app.innerHTML = `
+    <main class="boss-path-screen">
+      <div class="boss-path-backdrop" aria-hidden="true"></div>
+      <header class="boss-path-header">
+        <button class="back-button" id="boss-path-back" aria-label="Back">‹</button>
+        <div>
+          <small>MASTER CHEN'S ISLAND</small>
+          <h2>Elemental Master Gauntlet</h2>
+          <p>Defeat every challenger in sequence. Tournament masters lead the route, then the full playable roster enters the arena.</p>
+        </div>
+        <div class="boss-path-player">
+          <img src="${getCachedCharacterPortrait(selected.id) ?? getCharacterSvgIcon(selected)}" alt="" aria-hidden="true" />
+          <span><small>YOUR FIGHTER</small><b>${selectedIdentity.name}</b></span>
+        </div>
+      </header>
+
+      <section class="boss-path-board" aria-label="Gauntlet progression map">
+        <div class="boss-path-tabs" aria-hidden="true"><b>BOSSES</b><span>TOURNAMENT ROUTE</span><em>${challengers.length} FIGHTS</em></div>
+        <div class="boss-route-scroll">
+          <div class="boss-route-track">${routeNodes}</div>
+        </div>
+
+        <div class="boss-guard-section">
+          <div class="boss-path-tabs compact" aria-hidden="true"><b>ENEMIES</b><span>CHEN'S GUARDS</span></div>
+          <div class="boss-guard-grid">${guardNodes}</div>
+        </div>
+
+        <div class="boss-all-section">
+          <div class="boss-path-tabs compact"><b>ALL CHALLENGERS</b><span>FULL ROSTER ORDER · ${challengers.length}</span></div>
+          <div class="boss-path-mini-grid">${allNodes}</div>
+        </div>
+      </section>
+
+      <footer class="boss-path-footer">
+        <div>
+          <small>GAUNTLET RULE</small>
+          <b>ONE FIGHTER · ${challengers.length} CHALLENGERS · NO WAVE BREAKS</b>
+          <span>First opponent: ${getCharacterIdentity(challengers[0]).name}</span>
+        </div>
+        <button class="boss-path-play" id="boss-path-start" type="button"><i>▶</i><span><small>START</small><b>GAUNTLET</b></span></button>
+      </footer>
+    </main>`;
+
+  document.querySelector('#boss-path-back')?.addEventListener('click', showHome);
+  document.querySelector('#boss-path-start')?.addEventListener('click', startBossRush);
+
+  const visibleFighters = Array.from(new Set([
+    selected.id,
+    ...tournamentNodes.map((fighter) => fighter.id),
+    ...guards.map((fighter) => fighter.id)
+  ])).map((id) => findCharacter(id));
+
+  void renderCharacterPortraits(visibleFighters).then((cache) => {
+    if (!document.querySelector('.boss-path-screen')) return;
+    document.querySelectorAll<HTMLImageElement>('[data-boss-node] img, [data-guard-node] img, .boss-path-player img').forEach((image) => {
+      const host = image.closest<HTMLElement>('[data-boss-node], [data-guard-node]');
+      const id = host?.dataset.bossNode ?? host?.dataset.guardNode ?? selected.id;
+      const portrait = cache.get(id);
+      if (portrait) image.src = portrait;
+    });
+  }).catch(() => {
+    // SVG badges remain visible when WebGL portrait rendering is unavailable.
+  });
 }
 
 function showRoster() {
@@ -588,8 +702,9 @@ function startGame() {
     <main class="game-screen ${freePlayMode ? 'freeplay-mode' : ''} ${bossRushMode ? 'boss-rush-mode' : ''}">
       <div id="game-host"></div>
       <div class="hud hud-left">
-        <div class="portrait-ring" style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')}">
-          <span class="portrait-hood"></span><span class="portrait-face"></span><span class="portrait-eyes"></span>
+        <div class="portrait-ring" style="--fighter:#${baseFighter.color.toString(16).padStart(6, '0')};--accent:#${baseFighter.accent.toString(16).padStart(6, '0')}">
+          <img id="player-face-render" src="${getCachedCharacterPortrait(baseFighter.id) ?? getCharacterSvgIcon(baseFighter)}" alt="" aria-hidden="true" />
+          <span class="portrait-element" aria-hidden="true">${elementTheme.icon}</span>
         </div>
         <div class="player-hud-copy">
           <b>${identity.name}</b><small>${identity.variant ?? baseFighter.element}</small>
@@ -644,6 +759,22 @@ function startGame() {
     onCameraModeChange: syncCameraButton
   }, { bossRush: bossRushMode });
   activeGame = game;
+
+  const playerFace = document.querySelector<HTMLImageElement>('#player-face-render');
+  if (playerFace && !getCachedCharacterPortrait(baseFighter.id)) {
+    void renderCharacterPortraits([baseFighter]).then((cache) => {
+      const portrait = cache.get(baseFighter.id);
+      if (portrait && playerFace.isConnected) {
+        playerFace.src = portrait;
+        playerFace.classList.add('ready');
+      }
+    }).catch(() => {
+      // Generated SVG remains the clean-room fallback.
+    });
+  } else {
+    playerFace?.classList.add('ready');
+  }
+
   game.setUnlimitedSpecial(freePlayMode);
   game.setCreationUltimateEnabled(freePlayMode);
   showStageBanner(
