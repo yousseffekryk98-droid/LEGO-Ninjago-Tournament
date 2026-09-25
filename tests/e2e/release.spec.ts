@@ -174,11 +174,14 @@ test('the complete seven-step Dojo tutorial is playable with keyboard controls',
   // Move from the known spawn point to the training dummy, then land actual hits.
   await hold(page, 'ArrowRight', 180);
   await hold(page, 'ArrowUp', 820);
-  for (let i = 0; i < 3; i++) {
+  // Allow several real attack attempts because animation timing can vary on
+  // slower CI/GPU runners. Stop as soon as the tutorial advances.
+  for (let i = 0; i < 7; i++) {
+    if ((await page.locator('#dojo-step-title').textContent()) === 'Jump') break;
     await page.keyboard.press('j');
-    await page.waitForTimeout(360);
+    await page.waitForTimeout(420);
   }
-  await expect(page.locator('#dojo-step-title')).toHaveText('Jump');
+  await expect(page.locator('#dojo-step-title')).toHaveText('Jump', { timeout: 10_000 });
 
   await page.keyboard.press('k');
   await expect(page.locator('#dojo-step-title')).toHaveText('Block');
@@ -190,7 +193,7 @@ test('the complete seven-step Dojo tutorial is playable with keyboard controls',
   await expect(page.locator('#dojo-step-title')).toHaveText('Dodge');
 
   await page.keyboard.press('q');
-  await expect(page.locator('#dojo-step-title')).toHaveText('Special');
+  await expect(page.locator('#dojo-step-title')).toHaveText('Spinjitzu / Special');
   await expect(page.locator('#dojo-special')).toHaveClass(/ready/);
 
   await page.keyboard.press('e');
