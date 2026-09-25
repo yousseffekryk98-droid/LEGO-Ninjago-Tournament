@@ -61,6 +61,11 @@ const POWER_SPECIALS: Record<string, string> = {
   Combat: 'Combat Breaker'
 };
 
+const NAMED_SPECIAL_ATTACKS: Record<string, string> = {
+  Aspheera: 'Serpent Fire',
+  Wojira: 'Ocean Storm'
+};
+
 const POWER_PASSIVES: Record<string, string> = {
   Fire: 'Burning Momentum',
   Lightning: 'Static Charge',
@@ -220,7 +225,7 @@ export function withFighterAbilityKit(character: CharacterDef): CharacterDef {
     ...character,
     power,
     normalAttack: character.normalAttack ?? normalAttackFor(character.style),
-    specialAttack: character.specialAttack ?? specialAttackFor(element),
+    specialAttack: character.specialAttack ?? NAMED_SPECIAL_ATTACKS[character.name] ?? specialAttackFor(element),
     spinjitzu: character.spinjitzu ?? (element === 'Spinjitzu' ? 'Advanced Spinjitzu' : `${element} Spinjitzu`),
     ultimateSpinjitzu: character.ultimateSpinjitzu ?? `${element} Ultimate`,
     passive: character.passive ?? passiveFor(element)
