@@ -301,6 +301,14 @@ async function generate() {
   ];
   glyphs.forEach(([w,s,r],i)=>torsoKids.push(node(`sashGlyph${i}`,M.goldBox,rel(w,RIG_PIVOTS.torso),s,qEuler(0,0,r))));
 
+  // Circular Lloyd emblem visible on the back of the Tournament torso.
+  torsoKids.push(node('backPowerEmblemDisk',M.blackCyl,rel([0,1.48,-.255],RIG_PIVOTS.torso),[.175,.024,.175],qEuler(Math.PI/2,0,0)));
+  torsoKids.push(node('backPowerEmblemRing',M.goldTorus,rel([0,1.48,-.270],RIG_PIVOTS.torso),[.215,.042,.215],qEuler(Math.PI/2,0,0)));
+  torsoKids.push(node('backPowerEmblemCore',M.blackCyl,rel([0,1.48,-.287],RIG_PIVOTS.torso),[.115,.025,.115],qEuler(Math.PI/2,0,0)));
+  torsoKids.push(node('backGlyphStem',M.goldBox,rel([0,1.48,-.306],RIG_PIVOTS.torso),[.025,.14,.014]));
+  torsoKids.push(node('backGlyphWingL',M.goldBox,rel([-.045,1.51,-.307],RIG_PIVOTS.torso),[.09,.020,.014],qEuler(0,0,-.62)));
+  torsoKids.push(node('backGlyphWingR',M.goldBox,rel([.045,1.51,-.307],RIG_PIVOTS.torso),[.09,.020,.014],qEuler(0,0,.62)));
+
   const torso=node('torso',null,RIG_PIVOTS.torso,[1,1,1],undefined,torsoKids,{sourcePart:'973.dat'});
 
   const headKids=[
