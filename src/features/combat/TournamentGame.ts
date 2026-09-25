@@ -105,6 +105,8 @@ interface HealthPickup {
 }
 
 const ARENA_RADIUS = 43.5;
+const CENTER_PILLAR_RADIUS = 1.52;
+const CENTER_PILLAR_CLEARANCE = 0.72;
 const FIXED_SIMULATION_STEP = 1 / 60;
 const MAX_SIMULATION_CATCHUP = 0.22;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -557,6 +559,7 @@ export class TournamentGame {
       this.player.position.x = planar.x;
       this.player.position.z = planar.y;
     }
+    this.resolveCenterPillarCollision(this.player.position, CENTER_PILLAR_CLEARANCE);
 
     if (!this.grounded || this.jumpVelocity !== 0) {
       this.jumpVelocity -= 19 * dt;
@@ -1102,6 +1105,7 @@ export class TournamentGame {
           enemy.mesh.position.x = spinPlanar.x;
           enemy.mesh.position.z = spinPlanar.y;
         }
+        this.resolveCenterPillarCollision(enemy.mesh.position, 0.58);
         continue;
       }
 
@@ -1140,6 +1144,7 @@ export class TournamentGame {
         enemy.mesh.position.x = planar.x;
         enemy.mesh.position.z = planar.y;
       }
+      this.resolveCenterPillarCollision(enemy.mesh.position, 0.58);
 
       if (Math.abs(enemy.mesh.position.x) > 41.8 && Math.abs(enemy.mesh.position.z) < 2.8 && enemy.knock.length() > 1.5) {
         this.defeatEnemy(enemy);
@@ -2194,6 +2199,7 @@ export class TournamentGame {
     }
 
     this.buildArenaGate();
+    this.buildLegacyCenterPillar();
     this.buildSerpentPillar(-41.0, -37.2, 0.28);
     this.buildSerpentPillar(41.0, -37.2, -0.28);
     this.buildSerpentPillar(-41.8, 35.8, 0.2);
@@ -2503,6 +2509,140 @@ export class TournamentGame {
     crestCore.rotation.x = Math.PI / 2;
     crestCore.position.set(0, 5.0, z + 1.25);
     this.scene.add(crestCore);
+  }
+
+  private buildLegacyCenterPillar() {
+    const group = new THREE.Group();
+    group.name = 'legacyCenterSerpentPillar';
+
+    const stone = new THREE.MeshStandardMaterial({
+      color: 0x4a4845,
+      roughness: 0.94,
+      metalness: 0.015
+    });
+    const darkStone = new THREE.MeshStandardMaterial({
+      color: 0x2f3032,
+      roughness: 0.97
+    });
+    const serpent = new THREE.MeshStandardMaterial({
+      color: 0x6b2639,
+      roughness: 0.6,
+      metalness: 0.04
+    });
+    const serpentDark = new THREE.MeshStandardMaterial({
+      color: 0x391724,
+      roughness: 0.68
+    });
+    const bronze = new THREE.MeshStandardMaterial({
+      color: 0x9b7433,
+      roughness: 0.42,
+      metalness: 0.32
+    });
+
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.82, 0.44, 18), darkStone);
+    base.position.y = 0.22;
+    const baseRing = new THREE.Mesh(new THREE.TorusGeometry(1.48, 0.16, 10, 32), bronze);
+    baseRing.rotation.x = Math.PI / 2;
+    baseRing.position.y = 0.5;
+
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.18, 8.8, 18), stone);
+    shaft.position.y = 4.8;
+
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(1.34, 1.15, 0.5, 18), darkStone);
+    cap.position.y = 9.22;
+    const capRing = new THREE.Mesh(new THREE.TorusGeometry(1.22, 0.14, 10, 32), bronze);
+    capRing.rotation.x = Math.PI / 2;
+    capRing.position.y = 9.05;
+
+    for (const object of [base, baseRing, shaft, cap, capRing]) {
+      object.castShadow = true;
+      object.receiveShadow = true;
+      group.add(object);
+    }
+
+    const helixPoints: THREE.Vector3[] = [];
+    const turns = 2.48;
+    const segments = 88;
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const angle = -0.55 + t * Math.PI * 2 * turns;
+      const radius = 1.22 + Math.sin(t * Math.PI * 3) * 0.06;
+      helixPoints.push(new THREE.Vector3(
+        Math.cos(angle) * radius,
+        0.72 + t * 7.85,
+        Math.sin(angle) * radius
+      ));
+    }
+    const serpentCurve = new THREE.CatmullRomCurve3(helixPoints);
+    const coil = new THREE.Mesh(new THREE.TubeGeometry(serpentCurve, 112, 0.19, 10, false), serpent);
+    coil.castShadow = true;
+    coil.receiveShadow = true;
+    group.add(coil);
+
+    const headAngle = -0.55 + Math.PI * 2 * turns;
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.9, 6), serpent);
+    head.position.set(Math.cos(headAngle) * 1.3, 8.72, Math.sin(headAngle) * 1.3);
+    head.rotation.x = Math.PI / 2;
+    head.rotation.z = -headAngle + Math.PI / 2;
+    head.castShadow = true;
+    group.add(head);
+
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.13, 0.28), serpentDark);
+    brow.position.copy(head.position).add(new THREE.Vector3(0, 0.14, 0));
+    brow.rotation.y = -headAngle;
+    brow.castShadow = true;
+    group.add(brow);
+
+    for (const side of [-1, 1]) {
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 8, 6),
+        new THREE.MeshBasicMaterial({ color: 0xf2c45e })
+      );
+      const sideOffset = new THREE.Vector3(
+        Math.cos(headAngle + Math.PI / 2) * side * 0.16,
+        0.17,
+        Math.sin(headAngle + Math.PI / 2) * side * 0.16
+      );
+      eye.position.copy(head.position).add(sideOffset);
+      group.add(eye);
+    }
+
+    // Slightly irregular stone bands make the pillar read as an old arena prop,
+    // not a perfect primitive generated by the browser.
+    for (let i = 0; i < 6; i++) {
+      const band = new THREE.Mesh(
+        new THREE.TorusGeometry(1.06 + (i % 2) * 0.045, 0.055, 7, 28),
+        i % 3 === 0 ? darkStone : stone
+      );
+      band.rotation.x = Math.PI / 2;
+      band.rotation.z = i * 0.19;
+      band.position.y = 1.35 + i * 1.28;
+      band.scale.x = 1 + (i % 2 ? 0.06 : -0.03);
+      band.castShadow = true;
+      group.add(band);
+    }
+
+    group.position.set(0, 0, 0);
+    this.scene.add(group);
+  }
+
+  private resolveCenterPillarCollision(position: THREE.Vector3, padding: number) {
+    const minimumDistance = CENTER_PILLAR_RADIUS + padding;
+    const dx = position.x;
+    const dz = position.z;
+    const distanceSq = dx * dx + dz * dz;
+    if (distanceSq >= minimumDistance * minimumDistance) return;
+
+    const distance = Math.sqrt(distanceSq);
+    if (distance < 0.0001) {
+      position.x = minimumDistance;
+      position.z = 0;
+      return;
+    }
+
+    const scale = minimumDistance / distance;
+    position.x = dx * scale;
+    position.z = dz * scale;
   }
 
   private buildSerpentPillar(x: number, z: number, lean: number) {
