@@ -55,9 +55,10 @@ test('every fighter exposes the complete chronological design timeline available
     'commit-99837226',
     'commit-b5994b44',
     'commit-0170de08',
-    'commit-0bfc3094'
+    'commit-0bfc3094',
+    'cartoon-costume-remaster'
   ]);
-  expect(getDefaultCharacterDesignId('kai-tournament')).toBe('commit-0bfc3094');
+  expect(getDefaultCharacterDesignId('kai-tournament')).toBe('cartoon-costume-remaster');
 
   expect(getCharacterDesigns('lloyd-tournament').map((design) => design.id)).toEqual([
     'commit-998d2fce',
@@ -82,7 +83,7 @@ test('every fighter exposes the complete chronological design timeline available
     'commit-05b7ce43',
     'commit-961edd9b'
   ]);
-  expect(getDefaultCharacterDesignId('lloyd-tournament')).toBe('commit-425c89d4');
+  expect(getDefaultCharacterDesignId('lloyd-tournament')).toBe('commit-961edd9b');
 });
 
 test('roster data is complete, unique, and playable', () => {

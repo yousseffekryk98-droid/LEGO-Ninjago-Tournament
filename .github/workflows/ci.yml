@@ -19,8 +19,20 @@ jobs:
       - run: npm ci
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=moderate
+      - name: Test TRELLIS.2 asset discovery
+        run: npm run test:trellis
+      - name: Test remastered 3D fighter GLB generation
+        run: npm run test:remaster
       - run: npm run typecheck
       - run: npm run build
+      - name: Upload generated playable 3D fighter models
+        uses: actions/upload-artifact@v4
+        with:
+          name: ninjago-3d-character-remasters
+          path: |
+            public/assets/models/fighters/variants/*/cartoon-remaster.glb
+            public/assets/models/fighters/variants/lloyd-tournament/lloyd-exact.glb
+          if-no-files-found: error
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Upload Playwright diagnostics

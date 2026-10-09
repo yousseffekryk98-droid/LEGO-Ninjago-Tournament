@@ -26,7 +26,7 @@ The fighter selector preserves visual history **from the first 3D character-desi
 | C18 | `6860d027` | Exact Mould Initial | Lloyd |
 | C19 | `70f95ff9` | Exact Mould Intermediate | Lloyd |
 | C20 | `05b7ce43` | Exact Mould Refined | Lloyd |
-| C21 | `961edd9b` | Exact Mould + Back Emblem | Lloyd |
+| C21 | `961edd9b` | Exact Mould + Back Emblem | Lloyd |\n| C22 | `microsoft/TRELLIS.2` | Image-to-3D GLB (optional) | Characters with validated generated mesh files |\n| C23 | `clean-room-generator` | Tournament Costume 3D Remaster | Nine core fighters |
 
 The first authored design was introduced in `113a74c1`; `0170de08` is used for the selectable asset because it is the working buffer-size-fixed version of that same design. The high-fidelity authored design was introduced in `36008526`; `0bfc3094` is used because it contains the generator-expression fix required to build that design correctly. Lloyd Detailed originated at `ca1faa7d`; `425c89d4` is the repaired hair-data revision of the same design.
 

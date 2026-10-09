@@ -4,6 +4,7 @@ import { getHistoricalCharacterModelProfile } from './history';
 import { createMinifigureModel } from '../../shared/three/minifigure-model';
 import { createHistoricalMinifigureModel } from '../../shared/three/history';
 import { attachAuthoredCharacterBody } from './authored-model';
+import { attachTrellisCharacterBody } from './trellis-model';
 import { getSelectedCharacterDesign } from './designs';
 
 export function createCharacterModel(character: CharacterDef, scale = 1) {
@@ -32,6 +33,9 @@ export function createCharacterModel(character: CharacterDef, scale = 1) {
   if (typeof window !== 'undefined' && design) {
     model.userData.characterDesignId = design.id;
     model.userData.characterDesignLabel = design.label;
+    if (design.kind === 'trellis2' && design.assetUrl) {
+      void attachTrellisCharacterBody(model, character.id, design.assetUrl, design.id);
+    }
     if (design.kind === 'authored' && design.assetUrl) {
       void attachAuthoredCharacterBody(model, character.id, design.assetUrl, design.id);
     }
