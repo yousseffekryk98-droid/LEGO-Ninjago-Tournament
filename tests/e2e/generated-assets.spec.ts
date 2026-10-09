@@ -229,3 +229,31 @@ test('historical fighter design library preserves distinct GLB generations', asy
   expect(exactNames.has('hairMould61183')).toBeTruthy();
   expect(exactNames.has('bandanaMould15619')).toBeTruthy();
 });
+
+
+test('cartoon costume remasters are distinct, rig-compatible and contain character-specific detailing', async () => {
+  const ids = [
+    'kai-tournament', 'jay-tournament', 'cole-tournament', 'zane-techno',
+    'zane-zx', 'nya', 'skylor', 'master-chen', 'master-garmadon'
+  ];
+  for (const id of ids) {
+    const base = await readFile(resolve(`public/assets/models/fighters/variants/${id}/authored-v2.glb`));
+    const remaster = await readFile(resolve(`public/assets/models/fighters/variants/${id}/cartoon-remaster.glb`));
+    expect(remaster.byteLength, id).toBeGreaterThan(base.byteLength);
+    expect(remaster.readUInt32LE(0), id).toBe(0x46546c67);
+    expect(remaster.readUInt32LE(8), id).toBe(remaster.byteLength);
+    const jsonLength = remaster.readUInt32LE(12);
+    const json = JSON.parse(remaster.subarray(20, 20 + jsonLength).toString('utf8').trim());
+    expect(json.asset.extras?.remaster, id).toBe(true);
+    const names = new Set(json.nodes.map((node: { name?: string }) => node.name));
+    for (const joint of ['torso', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg']) {
+      expect(names.has(joint), `${id} missing rig joint ${joint}`).toBeTruthy();
+    }
+    for (const detail of ['remasterKimonoUnderlayer', 'remasterDiagonalSash', 'remasterChestMedallion', 'remasterBootTrim-1']) {
+      expect(names.has(detail), `${id} missing ${detail}`).toBeTruthy();
+    }
+    if (id.includes('tournament') || id.startsWith('zane')) {
+      expect(names.has('remasterMaskLower'), `${id} missing molded mask`).toBeTruthy();
+    }
+  }
+});
