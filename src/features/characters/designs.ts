@@ -108,7 +108,7 @@ function authoredHighFidelity(characterId: string): CharacterDesign {
   };
 }
 
-const LLOYD_TIMELINE: CharacterDesign[] = [
+const REMASTER_IDS = new Set([\n  'kai-tournament', 'jay-tournament', 'cole-tournament',\n  'zane-techno', 'zane-zx', 'nya', 'skylor', 'master-chen', 'master-garmadon'\n]);\n\nconst LLOYD_TIMELINE: CharacterDesign[] = [
   {
     id: 'commit-425c89d4',
     label: 'Detailed Lloyd',
@@ -177,13 +177,13 @@ export function getCharacterDesigns(characterId: string): CharacterDesign[] {
   if (CORE_AUTHORED_IDS.has(characterId)) {
     designs.push(authoredFirst(characterId), authoredHighFidelity(characterId));
   }
-  if (characterId === 'lloyd-tournament') designs.push(...LLOYD_TIMELINE);
+  if (characterId === 'lloyd-tournament') designs.push(...LLOYD_TIMELINE);\n  if (REMASTER_IDS.has(characterId)) designs.push({\n    id: 'cartoon-costume-remaster',\n    label: 'Tournament Costume 3D Remaster',\n    shortLabel: 'C23 · 3D Remaster',\n    description: 'Original LEGO-style modeled costume with raised prints, character-specific details and preserved limb joints (not an exact TV mesh).',\n    kind: 'authored',\n    assetUrl: `/assets/models/fighters/variants/${characterId}/cartoon-remaster.glb`,\n    sourceCommit: 'clean-room-generator',\n    timelineIndex: 23\n  });
   return designs;
 }
 
 export function getDefaultCharacterDesignId(characterId: string) {
   if (TRELLIS_CHARACTER_ASSETS[characterId]) return 'trellis2-image-to-3d';
-  if (characterId === 'lloyd-tournament') return 'commit-425c89d4';
+  if (characterId === 'lloyd-tournament') return 'commit-961edd9b';\n  if (REMASTER_IDS.has(characterId)) return 'cartoon-costume-remaster';
   if (CORE_AUTHORED_IDS.has(characterId)) return 'commit-0bfc3094';
   return 'commit-b5994b44';
 }
