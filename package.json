@@ -15,9 +15,11 @@
     "android:open": "cap open android",
     "android:run": "npm run android:sync && cap run android",
     "generate:assets": "node scripts/generate-authored-assets.mjs && node scripts/generate-chen-gate.mjs && node scripts/generate-arena-props.mjs && node scripts/generate-core-fighters-v1.mjs && node scripts/generate-core-fighters.mjs && node scripts/generate-lloyd-detailed-variant.mjs && node scripts/history/generate-lloyd-exact-6860d027.mjs && node scripts/history/generate-lloyd-exact-70f95ff9.mjs && node scripts/history/generate-lloyd-exact-05b7ce43.mjs && node scripts/generate-lloyd-exact-production.mjs",
-    "predev": "npm run generate:assets",
-    "prebuild": "npm run generate:assets",
-    "pretest:e2e": "npm run generate:assets"
+    "predev": "npm run sync:trellis && npm run generate:assets",
+    "prebuild": "npm run sync:trellis && npm run generate:assets",
+    "pretest:e2e": "npm run sync:trellis && npm run generate:assets",
+    "sync:trellis": "node scripts/trellis2/sync-assets.mjs",
+    "test:trellis": "node --test scripts/trellis2/*.test.mjs"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",
