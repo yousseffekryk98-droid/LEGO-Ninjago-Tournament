@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=moderate
+      - name: Test TRELLIS.2 asset discovery
+        run: npm run test:trellis
       - run: npm run typecheck
       - run: npm run build
       - run: npx playwright install --with-deps chromium
