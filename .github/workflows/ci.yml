@@ -21,6 +21,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=moderate
       - name: Test TRELLIS.2 asset discovery
         run: npm run test:trellis
+      - name: Test remastered 3D fighter GLB generation
+        run: npm run test:remaster
       - run: npm run typecheck
       - run: npm run build
       - run: npx playwright install --with-deps chromium
