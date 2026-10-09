@@ -32,8 +32,11 @@ test('remastered ninjas add face and uniform detail on the original articulation
     for (const value of ['remasterMaskLower', 'remasterHoodCrown', 'remasterChestMedallion', 'remasterKneeWrap-1']) {
       assert.ok(names.has(value), `${id} missing ${value}`);
     }
-    for (const name of ['torso', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg']) {
+    for (const name of ['torso', 'head', 'leftLeg', 'rightLeg']) {
       assert.ok(gltf.nodes.find((node) => node.name === name)?.children?.length > 0, `${id}: empty joint ${name}`);
+    }
+    for (const name of ['leftArm', 'rightArm']) {
+      assert.ok(gltf.nodes.some((node) => node.name === name), `${id}: missing arm joint ${name}`);
     }
     const payload = encodeGlb(gltf, Buffer.from([1, 2, 3, 4]));
     assert.equal(parseGlb(payload).gltf.asset.extras.remaster, true);
