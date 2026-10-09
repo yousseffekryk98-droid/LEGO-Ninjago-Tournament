@@ -39,3 +39,7 @@ When a third-party asset is added later, record:
 3. exact license;
 4. whether modified;
 5. the repository path where it is used.
+
+## Original Tournament costume 3D remasters
+
+The nine optional `cartoon-remaster.glb` variants are generated during the build from the project's original authored-v2 geometry by `scripts/remaster-tournament-fighters.mjs`. This adds original masks, hood shapes, belts, medallion relief, boot trim and costume layering. No LEGO game meshes or television textures are imported or redistributed. These variants are approximations; descriptive names do not assert exact official likeness. See `docs/TRELLIS2-CHARACTERS.md` for the distinct NVIDIA-GPU image-to-3D generation path.
