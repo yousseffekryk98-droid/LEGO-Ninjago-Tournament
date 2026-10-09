@@ -1,4 +1,6 @@
-export type CharacterDesignKind = 'historical-procedural' | 'authored';
+import { TRELLIS_CHARACTER_ASSETS } from './trellis2.generated';
+
+export type CharacterDesignKind = 'historical-procedural' | 'authored' | 'trellis2';
 
 export interface CharacterDesign {
   id: string;
@@ -161,6 +163,17 @@ const LLOYD_TIMELINE: CharacterDesign[] = [
 
 export function getCharacterDesigns(characterId: string): CharacterDesign[] {
   const designs = [...PROCEDURAL_TIMELINE];
+  const trellisUrl = TRELLIS_CHARACTER_ASSETS[characterId];
+  if (trellisUrl) designs.push({
+    id: 'trellis2-image-to-3d',
+    label: 'TRELLIS.2 Generated 3D',
+    shortLabel: 'TRELLIS.2',
+    description: 'Image-to-3D textured mesh. This version does not support articulated limb animations until rigged.',
+    kind: 'trellis2',
+    assetUrl: trellisUrl,
+    sourceCommit: 'microsoft/TRELLIS.2',
+    timelineIndex: 22
+  });
   if (CORE_AUTHORED_IDS.has(characterId)) {
     designs.push(authoredFirst(characterId), authoredHighFidelity(characterId));
   }
@@ -169,6 +182,7 @@ export function getCharacterDesigns(characterId: string): CharacterDesign[] {
 }
 
 export function getDefaultCharacterDesignId(characterId: string) {
+  if (TRELLIS_CHARACTER_ASSETS[characterId]) return 'trellis2-image-to-3d';
   if (characterId === 'lloyd-tournament') return 'commit-425c89d4';
   if (CORE_AUTHORED_IDS.has(characterId)) return 'commit-0bfc3094';
   return 'commit-b5994b44';
